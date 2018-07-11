@@ -1,0 +1,145 @@
+<!-- Manual -->
+
+<!ELEMENT manual (title, breadcrumb?, icons?, resources?, index?, chapter*)>
+<!ATTLIST manual version CDATA #REQUIRED>
+
+<!-- Breadcrumb -->
+
+<!ELEMENT breadcrumb (dir*)>
+
+<!ELEMENT dir (#PCDATA)>
+
+<!-- Icons -->
+
+<!ELEMENT icons (zip?, armv7?, iyonix?)>
+
+<!ELEMENT zip (#PCDATA)>
+<!ATTLIST zip alt CDATA #IMPLIED>
+<!ATTLIST zip width CDATA #REQUIRED>
+<!ATTLIST zip height CDATA #REQUIRED>
+
+<!ELEMENT armv7 (#PCDATA)>
+<!ATTLIST armv7 alt CDATA #IMPLIED>
+<!ATTLIST armv7 width CDATA #REQUIRED>
+<!ATTLIST armv7 height CDATA #REQUIRED>
+
+<!ELEMENT iyonix (#PCDATA)>
+<!ATTLIST iyonix alt CDATA #IMPLIED>
+<!ATTLIST iyonix width CDATA #REQUIRED>
+<!ATTLIST iyonix height CDATA #REQUIRED>
+
+<!-- Index and Chapter -->
+
+<!ELEMENT index (filename?, title?, resources?, chapterlist?, section*)>
+<!ATTLIST index id CDATA #REQUIRED>
+
+<!ELEMENT chapter (filename?, title?, resources?, summary?, section*)>
+<!ATTLIST chapter id CDATA #REQUIRED>
+
+<!ELEMENT filename (#PCDATA)>
+
+<!ELEMENT chapterlist (EMPTY)>
+
+<!ELEMENT section (title?, p*, table*, code*, image*, download*)>
+<!ATTLIST section id CDATA #IMPLIED>
+
+<!ELEMENT summary (#PCDATA)>
+<!ELEMENT p (#PCDATA)>
+
+<!-- Title -->
+
+<!ELEMENT title (#PCDATA)>
+
+<!-- Resources -->
+
+<!ELEMENT resources (images?, downloads?, common?, chapters?)>
+
+<!ELEMENT images (#PCDATA)>
+<!ELEMENT downloads (#PCDATA)>
+<!ELEMENT common (#PCDATA)>
+<!ELEMENT chapters (#PCDATA)>
+
+<!-- Entities -->
+
+<!ENTITY ldquo "&amp;ldquo;">
+<!ENTITY lsquo "&amp;lsquo;">
+<!ENTITY minus "&amp;minus;">
+<!ENTITY nbsp "&amp;nbsp;">
+<!ENTITY ndash "&amp;ndash;">
+<!ENTITY rdquo "&amp;rdquo;">
+<!ENTITY rsquo "&amp;rsquo;">
+<!ENTITY times "&amp;times;">
+
+
+
+
+
+<!--
+  <xsd:complexType name="TableType">
+    <xsd:attribute name="id" type="xsd:string"/>
+    <xsd:attribute name="title" type="xsd:string"/>
+    <xsd:element name="columns" type="ColumnsType" minOccurs="1" maxOccurs="1"/>
+    <xsd:element name="row" type="RowType" minOccurs="1" maxOccurs="unbounded"/>
+  </xsd:complexType>
+   
+  <xsd:complexType name="ColumnsType">
+    <xsd:attribute name="align" type="xsd:string"/>
+    <xsd:element name="col" type="ParagraphType" minOccurs="1" maxOccurs="unbounded"/>
+  </xsd:complexType>
+  
+  <xsd:complexType name="RowType">
+    <xsd:element name="col" type="ParagraphType" minOccurs="1" maxOccurs="unbounded"/>
+  </xsd:complexType>
+ 
+  <xsd:complexType name="CodeType">
+    <xsd:attribute name="lang" type="xsd:string" use="required"/>
+    <xsd:attribute name="file" type="xsd:string"/>
+    <xsd:attribute name="id" type="xsd:string"/>
+    <xsd:attribute name="title" type="xsd:string"/>
+  </xsd:complexType>
+  
+  <xsd:complexType name="ImageType">
+    <xsd:attribute name="file" type="xsd:string" use="required"/>
+    <xsd:attribute name="id" type="xsd:string"/>
+    <xsd:attribute name="title" type="xsd:string"/>
+  </xsd:complexType>
+  
+  <xsd:complexType name="DownloadType">
+    <xsd:attribute name="file" type="xsd:string" use="required"/>
+    <xsd:attribute name="id" type="xsd:string"/>
+    <xsd:attribute name="title" type="xsd:string"/>
+    <xsd:attribute name="compatibility" type="xsd:string"/>
+  </xsd:complexType>
+ 
+  <xsd:complexType name="ParagraphType">
+    <xsd:sequence>
+      <xsd:element name="code" type="xsd:string"/>
+      <xsd:element name="command" type="xsd:string"/>
+      <xsd:element name="const" type="xsd:string"/>
+      <xsd:element name="em" type="xsd:string"/>
+      <xsd:element name="event" type="xsd:string"/>
+      <xsd:element name="file" type="xsd:string"/>
+      <xsd:element name="function" type="xsd:string"/>
+      <xsd:element name="icon" type="xsd:string"/>
+      <xsd:element name="intro" type="xsd:string"/>
+      <xsd:element name="key" type="xsd:string"/>
+      <xsd:element name="link" type="LinkType"/>
+      <xsd:element name="maths" type="xsd:string"/>
+      <xsd:element name="menu" type="xsd:string"/>
+      <xsd:element name="mouse" type="xsd:string"/>
+      <xsd:element name="name" type="xsd:string"/>
+      <xsd:element name="reference" type="ReferenceType"/>
+      <xsd:element name="swi" type="xsd:string"/>
+      <xsd:element name="variable" type="xsd:string"/>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="ReferenceType">
+    <xsd:attribute name="id" type="xsd:string" use="required"/>
+  </xsd:complexType>
+
+  <xsd:complexType name="LinkType">
+    <xsd:attribute name="href" type="xsd:string" use="required"/>
+  </xsd:complexType>
+  -->
+

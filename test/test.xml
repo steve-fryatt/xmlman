@@ -1,0 +1,58 @@
+<?xml version='1.0'?>
+
+<!DOCTYPE manual SYSTEM "manual.dtd">
+
+<manual version="1.8.6">
+<title>Wimp Programming In C</title>
+<breadcrumb><dir>Home</dir><dir>Documentation</dir></breadcrumb>
+<icons>
+<zip width="34" height="34">../../software/images/zip.png</zip>
+<armv7 alt="ARMV7 OK" width="34" height="39">../../software/images/armv7.png</armv7>
+<iyonix alt="Iyonix OK" width="34" height="39">../../software/images/iyonix.gif</iyonix>
+</icons>
+<resources>
+<images>Images</images>
+<downloads>Downloads</downloads>
+<common>Common</common>
+<chapters>Chapters</chapters>
+</resources>
+
+<!-- Index -->
+
+<index>
+<filename>index.html</filename>
+<section>
+<p>Like many other RISC&nbsp;OS users, I started programming in BBC&nbsp;BASIC. Although it served me well, I began to find that it didn&rsquo;t always scale well &ndash; especially when software had to handle large, variable amounts of data or multiple documents.</p>
+
+<p>After learning C on Unix systems, I began to investigate how it could be used on RISC&nbsp;OS. My first efforts directly copied the techniques used in BASIC, and quickly became just as unweildy as their predecessors.</p>
+
+<p>Eventually I settled on using a combination of <link href="http://ro-oslib.sourceforge.net/">OSLib</link> and my own libraries &ndash; imaginatively called SFLib &ndash; based on it. Together, these have formed the basis of all of my software which has been started since 2000.</p>
+
+<p>The aim of this guide is to give some help to those who are competent in C but have not used it when writing for the RISC&nbsp;OS desktop. It will also introduce the use of SFLib, which may be of interest to those writing Wimp software using OSLib.</p>
+
+<p>Many thanks to all those on the <link href="https://www.riscosopen.org/forum/">ROOL Forums</link> who have answered my questions about the DDE and offered suggestions while I&rsquo;ve worked on this guide.</p>
+</section>
+
+<chapterlist/>
+
+</index>
+
+<chapter file="ch01-start-basic.xml"/>
+<chapter file="ch02-moving-to-c.xml"/>
+<chapter file="ch03-compiling.xml"/>
+<chapter file="ch04-event-driven.xml"/>
+<chapter file="ch05-compile-better.xml"/>
+<chapter file="ch06-ibar.xml"/>
+<chapter file="ch07-click.xml"/>
+<chapter file="ch08-report.xml"/>
+<chapter file="ch09-debug.xml"/>
+<chapter file="ch10-report2.xml"/>
+<chapter file="ch11-windows.xml"/>
+<chapter file="ch12-window-theory.xml"/>
+<chapter file="ch13-window-handling.xml"/>
+<chapter file="ch14-icons-intro.xml"/>
+<chapter file="ch15-icons-indirect.xml"/>
+<chapter file="ch16-interact-click.xml"/>
+<chapter file="ch17-appdir.xml"/>
+
+</manual>

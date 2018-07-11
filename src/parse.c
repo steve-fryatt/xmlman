@@ -34,6 +34,7 @@
 
 #include <libxml/xmlreader.h>
 
+
 /**
  * A list of element types known to the parser.
  */
@@ -183,6 +184,10 @@ static enum parse_element_type parse_find_element_type(xmlTextReaderPtr reader)
 
 static void parse_error_handler(void *arg, const char *msg, xmlParserSeverities severity, xmlTextReaderLocatorPtr locator)
 {
-	printf("Error: %s\n", msg);
+	int	line;
+
+	line = xmlTextReaderLocatorLineNumber(locator);
+
+	printf("Error at line %d: %s", line, msg);
 }
 
