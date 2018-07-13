@@ -40,11 +40,71 @@
 
 <!ELEMENT chapterlist (EMPTY)>
 
-<!ELEMENT section (title?, p*, table*, code*, image*, download*)>
+<!ELEMENT section (title?, p*, table*, codeblock*, image*, download*)>
 <!ATTLIST section id CDATA #IMPLIED>
 
-<!ELEMENT summary (#PCDATA)>
-<!ELEMENT p (#PCDATA)>
+<!ELEMENT summary (#PCDATA)> <!-- Needs to match P -->
+<!ELEMENT p (#PCDATA)> <!-- Needs to match P -->
+
+<!-- Table -->
+
+<!ELEMENT table (columns, row+, title?)>
+<!ATTLIST table id CDATA #IMPLIED>
+
+<!ELEMENT columns (col+)>
+
+<!ELEMENT row (col+)>
+
+<!ELEMENT col (#PCDATA)> <!-- Needs to match P -->
+<!ATTLIST col align CDATA #IMPLIED>
+
+<!-- Code -->
+
+<!ELEMENT codeblock (#PCDATA)>
+<!ATTLIST codeblock id CDATA #IMPLIED>
+<!ATTLIST codeblock lang CDATA #REQUIRED>
+<!ATTLIST codeblock file CDATA #REQUIRED>
+<!ATTLIST codeblock title CDATA #IMPLIED>
+
+<!ELEMENT image (#PCDATA)>
+<!ATTLIST image id CDATA #IMPLIED>
+<!ATTLIST image file CDATA #REQUIRED>
+<!ATTLIST image title CDATA #IMPLIED>
+
+<!ELEMENT download (#PCDATA)>
+<!ATTLIST download id CDATA #IMPLIED>
+<!ATTLIST download file CDATA #REQUIRED>
+<!ATTLIST download title CDATA #IMPLIED>
+<!ATTLIST download compatibility CDATA #IMPLIED>
+
+<!-- Paragraph contents -->
+
+<!ELEMENT code (#PCDATA)>
+<!ELEMENT command (#PCDATA)>
+<!ELEMENT const (#PCDATA)>
+<!ELEMENT em (#PCDATA)>
+<!ELEMENT event (#PCDATA)>
+<!ELEMENT file (#PCDATA)>
+<!ELEMENT function (#PCDATA)>
+<!ELEMENT icon (#PCDATA)>
+<!ELEMENT intro (#PCDATA)>
+<!ELEMENT key (#PCDATA)>
+<!ELEMENT maths (#PCDATA)>
+<!ELEMENT menu (#PCDATA)>
+<!ELEMENT mouse (#PCDATA)>
+<!ELEMENT name (#PCDATA)>
+<!ELEMENT swi (#PCDATA)>
+<!ELEMENT variable (#PCDATA)>
+
+<!-- Reference -->
+
+<!ELEMENT reference (#PCDATA)>
+<!ATTLIST reference id CDATA #REQUIRED>
+
+<!-- Link -->
+
+<!ELEMENT link (#PCDATA)>
+<!ATTLIST link href CDATA #REQUIRED>
 
 <!-- Title -->
 
@@ -69,77 +129,4 @@
 <!ENTITY rdquo "&amp;rdquo;">
 <!ENTITY rsquo "&amp;rsquo;">
 <!ENTITY times "&amp;times;">
-
-
-
-
-
-<!--
-  <xsd:complexType name="TableType">
-    <xsd:attribute name="id" type="xsd:string"/>
-    <xsd:attribute name="title" type="xsd:string"/>
-    <xsd:element name="columns" type="ColumnsType" minOccurs="1" maxOccurs="1"/>
-    <xsd:element name="row" type="RowType" minOccurs="1" maxOccurs="unbounded"/>
-  </xsd:complexType>
-   
-  <xsd:complexType name="ColumnsType">
-    <xsd:attribute name="align" type="xsd:string"/>
-    <xsd:element name="col" type="ParagraphType" minOccurs="1" maxOccurs="unbounded"/>
-  </xsd:complexType>
-  
-  <xsd:complexType name="RowType">
-    <xsd:element name="col" type="ParagraphType" minOccurs="1" maxOccurs="unbounded"/>
-  </xsd:complexType>
- 
-  <xsd:complexType name="CodeType">
-    <xsd:attribute name="lang" type="xsd:string" use="required"/>
-    <xsd:attribute name="file" type="xsd:string"/>
-    <xsd:attribute name="id" type="xsd:string"/>
-    <xsd:attribute name="title" type="xsd:string"/>
-  </xsd:complexType>
-  
-  <xsd:complexType name="ImageType">
-    <xsd:attribute name="file" type="xsd:string" use="required"/>
-    <xsd:attribute name="id" type="xsd:string"/>
-    <xsd:attribute name="title" type="xsd:string"/>
-  </xsd:complexType>
-  
-  <xsd:complexType name="DownloadType">
-    <xsd:attribute name="file" type="xsd:string" use="required"/>
-    <xsd:attribute name="id" type="xsd:string"/>
-    <xsd:attribute name="title" type="xsd:string"/>
-    <xsd:attribute name="compatibility" type="xsd:string"/>
-  </xsd:complexType>
- 
-  <xsd:complexType name="ParagraphType">
-    <xsd:sequence>
-      <xsd:element name="code" type="xsd:string"/>
-      <xsd:element name="command" type="xsd:string"/>
-      <xsd:element name="const" type="xsd:string"/>
-      <xsd:element name="em" type="xsd:string"/>
-      <xsd:element name="event" type="xsd:string"/>
-      <xsd:element name="file" type="xsd:string"/>
-      <xsd:element name="function" type="xsd:string"/>
-      <xsd:element name="icon" type="xsd:string"/>
-      <xsd:element name="intro" type="xsd:string"/>
-      <xsd:element name="key" type="xsd:string"/>
-      <xsd:element name="link" type="LinkType"/>
-      <xsd:element name="maths" type="xsd:string"/>
-      <xsd:element name="menu" type="xsd:string"/>
-      <xsd:element name="mouse" type="xsd:string"/>
-      <xsd:element name="name" type="xsd:string"/>
-      <xsd:element name="reference" type="ReferenceType"/>
-      <xsd:element name="swi" type="xsd:string"/>
-      <xsd:element name="variable" type="xsd:string"/>
-    </xsd:sequence>
-  </xsd:complexType>
-
-  <xsd:complexType name="ReferenceType">
-    <xsd:attribute name="id" type="xsd:string" use="required"/>
-  </xsd:complexType>
-
-  <xsd:complexType name="LinkType">
-    <xsd:attribute name="href" type="xsd:string" use="required"/>
-  </xsd:complexType>
-  -->
 
