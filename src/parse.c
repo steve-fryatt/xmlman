@@ -38,7 +38,10 @@
 
 /* Static Function Prototypes. */
 
-static void parse_process_top_level_node(xmlTextReaderPtr reader);
+static void parse_process_node(xmlTextReaderPtr reader);
+static void parse_process_outer_node(xmlTextReaderPtr reader);
+static void parse_process_manual_node(xmlTextReaderPtr reader);
+static void parse_process_chapter_node(xmlTextReaderPtr reader);
 static void parse_error_handler(void *arg, const char *msg, xmlParserSeverities severity, xmlTextReaderLocatorPtr locator);
 
 
@@ -53,6 +56,8 @@ void parse_file(char *filename)
 	xmlTextReaderPtr	reader;
 	int			ret;
 
+	parse_stack_reset();
+
 	reader = xmlReaderForFile(filename, NULL, XML_PARSE_DTDATTR | XML_PARSE_DTDVALID);
 
 	if (reader == NULL) {
@@ -64,7 +69,7 @@ void parse_file(char *filename)
 
 	ret = xmlTextReaderRead(reader);
 	while (ret == 1) {
-		parse_process_top_level_node(reader);
+		parse_process_node(reader);
 		ret = xmlTextReaderRead(reader);
 	}
 
@@ -80,13 +85,42 @@ void parse_file(char *filename)
 
 
 
-static void parse_process_top_level_node(xmlTextReaderPtr reader)
+static void parse_process_node(xmlTextReaderPtr reader)
 {
-	xmlReaderTypes		type;
-	enum parse_element_type	element;
+	struct parse_stack_entry	*stack;
+
+	stack = parse_stack_peek();
+
+	if (stack == NULL) {
+		printf("Stack error in node.");
+		return;
+	}
+
+	switch (stack->content) {
+	case PARSE_STACK_CONTENT_NONE:
+		parse_process_outer_node(reader);
+		break;
+	case PARSE_STACK_CONTENT_MANUAL:
+		parse_process_manual_node(reader);
+		break;
+	case PARSE_STACK_CONTENT_CHAPTER:
+		parse_process_manual_node(reader);
+		break;
+	}
+}
+
+/**
+ * Process nodes when we're outside the whole document structure.
+ *
+ * \param reader	The XML Reader to read the node from.
+ */
+
+static void parse_process_outer_node(xmlTextReaderPtr reader)
+{
+	xmlReaderTypes			type;
+	enum parse_element_type		element;
 
 	type = xmlTextReaderNodeType(reader);
-	printf("Type: %d\n", type);
 	if (type != XML_READER_TYPE_ELEMENT)
 		return;
 
@@ -94,8 +128,79 @@ static void parse_process_top_level_node(xmlTextReaderPtr reader)
 	switch (element) {
 	case PARSE_ELEMENT_MANUAL:
 		printf("Found manual\n");
+		parse_stack_push(PARSE_STACK_CONTENT_MANUAL, element);
 		break;
 	}
+}
+
+static void parse_process_manual_node(xmlTextReaderPtr reader)
+{
+	xmlReaderTypes			type;
+	enum parse_element_type		element;
+	struct parse_stack_entry	*stack;
+
+	stack = parse_stack_peek();
+
+	type = xmlTextReaderNodeType(reader);
+	switch (type) {
+	case XML_READER_TYPE_ELEMENT:
+		element = parse_find_element_type(reader);
+
+		switch (element) {
+		case PARSE_ELEMENT_INDEX:
+			printf("Found index\n");
+			parse_stack_push(PARSE_STACK_CONTENT_CHAPTER, element);
+			break;
+		case PARSE_ELEMENT_CHAPTER:
+			if (xmlTextReaderIsEmptyElement(reader)) {
+				printf ("Found chapter pointer ->\n");
+			} else {
+				printf("Found chapter\n");
+				parse_stack_push(PARSE_STACK_CONTENT_CHAPTER, element);
+			}
+			break;
+		}
+		break;
+
+	case XML_READER_TYPE_END_ELEMENT:
+		element = parse_find_element_type(reader);
+
+		if (element != stack->closing_element) {
+			printf("Unexpected closing element\n");
+			break;
+		}
+
+		printf("Closed element type %d\n", element);
+		parse_stack_pop();
+		break;
+	}
+}
+
+static void parse_process_chapter_node(xmlTextReaderPtr reader)
+{
+	xmlReaderTypes			type;
+	enum parse_element_type		element;
+	struct parse_stack_entry	*stack;
+
+	stack = parse_stack_peek();
+
+	type = xmlTextReaderNodeType(reader);
+	switch (type) {
+	case XML_READER_TYPE_END_ELEMENT:
+		element = parse_find_element_type(reader);
+
+		if (element != stack->closing_element) {
+			printf("Unexpected closing element\n");
+			break;
+		}
+
+		printf("Closed element type %d\n", element);
+		parse_stack_pop();
+		break;
+	}
+}
+
+
 
 /*
 	const		xmlChar *name, *value;
@@ -124,8 +229,6 @@ static void parse_process_top_level_node(xmlTextReaderPtr reader)
 			printf(" %s\n", value);
 	}
 */
-}
-
 
 
 

@@ -32,13 +32,35 @@
 
 #include <stdbool.h>
 
+enum parse_object_type {
+	PARSE_OBJECT_TYPE_NONE,
+	PARSE_OBJECT_TYPE_MANUAL,
+	PARSE_OBJECT_TYPE_INDEX,
+	PARSE_OBJECT_TYPE_CHAPTER,
+	PARSE_OBJECT_TYPE_SECTION
+};
+
+struct parse_chapter {
+
+
+};
+
+struct parse_manual {
+	/**
+	 * Pointer to the manual title.
+	 */
+
+	char		*title;
+};
+
 /**
  * Parse an XML file and its descendents.
  *
  * \param *filename	The name of the file to parse.
+ * \return
  */
 
-void parse_file(char *filename);
+struct parse_manual *parse_file(char *filename);
 
 #endif
 

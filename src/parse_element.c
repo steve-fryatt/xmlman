@@ -73,8 +73,7 @@ enum parse_element_type parse_find_element_type(xmlTextReaderPtr reader)
 	if (name == NULL)
 		return PARSE_ELEMENT_NONE;
 
-	for (i = 0; parse_element_tags[i].type != PARSE_ELEMENT_NONE && strcmp((const char *) parse_element_tags[i].tag, (const char *) name) != 0; i++)
-		printf("Matching tag %s to %s\n", (const char *) parse_element_tags[i].tag, (const char *) name);
+	for (i = 0; parse_element_tags[i].type != PARSE_ELEMENT_NONE && strcmp((const char *) parse_element_tags[i].tag, (const char *) name) != 0; i++);
 
 	return parse_element_tags[i].type;
 }

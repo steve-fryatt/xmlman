@@ -68,5 +68,11 @@ struct parse_stack_entry {
 
 void parse_stack_reset(void);
 
+struct parse_stack_entry *parse_stack_push(enum parse_stack_content content, enum parse_element_type closing_element);
+
+struct parse_stack_entry *parse_stack_pop(void);
+
+struct parse_stack_entry *parse_stack_peek(void);
+
 #endif
 

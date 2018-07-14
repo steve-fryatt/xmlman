@@ -59,6 +59,40 @@ static struct parse_stack_entry parse_stack[PARSE_STACK_SIZE];
 void parse_stack_reset(void)
 {
 	parse_stack_size = 0;
+
+	parse_stack_push(PARSE_STACK_CONTENT_NONE, PARSE_ELEMENT_NONE);
+}
+
+struct parse_stack_entry *parse_stack_push(enum parse_stack_content content, enum parse_element_type closing_element)
+{
+	if (parse_stack_size >= PARSE_STACK_SIZE) {
+		printf("Stack full!\n");
+		return NULL;
+	}
+
+	parse_stack[parse_stack_size].content = content;
+	parse_stack[parse_stack_size].closing_element = closing_element;
+
+	parse_stack_size++;
+
+	return parse_stack + (parse_stack_size - 1);
+}
+
+struct parse_stack_entry *parse_stack_pop(void)
+{
+	if (parse_stack_size == 0)
+		return NULL;
+
+	parse_stack_size--;
+
+	return parse_stack + parse_stack_size;
 }
 
 
+struct parse_stack_entry *parse_stack_peek(void)
+{
+	if (parse_stack_size == 0)
+		return NULL;
+
+	return parse_stack + (parse_stack_size - 1);
+}
