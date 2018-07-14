@@ -27,7 +27,7 @@
 ARCHIVE := xmlman
 
 ifeq ($(TARGET),riscos)
-  RUNIMAGE ?= xmlman,ff8
+  RUNIMAGE := xmlman,ff8
 else
   RUNIMAGE := xmlman
 endif
