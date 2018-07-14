@@ -32,9 +32,11 @@ else
   RUNIMAGE := xmlman
 endif
 
-OBJS := args.o		\
-	parse.o		\
-	string.o	\
+OBJS := args.o			\
+	parse.o			\
+	parse_element.o		\
+	parse_stack.o		\
+	string.o		\
 	xmlman.o
 
 include $(SFTOOLS_MAKE)/Cross
