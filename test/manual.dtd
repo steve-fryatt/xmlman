@@ -1,6 +1,6 @@
 <!-- Manual -->
 
-<!ELEMENT manual (title, breadcrumb?, icons?, resources?, index?, chapter*)>
+<!ELEMENT manual (title | breadcrumb | icons | resources | index | chapter)*>
 <!ATTLIST manual version CDATA #REQUIRED>
 
 <!-- Breadcrumb -->
@@ -11,7 +11,7 @@
 
 <!-- Icons -->
 
-<!ELEMENT icons (zip?, armv7?, iyonix?)>
+<!ELEMENT icons (zip | armv7 | iyonix)*>
 
 <!ELEMENT zip (#PCDATA)>
 <!ATTLIST zip alt CDATA #IMPLIED>
@@ -30,32 +30,33 @@
 
 <!-- Index and Chapter -->
 
-<!ELEMENT index (filename?, title?, resources?, chapterlist?, section*)>
-<!ATTLIST index id CDATA #REQUIRED>
+<!ELEMENT index (filename | title | resources | chapterlist | section)*>
+<!ATTLIST index id CDATA #IMPLIED>
 
-<!ELEMENT chapter (filename?, title?, resources?, summary?, section*)>
-<!ATTLIST chapter id CDATA #REQUIRED>
+<!ELEMENT chapter (EMPTY | filename | title | resources | summary | section)*>
+<!ATTLIST chapter id CDATA #IMPLIED>
+<!ATTLIST chapter file CDATA #IMPLIED>
 
 <!ELEMENT filename (#PCDATA)>
 
 <!ELEMENT chapterlist (EMPTY)>
 
-<!ELEMENT section (title?, p*, table*, codeblock*, image*, download*)>
+<!ELEMENT section (title | p | table | codeblock | image | download)*>
 <!ATTLIST section id CDATA #IMPLIED>
 
-<!ELEMENT summary (#PCDATA)> <!-- Needs to match P -->
-<!ELEMENT p (#PCDATA)> <!-- Needs to match P -->
+<!ELEMENT summary (#PCDATA | code | command | const | em | event | file | function | icon | intro | key | link | maths | menu | mouse | name | reference | swi | variable)*> <!-- Needs to match P -->
+<!ELEMENT p (#PCDATA | code | command | const | em | event | file | function | icon | intro | key | link | maths | menu | mouse | name | reference | swi | variable)*> <!-- Needs to match P -->
 
 <!-- Table -->
 
-<!ELEMENT table (columns, row+, title?)>
+<!ELEMENT table (columns | row | title)*>
 <!ATTLIST table id CDATA #IMPLIED>
 
 <!ELEMENT columns (col+)>
 
 <!ELEMENT row (col+)>
 
-<!ELEMENT col (#PCDATA)> <!-- Needs to match P -->
+<!ELEMENT col (#PCDATA | code | command | const | em | event | file | function | icon | intro | key | link | maths | menu | mouse | name | reference | swi | variable)*> <!-- Needs to match P -->
 <!ATTLIST col align CDATA #IMPLIED>
 
 <!-- Code -->
@@ -112,7 +113,7 @@
 
 <!-- Resources -->
 
-<!ELEMENT resources (images?, downloads?, common?, chapters?)>
+<!ELEMENT resources (images | downloads | common | chapters)*>
 
 <!ELEMENT images (#PCDATA)>
 <!ELEMENT downloads (#PCDATA)>
