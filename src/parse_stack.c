@@ -52,6 +52,7 @@ static int parse_stack_size = 0;
 
 static struct parse_stack_entry parse_stack[PARSE_STACK_SIZE];
 
+
 /**
  * Reset the parse stack.
  */
@@ -62,6 +63,15 @@ void parse_stack_reset(void)
 
 	parse_stack_push(PARSE_STACK_CONTENT_NONE, PARSE_ELEMENT_NONE);
 }
+
+/**
+ * Push an entry on to the parse stack.
+ *
+ * \param content		The content type of the new entry.
+ * \param closing_element	The type of element which will close the
+ *				entry.
+ * \return			Pointer to the new entry, or NULL.
+ */
 
 struct parse_stack_entry *parse_stack_push(enum parse_stack_content content, enum parse_element_type closing_element)
 {
@@ -78,6 +88,12 @@ struct parse_stack_entry *parse_stack_push(enum parse_stack_content content, enu
 	return parse_stack + (parse_stack_size - 1);
 }
 
+/**
+ * Push an entry from the parse stack.
+ *
+ * \return			Pointer to the popped entry, or NULL.
+ */
+
 struct parse_stack_entry *parse_stack_pop(void)
 {
 	if (parse_stack_size == 0)
@@ -88,6 +104,11 @@ struct parse_stack_entry *parse_stack_pop(void)
 	return parse_stack + parse_stack_size;
 }
 
+/**
+ * Peek the entry from the top of the parse stack.
+ *
+ * \return			Pointer to the peeked entry, or NULL.
+ */
 
 struct parse_stack_entry *parse_stack_peek(void)
 {
@@ -96,3 +117,25 @@ struct parse_stack_entry *parse_stack_peek(void)
 
 	return parse_stack + (parse_stack_size - 1);
 }
+
+/**
+ * Peek the closest entry to the top of the parse stack with the
+ * given content type.
+ *
+ * \param content		The required content type.
+ * \return			Pointer to the peeked entry, or NULL.
+ */
+
+struct parse_stack_entry *parse_stack_peek_content(enum parse_stack_content content)
+{
+	int	stack_pos = parse_stack_size - 1;
+
+	while (stack_pos >= 0 && parse_stack[stack_pos].content != content)
+		stack_pos--;
+
+	if (stack_pos < 0)
+		return NULL;
+
+	return parse_stack + stack_pos;
+}
+

@@ -33,6 +33,7 @@ else
 endif
 
 OBJS := args.o			\
+	manual_data.o		\
 	parse.o			\
 	parse_element.o		\
 	parse_stack.o		\

@@ -32,6 +32,7 @@
 
 #include <stdbool.h>
 
+#include "manual_data.h"
 #include "parse_element.h"
 
 /**
@@ -45,6 +46,15 @@ enum parse_stack_content {
 };
 
 /**
+ * The data associated with the different types of stack entry.
+ */
+
+union parse_stack_entry_data {
+	struct manual_data			*manual;
+	struct manual_data_chapter		*chapter;
+};
+
+/**
  * An entry in the parse stack.
  */
 
@@ -53,13 +63,19 @@ struct parse_stack_entry {
 	 * The content of the level.
 	 */
 
-	enum parse_stack_content	content;
+	enum parse_stack_content		content;
 
 	/**
 	 * The element expected to close the level.
 	 */
 
-	enum parse_element_type		closing_element;
+	enum parse_element_type			closing_element;
+
+	/**
+	 * Specific data relating to the level content type.
+	 */
+
+	union parse_stack_entry_data		data;
 };
 
 /**
@@ -68,11 +84,42 @@ struct parse_stack_entry {
 
 void parse_stack_reset(void);
 
+/**
+ * Push an entry on to the parse stack.
+ *
+ * \param content		The content type of the new entry.
+ * \param closing_element	The type of element which will close the
+ *				entry.
+ * \return			Pointer to the new entry, or NULL.
+ */
+
 struct parse_stack_entry *parse_stack_push(enum parse_stack_content content, enum parse_element_type closing_element);
+
+/**
+ * Push an entry from the parse stack.
+ *
+ * \return			Pointer to the popped entry, or NULL.
+ */
 
 struct parse_stack_entry *parse_stack_pop(void);
 
+/**
+ * Peek the entry from the top of the parse stack.
+ *
+ * \return			Pointer to the peeked entry, or NULL.
+ */
+
 struct parse_stack_entry *parse_stack_peek(void);
+
+/**
+ * Peek the closest entry to the top of the parse stack with the
+ * given content type.
+ *
+ * \param content		The required content type.
+ * \return			Pointer to the peeked entry, or NULL.
+ */
+
+struct parse_stack_entry *parse_stack_peek_content(enum parse_stack_content content);
 
 #endif
 
