@@ -37,12 +37,16 @@
 #include "parse_element.h"
 #include "parse_stack.h"
 
+
+
 /* Static Function Prototypes. */
 
-static void parse_process_node(xmlTextReaderPtr reader);
-static void parse_process_outer_node(xmlTextReaderPtr reader);
-static void parse_process_manual_node(xmlTextReaderPtr reader);
+static bool parse_file(char *filename, struct manual_data **manual, struct manual_data_chapter **chapter);
+static void parse_process_node(xmlTextReaderPtr reader, struct manual_data **manual, struct manual_data_chapter **chapter);
+static void parse_process_outer_node(xmlTextReaderPtr reader, struct manual_data **manual);
+static void parse_process_manual_node(xmlTextReaderPtr reader, struct manual_data_chapter **chapter);
 static void parse_process_chapter_node(xmlTextReaderPtr reader);
+static bool parse_process_add_chapter(struct parse_stack_entry *old_stack, enum manual_data_object_type type, enum parse_element_type element, struct manual_data_chapter **chapter);
 static void parse_process_title_node(xmlTextReaderPtr reader);
 static void parse_error_handler(void *arg, const char *msg, xmlParserSeverities severity, xmlTextReaderLocatorPtr locator);
 
@@ -50,10 +54,33 @@ static void parse_error_handler(void *arg, const char *msg, xmlParserSeverities 
 /**
  * Parse an XML file and its descendents.
  *
- * \param *filename	The name of the file to parse.
+ * \param *filename	The name of the root file to parse.
+ * \return		Pointer to the resulting manual structure.
  */
 
-struct parse_manual *parse_file(char *filename)
+struct parse_manual *parse_document(char *filename)
+{
+	struct manual_data		*manual = NULL;
+	struct manual_data_chapter	*chapter = NULL;
+
+	parse_file(filename, &manual, &chapter);
+
+	return manual;
+} 
+
+/**
+ * Parse an XML file.
+ *
+ * \param *filename	The name of the file to parse.
+ * \param **manual	Pointer to a pointer to the current manual. The
+ *			manual pointer can be NULL if this is the root
+ *			file.
+ * \param **chapter	Pointer a pointer to the current chapter. The
+ *			chapter pointer can be  NULL if this is the root
+ *			file.
+ */
+
+static bool parse_file(char *filename, struct manual_data **manual, struct manual_data_chapter **chapter)
 {
 	xmlTextReaderPtr		reader;
 	int				ret;
@@ -64,14 +91,14 @@ struct parse_manual *parse_file(char *filename)
 
 	if (reader == NULL) {
 		fprintf(stderr, "Unable to open %s\n", filename);
-		return;
+		return false;
 	}
 
 	xmlTextReaderSetErrorHandler(reader, parse_error_handler, NULL);
 
 	ret = xmlTextReaderRead(reader);
 	while (ret == 1) {
-		parse_process_node(reader);
+		parse_process_node(reader, manual, chapter);
 		ret = xmlTextReaderRead(reader);
 	}
 
@@ -82,6 +109,8 @@ struct parse_manual *parse_file(char *filename)
 
 	if (ret != 0)
 		fprintf(stderr, "%s : failed to parse\n", filename);
+
+	return true;
 }
 
 
@@ -90,9 +119,15 @@ struct parse_manual *parse_file(char *filename)
  * parser based on the current position in the tree.
  *
  * \param reader	The XML Reader to read the node from.
+ * \param **manual	Pointer to a pointer to the current manual. The
+ *			manual pointer can be NULL if this is the root
+ *			file.
+ * \param **chapter	Pointer a pointer to the current chapter. The
+ *			chapter pointer can be  NULL if this is the root
+ *			file.
  */
 
-static void parse_process_node(xmlTextReaderPtr reader)
+static void parse_process_node(xmlTextReaderPtr reader, struct manual_data **manual, struct manual_data_chapter **chapter)
 {
 	struct parse_stack_entry	*stack;
 
@@ -105,10 +140,10 @@ static void parse_process_node(xmlTextReaderPtr reader)
 
 	switch (stack->content) {
 	case PARSE_STACK_CONTENT_NONE:
-		parse_process_outer_node(reader);
+		parse_process_outer_node(reader, manual);
 		break;
 	case PARSE_STACK_CONTENT_MANUAL:
-		parse_process_manual_node(reader);
+		parse_process_manual_node(reader, chapter);
 		break;
 	case PARSE_STACK_CONTENT_CHAPTER:
 		parse_process_chapter_node(reader);
@@ -124,9 +159,12 @@ static void parse_process_node(xmlTextReaderPtr reader)
  * Process nodes when we're outside the whole document structure.
  *
  * \param reader	The XML Reader to read the node from.
+ * \param **manual	Pointer to a pointer to the current manual. The
+ *			manual pointer can be NULL if this is the root
+ *			file.
  */
 
-static void parse_process_outer_node(xmlTextReaderPtr reader)
+static void parse_process_outer_node(xmlTextReaderPtr reader, struct manual_data **manual)
 {
 	xmlReaderTypes			type;
 	enum parse_element_type		element;
@@ -152,8 +190,14 @@ static void parse_process_outer_node(xmlTextReaderPtr reader)
 			return NULL;
 		}
 
-		new_stack->data.manual.manual = manual_data_create();
-		new_stack->data.manual.current_chapter = NULL;
+		/* Create a new manual if this is the root file. */
+
+		if (*manual == NULL)
+			*manual = manual_data_create();
+
+		/* Record the current manual on the stack. */
+
+		new_stack->data.manual.manual = *manual;
 		break;
 	}
 }
@@ -163,9 +207,12 @@ static void parse_process_outer_node(xmlTextReaderPtr reader)
  * Process nodes within the <manual> tag.
  *
  * \param reader	The XML Reader to read the node from.
+ * \param **chapter	Pointer a pointer to the current chapter. The
+ *			chapter pointer can be  NULL if this is the root
+ *			file.
  */
 
-static void parse_process_manual_node(xmlTextReaderPtr reader)
+static void parse_process_manual_node(xmlTextReaderPtr reader, struct manual_data_chapter **chapter)
 {
 	xmlReaderTypes			type;
 	enum parse_element_type		element;
@@ -194,28 +241,15 @@ static void parse_process_manual_node(xmlTextReaderPtr reader)
 			break;
 		case PARSE_ELEMENT_INDEX:
 			printf("Found index\n");
-			new_stack = parse_stack_push(PARSE_STACK_CONTENT_CHAPTER, element);
-			if (new_stack == NULL) {
-				fprintf(stderr, "Failed to allocate stack.\n");
-				break;
-			}
-
-			new_stack->data.chapter.chapter = manual_data_chapter_create(MANUAL_DATA_OBJECT_TYPE_INDEX);
-			new_stack->data.chapter.current_section = NULL;
+			parse_process_add_chapter(old_stack, MANUAL_DATA_OBJECT_TYPE_INDEX, element, chapter);
 			break;
 		case PARSE_ELEMENT_CHAPTER:
 			if (xmlTextReaderIsEmptyElement(reader)) {
-				printf ("Found chapter pointer ->\n");
+				printf("Found chapter placeholder ->\n");
+				parse_process_add_chapter(old_stack, MANUAL_DATA_OBJECT_TYPE_CHAPTER, element, NULL);
 			} else {
 				printf("Found chapter\n");
-				new_stack = parse_stack_push(PARSE_STACK_CONTENT_CHAPTER, element);
-				if (new_stack == NULL) {
-					fprintf(stderr, "Failed to allocate stack.\n");
-					break;
-				}
-
-				new_stack->data.chapter.chapter = manual_data_chapter_create(MANUAL_DATA_OBJECT_TYPE_CHAPTER);
-				new_stack->data.chapter.current_section = NULL;
+				parse_process_add_chapter(old_stack, MANUAL_DATA_OBJECT_TYPE_CHAPTER, element, chapter);
 			}
 			break;
 		}
@@ -233,6 +267,62 @@ static void parse_process_manual_node(xmlTextReaderPtr reader)
 		parse_stack_pop();
 		break;
 	}
+}
+
+/**
+ * Add a new chapter to the document structure.
+ *
+ * \param *old_stack		The parent stack entry, within which the
+ *				new chapter will be added.
+ * \param type			The type of chapter object (Chapter or
+ *				Index) to add.
+ * \param element		The XML element to close the object.
+ * \param **chapter		Pointer a pointer to the current chapter. The
+ *				chapter pointer can be  NULL if this is the root
+ *				file, and the main pointer can be NULL if this
+ *				is to create a placeholder chapter.
+ * \return			TRUE on success, or FALSE on failure.
+ */
+
+static bool parse_process_add_chapter(struct parse_stack_entry *old_stack, enum manual_data_object_type type, enum parse_element_type element, struct manual_data_chapter **chapter)
+{
+	struct manual_data_chapter	*new_chapter;
+	struct parse_stack_entry	*new_stack;
+
+	if (old_stack->content != PARSE_STACK_CONTENT_MANUAL) {
+		fprintf(stderr, "Can only create new chapters in manuals.\n");
+		return FALSE;
+	}
+
+	new_stack = parse_stack_push(PARSE_STACK_CONTENT_CHAPTER, element);
+	if (new_stack == NULL) {
+		fprintf(stderr, "Failed to allocate stack.\n");
+		return FALSE;
+	}
+
+	if (chapter == NULL || *chapter == NULL) {
+		new_chapter = manual_data_chapter_create(type);
+		if (new_chapter == NULL) {
+			fprintf(stderr, "Failed to create new chapter data.\n");
+			return FALSE;
+		}
+
+		if (chapter != NULL)
+			new_chapter->processed = true;
+	} else {
+		new_chapter = *chapter;
+	}
+
+	new_stack->data.chapter.chapter = new_chapter;
+
+	if (chapter == NULL || *chapter == NULL) {
+		if (old_stack->data.manual.current_chapter == NULL)
+			old_stack->data.manual.manual->first_chapter = new_chapter;
+		else
+			old_stack->data.manual.current_chapter->next_chapter = new_chapter;
+	}
+
+	old_stack->data.manual.current_chapter = new_chapter;
 }
 
 /**
@@ -296,6 +386,7 @@ static void parse_process_title_node(xmlTextReaderPtr reader)
 	xmlReaderTypes			type;
 	enum parse_element_type		element;
 	struct parse_stack_entry	*old_stack, *parent_stack;
+	const xmlChar			*value;
 
 	old_stack = parse_stack_peek(PARSE_STACK_TOP);
 	if (old_stack->content != PARSE_STACK_CONTENT_TITLE) {
@@ -313,13 +404,17 @@ static void parse_process_title_node(xmlTextReaderPtr reader)
 			break;
 		}
 
+		value = xmlTextReaderConstValue(reader);
+		if (value == NULL)
+			break;
+
 		switch (parent_stack->content) {
 		case PARSE_STACK_CONTENT_MANUAL:
-			parent_stack->data.manual.manual->title = "Manual Title";
+			parent_stack->data.manual.manual->title = xmlStrdup(value);
 			printf("Setting manual title\n");
 			break;
 		case PARSE_STACK_CONTENT_CHAPTER:
-			parent_stack->data.chapter.chapter->title = "Chapter Title";
+			parent_stack->data.chapter.chapter->title = xmlStrdup(value);
 			printf("Setting chapter title\n");
 			break;
 		default:

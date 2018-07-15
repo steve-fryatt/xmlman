@@ -30,6 +30,7 @@
 #ifndef XMLMAN_MANUAL_DATA_H
 #define XMLMAN_MANUAL_DATA_H
 
+#include <libxml/xmlstring.h>
 
 enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_NONE,
@@ -50,7 +51,7 @@ struct manual_data_section {
 	 * Pointer to the section title.
 	 */
 
-	char				*title;
+	xmlChar				*title;
 };
 
 struct manual_data_chapter {
@@ -61,10 +62,22 @@ struct manual_data_chapter {
 	enum manual_data_object_type	type;
 
 	/**
+	 * Has the chapter been processed, or is this just a placeholder?
+	 */
+
+	bool				processed;
+
+	/**
+	 * Pointer to the next chapter of the manual.
+	 */
+
+	struct manual_data_chapter	*next_chapter;
+
+	/**
 	 * Pointer to the chapter title.
 	 */
 
-	char				*title;
+	xmlChar				*title;
 };
 
 struct manual_data {
@@ -72,7 +85,7 @@ struct manual_data {
 	 * Pointer to the manual title.
 	 */
 
-	char				*title;
+	xmlChar				*title;
 
 	/**
 	 * Pointer to the first chapter of the manual.

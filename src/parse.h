@@ -35,11 +35,11 @@
 /**
  * Parse an XML file and its descendents.
  *
- * \param *filename	The name of the file to parse.
- * \return
+ * \param *filename	The name of the root file to parse.
+ * \return		Pointer to the resulting manual structure.
  */
 
-struct parse_manual *parse_file(char *filename);
+struct parse_manual *parse_document(char *filename);
 
 #endif
 

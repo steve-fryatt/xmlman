@@ -39,6 +39,7 @@
 
 #include "args.h"
 #include "parse.h"
+#include "manual_data.h"
 
 /* OSLib source headers. */
 
@@ -53,6 +54,7 @@ int main(int argc, char *argv[])
 	bool			verbose_output = false;
 	struct args_option	*options;
 	char			*input_file = NULL;
+	struct manual_data	*manual;
 
 	/* Decode the command line options. */
 
@@ -101,7 +103,13 @@ int main(int argc, char *argv[])
 
 	/* Run the tokenisation. */
 
-	parse_file(input_file);
+	manual = parse_document(input_file);
+	if (manual == NULL) {
+		fprintf(stderr, "Failed to parse manual.\n");
+		return EXIT_FAILURE;
+	}
+
+	printf("*** Found Manual: %s ***\n", (char *) manual->title);
 
 	return EXIT_SUCCESS;
 }
