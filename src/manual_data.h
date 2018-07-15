@@ -40,6 +40,10 @@ enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_SECTION
 };
 
+/**
+ * Data for a manual page section.
+ */
+
 struct manual_data_section {
 	/**
 	 * The object's type (Section or otherwise).
@@ -53,6 +57,10 @@ struct manual_data_section {
 
 	xmlChar				*title;
 };
+
+/**
+ * Data for a manual chapter or index page.
+ */
 
 struct manual_data_chapter {
 	/**
@@ -79,6 +87,10 @@ struct manual_data_chapter {
 
 	xmlChar				*title;
 };
+
+/**
+ * Top-Level data for a manual.
+ */
 
 struct manual_data {
 	/**

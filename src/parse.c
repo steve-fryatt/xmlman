@@ -59,7 +59,7 @@ static void parse_error_handler(void *arg, const char *msg, xmlParserSeverities 
  * \return		Pointer to the resulting manual structure.
  */
 
-struct parse_manual *parse_document(char *filename)
+struct manual_data *parse_document(char *filename)
 {
 	struct manual_data		*manual = NULL;
 	struct manual_data_chapter	*chapter = NULL;

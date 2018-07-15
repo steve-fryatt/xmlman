@@ -22,24 +22,25 @@
  */
 
 /**
- * \file parse.h
+ * \file parse_element.h
  *
- * XML Parser Interface.
+ * XML Parser Element Decoding Interface.
  */
 
-#ifndef XMLMAN_PARSE_H
-#define XMLMAN_PARSE_H
+#ifndef XMLMAN_OUTPUT_DEBUG_H
+#define XMLMAN_OUTPUT_DEBUG_H
 
 #include <stdbool.h>
+#include "manual_data.h"
 
 /**
- * Parse an XML file and its descendents.
+ * Output a manual in debug form.
  *
- * \param *filename	The name of the root file to parse.
- * \return		Pointer to the resulting manual structure.
+ * \param *manual	The manual to be output.
+ * \return		TRUE if successful, otherwise FALSE.
  */
 
-struct manual_data *parse_document(char *filename);
+bool output_debug(struct manual_data *manual);
 
 #endif
 

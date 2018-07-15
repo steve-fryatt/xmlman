@@ -40,6 +40,7 @@
 #include "args.h"
 #include "parse.h"
 #include "manual_data.h"
+#include "output_debug.h"
 
 /* OSLib source headers. */
 
@@ -101,7 +102,7 @@ int main(int argc, char *argv[])
 		return (output_help) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
-	/* Run the tokenisation. */
+	/* Parse the source XML documents. */
 
 	manual = parse_document(input_file);
 	if (manual == NULL) {
@@ -109,9 +110,8 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	printf("*** Found Manual: %s ***\n", (char *) manual->title);
-
-	
+	if (!output_debug(manual))
+		return EXIT_FAILURE;
 
 	return EXIT_SUCCESS;
 }
