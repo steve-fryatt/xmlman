@@ -105,17 +105,21 @@ struct parse_stack_entry *parse_stack_pop(void)
 }
 
 /**
- * Peek the entry from the top of the parse stack.
+ * Peek the entry relative to the top of the parse stack.
  *
+ * \param offset		The number of entries to offset from
+ *				the top of the stack (0 for top).
  * \return			Pointer to the peeked entry, or NULL.
  */
 
-struct parse_stack_entry *parse_stack_peek(void)
+struct parse_stack_entry *parse_stack_peek(int offset)
 {
-	if (parse_stack_size == 0)
+	int	stack_pos = parse_stack_size - (offset + 1);
+
+	if (stack_pos < 0)
 		return NULL;
 
-	return parse_stack + (parse_stack_size - 1);
+	return parse_stack + stack_pos;
 }
 
 /**

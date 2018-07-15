@@ -21,6 +21,7 @@
 
 <index>
 <filename>index.html</filename>
+<title>Manual Index</title>
 <section>
 <p>Like many other RISC&nbsp;OS users, I started programming in BBC&nbsp;BASIC. Although it served me well, I began to find that it didn&rsquo;t always scale well &ndash; especially when software had to handle large, variable amounts of data or multiple documents.</p>
 

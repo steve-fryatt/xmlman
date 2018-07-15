@@ -50,6 +50,7 @@ struct parse_element_definition {
  */
 
 static struct parse_element_definition parse_element_tags[] = {
+	{PARSE_ELEMENT_TITLE,		(const xmlChar *) "title"},
 	{PARSE_ELEMENT_CHAPTER,		(const xmlChar *) "chapter"},
 	{PARSE_ELEMENT_INDEX,		(const xmlChar *) "index"},
 	{PARSE_ELEMENT_MANUAL,		(const xmlChar *) "manual"},

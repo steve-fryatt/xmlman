@@ -42,7 +42,26 @@
 enum parse_stack_content {
 	PARSE_STACK_CONTENT_NONE,		/**< No, or undefined, content.		*/
 	PARSE_STACK_CONTENT_MANUAL,		/**< A top-level manual structure.	*/
-	PARSE_STACK_CONTENT_CHAPTER		/**< A chapter structure.		*/
+	PARSE_STACK_CONTENT_CHAPTER,		/**< A chapter structure.		*/
+	PARSE_STACK_CONTENT_TITLE		/**< An object title.			*/
+};
+
+/**
+ * Data associated with a manual entry.
+ */
+
+struct parse_stack_entry_manual_data {
+	struct manual_data			*manual;
+	struct manual_data_chapter		*current_chapter;
+};
+
+/**
+ * Data associated with a chapter or index entry.
+ */
+
+struct parse_stack_entry_chapter_data {
+	struct manual_data_chapter		*chapter;
+	struct manual_data_section		*current_section;
 };
 
 /**
@@ -50,8 +69,8 @@ enum parse_stack_content {
  */
 
 union parse_stack_entry_data {
-	struct manual_data			*manual;
-	struct manual_data_chapter		*chapter;
+	struct parse_stack_entry_manual_data	manual;
+	struct parse_stack_entry_chapter_data	chapter;
 };
 
 /**
@@ -79,6 +98,18 @@ struct parse_stack_entry {
 };
 
 /**
+ * Offset to the top of the stack from the top.
+ */
+
+#define PARSE_STACK_TOP ((int) 0)
+
+/**
+ * Offset to the parent item to the top of the stack.
+ */
+
+#define PARSE_STACK_PARENT ((int) 1)
+
+/**
  * Reset the parse stack.
  */
 
@@ -104,12 +135,14 @@ struct parse_stack_entry *parse_stack_push(enum parse_stack_content content, enu
 struct parse_stack_entry *parse_stack_pop(void);
 
 /**
- * Peek the entry from the top of the parse stack.
+ * Peek the entry relative to the top of the parse stack.
  *
+ * \param offset		The number of entries to offset from
+ *				the top of the stack (0 for top).
  * \return			Pointer to the peeked entry, or NULL.
  */
 
-struct parse_stack_entry *parse_stack_peek(void);
+struct parse_stack_entry *parse_stack_peek(int offset);
 
 /**
  * Peek the closest entry to the top of the parse stack with the
