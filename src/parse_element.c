@@ -42,7 +42,7 @@
 
 struct parse_element_definition {
 	enum parse_element_type	type;		/**< The type of element.		*/
-	const xmlChar		*tag;		/**< The tag name for the element.	*/
+	const char		*tag;		/**< The tag name for the element.	*/
 };
 
 /**
@@ -50,11 +50,11 @@ struct parse_element_definition {
  */
 
 static struct parse_element_definition parse_element_tags[] = {
-	{PARSE_ELEMENT_TITLE,		(const xmlChar *) "title"},
-	{PARSE_ELEMENT_CHAPTER,		(const xmlChar *) "chapter"},
-	{PARSE_ELEMENT_INDEX,		(const xmlChar *) "index"},
-	{PARSE_ELEMENT_MANUAL,		(const xmlChar *) "manual"},
-	{PARSE_ELEMENT_NONE,		(const xmlChar *) ""}
+	{PARSE_ELEMENT_TITLE,		"title"},
+	{PARSE_ELEMENT_CHAPTER,		"chapter"},
+	{PARSE_ELEMENT_INDEX,		"index"},
+	{PARSE_ELEMENT_MANUAL,		"manual"},
+	{PARSE_ELEMENT_NONE,		""}
 };
 
 
@@ -74,8 +74,25 @@ enum parse_element_type parse_find_element_type(xmlTextReaderPtr reader)
 	if (name == NULL)
 		return PARSE_ELEMENT_NONE;
 
-	for (i = 0; parse_element_tags[i].type != PARSE_ELEMENT_NONE && strcmp((const char *) parse_element_tags[i].tag, (const char *) name) != 0; i++);
+	for (i = 0; parse_element_tags[i].type != PARSE_ELEMENT_NONE && xmlStrcmp(BAD_CAST parse_element_tags[i].tag, name) != 0; i++);
 
 	return parse_element_tags[i].type;
+}
+
+/**
+ * Given an element type, return the textual node tag.
+ *
+ * \param type		The node type to look up.
+ * \return		Pointer to the node's textual name, or to "" if
+ *			the type was not recognised.
+ */
+
+const char *parse_element_find_tag(enum parse_element_type type)
+{
+	int		i;
+
+	for (i = 0; parse_element_tags[i].type != PARSE_ELEMENT_NONE && parse_element_tags[i].type != type; i++);
+
+	return parse_element_tags[i].tag;
 }
 

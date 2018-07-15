@@ -262,11 +262,11 @@ static void parse_process_manual_node(xmlTextReaderPtr reader, struct manual_dat
 		element = parse_find_element_type(reader);
 
 		if (element != old_stack->closing_element) {
-			printf("Unexpected closing element in manual\n");
+			printf("Unexpected closing element '<%s>' in manual.\n", parse_element_find_tag(element));
 			break;
 		}
 
-		printf("Closed element type %d\n", element);
+		printf("Closed element type <%s>\n", parse_element_find_tag(element));
 		parse_stack_pop();
 		break;
 	}
@@ -368,11 +368,11 @@ static void parse_process_chapter_node(xmlTextReaderPtr reader)
 		element = parse_find_element_type(reader);
 
 		if (element != old_stack->closing_element) {
-			printf("Unexpected closing element in chapter\n");
+			printf("Unexpected closing element '<%s>' in chapter.\n", parse_element_find_tag(element));
 			break;
 		}
 
-		printf("Closed element type %d\n", element);
+		printf("Closed element type <%s>\n", parse_element_find_tag(element));
 		parse_stack_pop();
 		break;
 	}
@@ -428,11 +428,11 @@ static void parse_process_title_node(xmlTextReaderPtr reader)
 		element = parse_find_element_type(reader);
 
 		if (element != old_stack->closing_element) {
-			printf("Unexpected closing element in title.\n");
+			printf("Unexpected closing element '<%s>' in title.\n", parse_element_find_tag(element));
 			break;
 		}
 
-		printf("Closed element type %d\n", element);
+		printf("Closed element type <%s>\n", parse_element_find_tag(element));
 		parse_stack_pop();
 		break;
 	default:

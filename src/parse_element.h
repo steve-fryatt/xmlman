@@ -52,6 +52,15 @@ enum parse_element_type {
  */
 
 enum parse_element_type parse_find_element_type(xmlTextReaderPtr reader);
+/**
+ * Given an element type, return the textual node tag.
+ *
+ * \param type		The node type to look up.
+ * \return		Pointer to the node's textual name, or to "" if
+ *			the type was not recognised.
+ */
+
+const char *parse_element_find_tag(enum parse_element_type type);
 
 #endif
 
