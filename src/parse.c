@@ -34,6 +34,7 @@
 #include <libxml/xmlreader.h>
 
 #include "manual_data.h"
+#include "msg.h"
 #include "parse_element.h"
 #include "parse_stack.h"
 
@@ -63,6 +64,8 @@ struct parse_manual *parse_document(char *filename)
 	struct manual_data		*manual = NULL;
 	struct manual_data_chapter	*chapter = NULL;
 
+	msg_initialise();
+
 	parse_file(filename, &manual, &chapter);
 
 	return manual;
@@ -90,7 +93,7 @@ static bool parse_file(char *filename, struct manual_data **manual, struct manua
 	reader = xmlReaderForFile(filename, NULL, XML_PARSE_DTDATTR | XML_PARSE_DTDVALID);
 
 	if (reader == NULL) {
-		fprintf(stderr, "Unable to open %s\n", filename);
+		msg_report(MSG_OPEN_FAIL, filename);
 		return false;
 	}
 
@@ -103,7 +106,7 @@ static bool parse_file(char *filename, struct manual_data **manual, struct manua
 	}
 
 	if (xmlTextReaderIsValid(reader) != 1)
-		fprintf(stderr, "Document %s does not validate\n", filename);
+		msg_report(MSG_INVALID, filename);
 
 	xmlFreeTextReader(reader);
 
