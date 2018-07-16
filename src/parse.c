@@ -361,7 +361,6 @@ static bool parse_process_add_chapter(struct parse_stack_entry *old_stack, enum 
 	return true;
 }
 
-
 /**
  * Add a new placeholder chapter to the document structure.
  *
@@ -403,8 +402,6 @@ static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struc
 
 	return true;
 }
-
-
 
 /**
  * Process nodes within an <index> or <chapter> tag.
