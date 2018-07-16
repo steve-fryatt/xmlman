@@ -47,7 +47,8 @@ static void parse_process_node(xmlTextReaderPtr reader, struct manual_data **man
 static void parse_process_outer_node(xmlTextReaderPtr reader, struct manual_data **manual);
 static void parse_process_manual_node(xmlTextReaderPtr reader, struct manual_data_chapter **chapter);
 static void parse_process_chapter_node(xmlTextReaderPtr reader);
-static bool parse_process_add_chapter(struct parse_stack_entry *old_stack, enum manual_data_object_type type, enum parse_element_type element, struct manual_data_chapter **chapter);
+static bool parse_process_add_chapter(struct parse_stack_entry *old_stack, enum manual_data_object_type type, enum parse_element_type element, struct manual_data_chapter *chapter);
+static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack, enum manual_data_object_type type);
 static void parse_process_title_node(xmlTextReaderPtr reader);
 static void parse_error_handler(void *arg, const char *msg, xmlParserSeverities severity, xmlTextReaderLocatorPtr locator);
 
@@ -244,15 +245,15 @@ static void parse_process_manual_node(xmlTextReaderPtr reader, struct manual_dat
 			break;
 		case PARSE_ELEMENT_INDEX:
 			printf("Found index\n");
-			parse_process_add_chapter(old_stack, MANUAL_DATA_OBJECT_TYPE_INDEX, element, chapter);
+			parse_process_add_chapter(old_stack, MANUAL_DATA_OBJECT_TYPE_INDEX, element, *chapter);
 			break;
 		case PARSE_ELEMENT_CHAPTER:
 			if (xmlTextReaderIsEmptyElement(reader)) {
 				printf("Found chapter placeholder ->\n");
-				parse_process_add_chapter(old_stack, MANUAL_DATA_OBJECT_TYPE_CHAPTER, element, NULL);
+				parse_process_add_placeholder_chapter(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_CHAPTER);
 			} else {
 				printf("Found chapter\n");
-				parse_process_add_chapter(old_stack, MANUAL_DATA_OBJECT_TYPE_CHAPTER, element, chapter);
+				parse_process_add_chapter(old_stack, MANUAL_DATA_OBJECT_TYPE_CHAPTER, element, *chapter);
 			}
 			break;
 		}
@@ -280,14 +281,12 @@ static void parse_process_manual_node(xmlTextReaderPtr reader, struct manual_dat
  * \param type			The type of chapter object (Chapter or
  *				Index) to add.
  * \param element		The XML element to close the object.
- * \param **chapter		Pointer a pointer to the current chapter. The
- *				chapter pointer can be  NULL if this is the root
- *				file, and the main pointer can be NULL if this
- *				is to create a placeholder chapter.
+ * \param **chapter		Pointer to the current chapter, which can be
+ *				 NULL if this is the root file
  * \return			TRUE on success, or FALSE on failure.
  */
 
-static bool parse_process_add_chapter(struct parse_stack_entry *old_stack, enum manual_data_object_type type, enum parse_element_type element, struct manual_data_chapter **chapter)
+static bool parse_process_add_chapter(struct parse_stack_entry *old_stack, enum manual_data_object_type type, enum parse_element_type element, struct manual_data_chapter *chapter)
 {
 	struct manual_data_chapter	*new_chapter;
 	struct parse_stack_entry	*new_stack;
@@ -297,48 +296,40 @@ static bool parse_process_add_chapter(struct parse_stack_entry *old_stack, enum 
 		return false;
 	}
 
-	/* If this isn't a place-holder, push the chapter on to the stack ready to
-	 * be processed.
-	 */
+	/* Push the chapter on to the stack ready to be processed. */
 
-	if (chapter != NULL) {
-		new_stack = parse_stack_push(PARSE_STACK_CONTENT_CHAPTER, element);
-		if (new_stack == NULL) {
-			fprintf(stderr, "Failed to allocate stack.\n");
-			return false;
-		}
+	new_stack = parse_stack_push(PARSE_STACK_CONTENT_CHAPTER, element);
+	if (new_stack == NULL) {
+		fprintf(stderr, "Failed to allocate stack.\n");
+		return false;
 	}
 
-	/* If this is a placeholder, or a complete chapter that we're going to process
-	 * from scratch, create a new chapter structure. Otherwise, just reference the
-	 * pre-existing chapter from the place-holder.
+	/* If this is a complete chapter that we're going to process from
+	 * scratch, create a new chapter structure. Otherwise, just
+	 * reference the pre-existing chapter from the place-holder.
 	 */
 
-	if (chapter == NULL || *chapter == NULL) {
+	if (chapter == NULL) {
 		new_chapter = manual_data_chapter_create(type);
 		if (new_chapter == NULL) {
 			fprintf(stderr, "Failed to create new chapter data.\n");
 			return false;
 		}
 
-		if (chapter != NULL)
-			new_chapter->processed = true;
+		new_chapter->processed = true;
 	} else {
-		new_chapter = *chapter;
+		new_chapter = chapter;
 	}
 
-	/* Store the chapter details on the stack, if necessary (ie. if this isn't a
-	 * place-holder.
+	/* Store the chapter details on the stack. */
+
+	new_stack->data.chapter.chapter = new_chapter;
+
+	/* If this isn't a pre-existing chapter, link the new item in to
+	 * the document structure.
 	 */
 
-	if (chapter != NULL)
-		new_stack->data.chapter.chapter = new_chapter;
-
-	/* If this isn't a pre-existing chapter, link the new item in to the document
-	 * structure.
-	 */
-
-	if (chapter == NULL || *chapter == NULL) {
+	if (chapter == NULL) {
 		if (old_stack->data.manual.current_chapter == NULL)
 			old_stack->data.manual.manual->first_chapter = new_chapter;
 		else
@@ -349,6 +340,52 @@ static bool parse_process_add_chapter(struct parse_stack_entry *old_stack, enum 
 
 	return true;
 }
+
+
+/**
+ * Add a new placeholder chapter to the document structure.
+ *
+ * \param reader		The XML Reader to read the node from.
+ * \param *old_stack		The parent stack entry, within which the
+ *				new chapter will be added.
+ * \param type			The type of chapter object (Chapter or
+ *				Index) to add.
+ * \return			TRUE on success, or FALSE on failure.
+ */
+
+static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack, enum manual_data_object_type type)
+{
+	struct manual_data_chapter	*new_chapter;
+	struct parse_stack_entry	*new_stack;
+
+	if (old_stack->content != PARSE_STACK_CONTENT_MANUAL) {
+		fprintf(stderr, "Can only create new chapters in manuals.\n");
+		return false;
+	}
+
+	/* Create a new chapter structure. */
+
+	new_chapter = manual_data_chapter_create(type);
+	if (new_chapter == NULL) {
+		fprintf(stderr, "Failed to create new chapter data.\n");
+		return false;
+	}
+
+	new_chapter->file = xmlTextReaderGetAttribute(reader, "file");
+
+	/* Link the new item in to the document structure. */
+
+	if (old_stack->data.manual.current_chapter == NULL)
+		old_stack->data.manual.manual->first_chapter = new_chapter;
+	else
+		old_stack->data.manual.current_chapter->next_chapter = new_chapter;
+
+	old_stack->data.manual.current_chapter = new_chapter;
+
+	return true;
+}
+
+
 
 /**
  * Process nodes within an <index> or <chapter> tag.

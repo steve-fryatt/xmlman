@@ -36,6 +36,10 @@
 
 #include "output_debug.h"
 
+/* Static Function Prototypes. */
+
+static char *output_debug_get_text(xmlChar *text);
+
 /**
  * Output a manual in debug form.
  *
@@ -64,12 +68,12 @@ bool output_debug(struct manual_data *manual)
 	chapter = manual->first_chapter;
 
 	while (chapter != NULL) {
-		printf("* Found Chapter *\n");
+		printf("* Found Chapter '%s'*\n", output_debug_get_text(chapter->title));
 
-		if (chapter->title != NULL)
-			printf("Chapter Title: '%s'\n", chapter->title);
-		else
-			printf("<No Title>\n");
+		printf("Processed: %d\n", chapter->processed);
+
+		if (chapter->file != NULL)
+			printf("Associated with file '%s'\n", chapter->file);
 
 		chapter = chapter->next_chapter;
 	}
@@ -77,3 +81,14 @@ bool output_debug(struct manual_data *manual)
 	return true;
 }
 
+
+
+static char *output_debug_get_text(xmlChar *text)
+{
+	/* \TODO -- This needs to de-UTF8-ify the text! */
+
+	if (text == NULL)
+		return "<none>";
+
+	return text;
+}

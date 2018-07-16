@@ -76,6 +76,13 @@ struct manual_data_chapter {
 	bool				processed;
 
 	/**
+	 * Pointer to the chapter file, or NULL if this is an inline
+	 * chapter.
+	 */
+
+	xmlChar				*file;
+
+	/**
 	 * Pointer to the next chapter of the manual.
 	 */
 
