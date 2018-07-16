@@ -73,7 +73,7 @@ struct manual_data_chapter *manual_data_chapter_create(enum manual_data_object_t
 
 	chapter->type = type;
 	chapter->title = NULL;
-	chapter->file = NULL;
+	chapter->filename = NULL;
 	chapter->processed = false;
 	chapter->next_chapter = NULL;
 

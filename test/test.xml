@@ -38,7 +38,7 @@
 
 </index>
 
-<chapter file="ch01-start-basic.xml"/>
+<chapter file="test/chapter1.xml"/>
 <chapter file="ch02-moving-to-c.xml"/>
 <chapter file="ch03-compiling.xml"/>
 <chapter file="ch04-event-driven.xml"/>

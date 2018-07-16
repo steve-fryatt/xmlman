@@ -67,7 +67,22 @@ struct manual_data *parse_document(char *filename)
 
 	msg_initialise();
 
+	/* Parse the root file. */
+
 	parse_file(filename, &manual, &chapter);
+
+	/* Parse any non-inlined chapter files. */
+
+	chapter = manual->first_chapter;
+
+	while (chapter != NULL) {
+		if (!chapter->processed) {
+			parse_file(chapter->filename, &manual, &chapter);
+			chapter->processed = true;
+		}
+
+		chapter = chapter->next_chapter;
+	}
 
 	return manual;
 } 
@@ -88,6 +103,11 @@ static bool parse_file(char *filename, struct manual_data **manual, struct manua
 {
 	xmlTextReaderPtr		reader;
 	int				ret;
+
+	if (filename == NULL) {
+		msg_report(MSG_FILE_MISSING);
+		return false;
+	}
 
 	parse_stack_reset();
 
@@ -356,7 +376,6 @@ static bool parse_process_add_chapter(struct parse_stack_entry *old_stack, enum 
 static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack, enum manual_data_object_type type)
 {
 	struct manual_data_chapter	*new_chapter;
-	struct parse_stack_entry	*new_stack;
 
 	if (old_stack->content != PARSE_STACK_CONTENT_MANUAL) {
 		fprintf(stderr, "Can only create new chapters in manuals.\n");
@@ -371,7 +390,7 @@ static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struc
 		return false;
 	}
 
-	new_chapter->file = xmlTextReaderGetAttribute(reader, "file");
+	new_chapter->filename = xmlTextReaderGetAttribute(reader, (const xmlChar *) "file");
 
 	/* Link the new item in to the document structure. */
 

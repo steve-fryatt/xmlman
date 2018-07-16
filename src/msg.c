@@ -80,6 +80,7 @@ struct msg_data {
 
 static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Unknown error",				true	},
+	{MSG_ERROR,	"Missing source file",				false	},
 	{MSG_ERROR,	"Failed to open source document '%s'",		false	},
 	{MSG_ERROR,	"Source document '%s' does not validate",	false	}
 };
