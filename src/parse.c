@@ -294,20 +294,20 @@ static bool parse_process_add_chapter(struct parse_stack_entry *old_stack, enum 
 
 	if (old_stack->content != PARSE_STACK_CONTENT_MANUAL) {
 		fprintf(stderr, "Can only create new chapters in manuals.\n");
-		return FALSE;
+		return false;
 	}
 
 	new_stack = parse_stack_push(PARSE_STACK_CONTENT_CHAPTER, element);
 	if (new_stack == NULL) {
 		fprintf(stderr, "Failed to allocate stack.\n");
-		return FALSE;
+		return false;
 	}
 
 	if (chapter == NULL || *chapter == NULL) {
 		new_chapter = manual_data_chapter_create(type);
 		if (new_chapter == NULL) {
 			fprintf(stderr, "Failed to create new chapter data.\n");
-			return FALSE;
+			return false;
 		}
 
 		if (chapter != NULL)
@@ -326,6 +326,8 @@ static bool parse_process_add_chapter(struct parse_stack_entry *old_stack, enum 
 	}
 
 	old_stack->data.manual.current_chapter = new_chapter;
+
+	return true;
 }
 
 /**
