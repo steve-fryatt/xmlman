@@ -297,11 +297,22 @@ static bool parse_process_add_chapter(struct parse_stack_entry *old_stack, enum 
 		return false;
 	}
 
-	new_stack = parse_stack_push(PARSE_STACK_CONTENT_CHAPTER, element);
-	if (new_stack == NULL) {
-		fprintf(stderr, "Failed to allocate stack.\n");
-		return false;
+	/* If this isn't a place-holder, push the chapter on to the stack ready to
+	 * be processed.
+	 */
+
+	if (chapter != NULL) {
+		new_stack = parse_stack_push(PARSE_STACK_CONTENT_CHAPTER, element);
+		if (new_stack == NULL) {
+			fprintf(stderr, "Failed to allocate stack.\n");
+			return false;
+		}
 	}
+
+	/* If this is a placeholder, or a complete chapter that we're going to process
+	 * from scratch, create a new chapter structure. Otherwise, just reference the
+	 * pre-existing chapter from the place-holder.
+	 */
 
 	if (chapter == NULL || *chapter == NULL) {
 		new_chapter = manual_data_chapter_create(type);
@@ -316,16 +327,25 @@ static bool parse_process_add_chapter(struct parse_stack_entry *old_stack, enum 
 		new_chapter = *chapter;
 	}
 
-	new_stack->data.chapter.chapter = new_chapter;
+	/* Store the chapter details on the stack, if necessary (ie. if this isn't a
+	 * place-holder.
+	 */
+
+	if (chapter != NULL)
+		new_stack->data.chapter.chapter = new_chapter;
+
+	/* If this isn't a pre-existing chapter, link the new item in to the document
+	 * structure.
+	 */
 
 	if (chapter == NULL || *chapter == NULL) {
 		if (old_stack->data.manual.current_chapter == NULL)
 			old_stack->data.manual.manual->first_chapter = new_chapter;
 		else
 			old_stack->data.manual.current_chapter->next_chapter = new_chapter;
-	}
 
-	old_stack->data.manual.current_chapter = new_chapter;
+		old_stack->data.manual.current_chapter = new_chapter;
+	}
 
 	return true;
 }
