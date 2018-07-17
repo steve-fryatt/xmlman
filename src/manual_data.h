@@ -83,6 +83,12 @@ struct manual_data_chapter {
 	xmlChar				*filename;
 
 	/**
+	 * Pointer to the chapter's ID, or NULL if one has not been set.
+	 */
+
+	xmlChar				*id;
+
+	/**
 	 * Pointer to the next chapter of the manual.
 	 */
 

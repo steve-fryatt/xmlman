@@ -72,6 +72,9 @@ bool output_debug(struct manual_data *manual)
 
 		printf("Processed: %d\n", chapter->processed);
 
+		if (chapter->id != NULL)
+			printf("Chapter ID '%s'\n", chapter->id);
+
 		if (chapter->filename != NULL)
 			printf("Associated with file '%s'\n", chapter->filename);
 
