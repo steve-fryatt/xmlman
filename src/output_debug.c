@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <libxml/xmlstring.h>
 
@@ -93,5 +94,5 @@ static char *output_debug_get_text(xmlChar *text)
 	if (text == NULL)
 		return "<none>";
 
-	return text;
+	return (char *)text;
 }
