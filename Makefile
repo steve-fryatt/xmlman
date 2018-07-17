@@ -34,6 +34,7 @@ endif
 
 OBJS := args.o			\
 	manual_data.o		\
+	manual_entity.o		\
 	msg.o			\
 	output_debug.o		\
 	parse.o			\

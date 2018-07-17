@@ -22,47 +22,53 @@
  */
 
 /**
- * \file parse_element.h
+ * \file manual_entity.h
  *
- * XML Parser Element Decoding Interface.
+ * XML Manual Entity Decoding Interface.
  */
 
-#ifndef XMLMAN_PARSE_ELEMENT_H
-#define XMLMAN_PARSE_ELEMENT_H
+#ifndef XMLMAN_MANUAL_ENTITY_H
+#define XMLMAN_MANUAL_ENTITY_H
 
 #include <libxml/xmlreader.h>
 
 /**
- * A list of element types known to the parser.
+ * A list of entities known to the parser.
  */
 
-enum parse_element_type {
-	PARSE_ELEMENT_NONE,
-	PARSE_ELEMENT_MANUAL,
-	PARSE_ELEMENT_INDEX,
-	PARSE_ELEMENT_CHAPTER,
-	PARSE_ELEMENT_SECTION,
-	PARSE_ELEMENT_TITLE
+enum manual_entity_type {
+	MANUAL_ENTITY_NONE,
+	MANUAL_ENTITY_AMP,
+	MANUAL_ENTITY_QUOT,
+	MANUAL_ENTITY_NBSP,
+	MANUAL_ENTITY_LSQUO,
+	MANUAL_ENTITY_LDQUO,
+	MANUAL_ENTITY_RSQUO,
+	MANUAL_ENTITY_RDQUO,
+	MANUAL_ENTITY_NDASH,
+	MANUAL_ENTITY_MDASH,
+	MANUAL_ENTITY_MINUS,
+	MANUAL_ENTITY_TIMES
 };
 
 /**
- * Given a node containing an element, return the element type.
+ * Given a node containing an entity, return the entity type.
  *
  * \param reader	The reader to take the node from.
- * \return		The element type, or PARSE_ELEMENT_NONE if unknown.
+ * \return		The entity type, or MANUAL_ENTITY_NONE if unknown.
  */
 
-enum parse_element_type parse_element_find_type(xmlTextReaderPtr reader);
+enum manual_entity_type manual_entity_find_type(xmlTextReaderPtr reader);
 
 /**
- * Given an element type, return the textual node tag.
+ * Given an entity type, return the textual entity name.
  *
- * \param type		The node type to look up.
- * \return		Pointer to the node's textual name, or to "" if
+ * \param type		The entity type to look up.
+ * \return		Pointer to the entity's textual name, or to "" if
  *			the type was not recognised.
  */
 
-const char *parse_element_find_tag(enum parse_element_type type);
+const char *manual_entity_find_name(enum manual_entity_type type);
 
 #endif
 

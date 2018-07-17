@@ -87,6 +87,9 @@ bool output_debug(struct manual_data *manual)
 		while (section != NULL) {
 			printf("** Found Section '%s' **\n", output_debug_get_text(section->title));
 
+			if (section->id != NULL)
+				printf("Section ID '%s'\n", section->id);
+
 			section = section->next_section;
 		}
 

@@ -66,7 +66,7 @@ static struct parse_element_definition parse_element_tags[] = {
  * \return		The element type, or PARSE_ELEMENT_NONE if unknown.
  */
 
-enum parse_element_type parse_find_element_type(xmlTextReaderPtr reader)
+enum parse_element_type parse_element_find_type(xmlTextReaderPtr reader)
 {
 	const xmlChar	*name;
 	int		i;

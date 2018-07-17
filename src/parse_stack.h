@@ -71,7 +71,24 @@ struct parse_stack_entry_chapter_data {
 
 struct parse_stack_entry_section_data {
 	struct manual_data_section		*section;
-//	struct manual_data_section		*current_section;
+	struct manual_data_block		*current_block;
+};
+
+/**
+ * Data associated with a block entry.
+ */
+
+struct parse_stack_entry_block_data {
+	struct manual_data_block		*block;
+	struct manual_data_chunk		*current_chunk;
+};
+
+/**
+ * Data associated with a chunk entry.
+ */
+
+struct parse_stack_entry_chunk_data {
+	struct manual_data_chunk		*chunk;
 };
 
 /**
@@ -82,6 +99,8 @@ union parse_stack_entry_data {
 	struct parse_stack_entry_manual_data	manual;
 	struct parse_stack_entry_chapter_data	chapter;
 	struct parse_stack_entry_section_data	section;
+	struct parse_stack_entry_block_data	block;
+	struct parse_stack_entry_chunk_data	chunk;
 };
 
 /**

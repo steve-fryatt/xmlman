@@ -96,8 +96,11 @@ struct parse_stack_entry *parse_stack_push(enum parse_stack_content content, enu
 		break;
 	case PARSE_STACK_CONTENT_SECTION:
 		parse_stack[parse_stack_size].data.section.section = NULL;
+		parse_stack[parse_stack_size].data.section.current_block = NULL;
 		break;
 	case PARSE_STACK_CONTENT_TITLE:
+		parse_stack[parse_stack_size].data.block.block = NULL;
+		parse_stack[parse_stack_size].data.block.current_chunk = NULL;
 		break;
 	}
 

@@ -209,7 +209,7 @@ static void parse_process_outer_node(xmlTextReaderPtr reader, struct manual_data
 	if (type != XML_READER_TYPE_ELEMENT)
 		return;
 
-	element = parse_find_element_type(reader);
+	element = parse_element_find_type(reader);
 	switch (element) {
 	case PARSE_ELEMENT_MANUAL:
 		printf("Found manual\n");
@@ -256,7 +256,7 @@ static void parse_process_manual_node(xmlTextReaderPtr reader, struct manual_dat
 	type = xmlTextReaderNodeType(reader);
 	switch (type) {
 	case XML_READER_TYPE_ELEMENT:
-		element = parse_find_element_type(reader);
+		element = parse_element_find_type(reader);
 
 		switch (element) {
 		case PARSE_ELEMENT_TITLE:
@@ -285,7 +285,7 @@ static void parse_process_manual_node(xmlTextReaderPtr reader, struct manual_dat
 		break;
 
 	case XML_READER_TYPE_END_ELEMENT:
-		element = parse_find_element_type(reader);
+		element = parse_element_find_type(reader);
 
 		if (element != old_stack->closing_element) {
 			printf("Unexpected closing element '<%s>' in manual.\n", parse_element_find_tag(element));
@@ -439,7 +439,7 @@ static void parse_process_chapter_node(xmlTextReaderPtr reader)
 	type = xmlTextReaderNodeType(reader);
 	switch (type) {
 	case XML_READER_TYPE_ELEMENT:
-		element = parse_find_element_type(reader);
+		element = parse_element_find_type(reader);
 
 		switch (element) {
 		case PARSE_ELEMENT_TITLE:
@@ -459,7 +459,7 @@ static void parse_process_chapter_node(xmlTextReaderPtr reader)
 		break;
 
 	case XML_READER_TYPE_END_ELEMENT:
-		element = parse_find_element_type(reader);
+		element = parse_element_find_type(reader);
 
 		if (element != old_stack->closing_element) {
 			printf("Unexpected closing element '<%s>' in chapter.\n", parse_element_find_tag(element));
@@ -552,7 +552,7 @@ static void parse_process_section_node(xmlTextReaderPtr reader)
 	type = xmlTextReaderNodeType(reader);
 	switch (type) {
 	case XML_READER_TYPE_ELEMENT:
-		element = parse_find_element_type(reader);
+		element = parse_element_find_type(reader);
 
 		switch (element) {
 		case PARSE_ELEMENT_TITLE:
@@ -568,7 +568,7 @@ static void parse_process_section_node(xmlTextReaderPtr reader)
 		break;
 
 	case XML_READER_TYPE_END_ELEMENT:
-		element = parse_find_element_type(reader);
+		element = parse_element_find_type(reader);
 
 		if (element != old_stack->closing_element) {
 			printf("Unexpected closing element '<%s>' in section.\n", parse_element_find_tag(element));
@@ -632,7 +632,7 @@ static void parse_process_title_node(xmlTextReaderPtr reader)
 		}
 		break;
 	case XML_READER_TYPE_END_ELEMENT:
-		element = parse_find_element_type(reader);
+		element = parse_element_find_type(reader);
 
 		if (element != old_stack->closing_element) {
 			printf("Unexpected closing element '<%s>' in title.\n", parse_element_find_tag(element));

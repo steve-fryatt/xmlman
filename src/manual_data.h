@@ -32,12 +32,81 @@
 
 #include <libxml/xmlstring.h>
 
+#include "manual_entity.h"
+
 enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_NONE,
 	MANUAL_DATA_OBJECT_TYPE_MANUAL,
 	MANUAL_DATA_OBJECT_TYPE_INDEX,
 	MANUAL_DATA_OBJECT_TYPE_CHAPTER,
-	MANUAL_DATA_OBJECT_TYPE_SECTION
+	MANUAL_DATA_OBJECT_TYPE_SECTION,
+	MANUAL_DATA_OBJECT_TYPE_TITLE,
+
+
+	MANUAL_DATA_OBJECT_TYPE_TEXT,
+	MANUAL_DATA_OBJECT_TYPE_ENTITY,
+};
+
+
+/**
+ * Data for a manual block chunk.
+ */
+
+struct manual_data_chunk {
+	/**
+	 * The chunk's content type.
+	 */
+
+	enum manual_data_object_type	type;
+
+	/**
+	 * The chunk's contents.
+	 */
+
+	union {
+		xmlChar			*text;		/**< Pointer to the chunk text.	*/
+		enum manual_entity_type	entity;		/**< The chunk entity type.	*/
+	};
+
+	/**
+	 * Pointer to the next chunk in the data block.
+	 */
+
+	struct manual_data_chunk	*next_chunk;
+};
+
+/**
+ * Data for a text-type manual block.
+ */
+
+struct manual_data_block_text {
+	struct manual_data_chunk	*first_chunk;
+};
+
+/**
+ * Data for a manual block.
+ */
+
+struct manual_data_block {
+	/**
+	 * The object's type (Section or otherwise).
+	 */
+
+	enum manual_data_object_type	type;
+
+	/**
+	 * The object's contents.
+	 */
+
+	union {
+		struct manual_data_block_text	text;
+	};
+
+	/**
+	 * Pointer to the next block.
+	 */
+
+	struct manual_data_block	*next_block;
 };
 
 /**
