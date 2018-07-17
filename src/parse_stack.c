@@ -84,6 +84,8 @@ struct parse_stack_entry *parse_stack_push(enum parse_stack_content content, enu
 	parse_stack[parse_stack_size].closing_element = closing_element;
 
 	switch (content) {
+	case PARSE_STACK_CONTENT_NONE:
+		break;
 	case PARSE_STACK_CONTENT_MANUAL:
 		parse_stack[parse_stack_size].data.manual.manual = NULL;
 		parse_stack[parse_stack_size].data.manual.current_chapter = NULL;
@@ -91,6 +93,10 @@ struct parse_stack_entry *parse_stack_push(enum parse_stack_content content, enu
 	case PARSE_STACK_CONTENT_CHAPTER:
 		parse_stack[parse_stack_size].data.chapter.chapter = NULL;
 		parse_stack[parse_stack_size].data.chapter.current_section = NULL;
+		break;
+	case PARSE_STACK_CONTENT_SECTION:
+		break;
+	case PARSE_STACK_CONTENT_TITLE:
 		break;
 	}
 

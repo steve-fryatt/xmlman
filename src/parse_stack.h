@@ -42,7 +42,8 @@
 enum parse_stack_content {
 	PARSE_STACK_CONTENT_NONE,		/**< No, or undefined, content.		*/
 	PARSE_STACK_CONTENT_MANUAL,		/**< A top-level manual structure.	*/
-	PARSE_STACK_CONTENT_CHAPTER,		/**< A chapter structure.		*/
+	PARSE_STACK_CONTENT_CHAPTER,		/**< A chapter or index structure.	*/
+	PARSE_STACK_CONTENT_SECTION,		/**< A section structure.		*/
 	PARSE_STACK_CONTENT_TITLE		/**< An object title.			*/
 };
 
