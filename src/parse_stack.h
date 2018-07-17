@@ -66,12 +66,22 @@ struct parse_stack_entry_chapter_data {
 };
 
 /**
+ * Data associated with a section entry.
+ */
+
+struct parse_stack_entry_section_data {
+	struct manual_data_section		*section;
+//	struct manual_data_section		*current_section;
+};
+
+/**
  * The data associated with the different types of stack entry.
  */
 
 union parse_stack_entry_data {
 	struct parse_stack_entry_manual_data	manual;
 	struct parse_stack_entry_chapter_data	chapter;
+	struct parse_stack_entry_section_data	section;
 };
 
 /**

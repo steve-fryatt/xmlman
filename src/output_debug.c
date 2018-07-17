@@ -51,6 +51,7 @@ static char *output_debug_get_text(xmlChar *text);
 bool output_debug(struct manual_data *manual)
 {
 	struct manual_data_chapter	*chapter;
+	struct manual_data_section	*section;
 
 	if (manual == NULL)
 		return false;
@@ -69,7 +70,7 @@ bool output_debug(struct manual_data *manual)
 	chapter = manual->first_chapter;
 
 	while (chapter != NULL) {
-		printf("* Found Chapter '%s'*\n", output_debug_get_text(chapter->title));
+		printf("* Found Chapter '%s' *\n", output_debug_get_text(chapter->title));
 
 		printf("Processed: %d\n", chapter->processed);
 
@@ -78,6 +79,16 @@ bool output_debug(struct manual_data *manual)
 
 		if (chapter->filename != NULL)
 			printf("Associated with file '%s'\n", chapter->filename);
+
+		/* Output the section details. */
+
+		section = chapter->first_section;
+	
+		while (section != NULL) {
+			printf("** Found Section '%s' **\n", output_debug_get_text(section->title));
+
+			section = section->next_section;
+		}
 
 		chapter = chapter->next_chapter;
 	}

@@ -77,6 +77,7 @@ struct manual_data_chapter *manual_data_chapter_create(enum manual_data_object_t
 	chapter->filename = NULL;
 	chapter->processed = false;
 	chapter->next_chapter = NULL;
+	chapter->first_section = NULL;
 
 	return chapter;
 }
@@ -101,6 +102,8 @@ struct manual_data_section *manual_data_section_create(enum manual_data_object_t
 
 	section->type = type;
 	section->title = NULL;
+	section->id = NULL;
+	section->next_section = NULL;
 
 	return section;
 }

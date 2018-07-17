@@ -52,6 +52,18 @@ struct manual_data_section {
 	enum manual_data_object_type	type;
 
 	/**
+	 * Pointer to the section's ID, or NULL if one has not been set.
+	 */
+
+	xmlChar				*id;
+
+	/**
+	 * Pointer to the next section of the chapter.
+	 */
+
+	struct manual_data_section	*next_section;
+
+	/**
 	 * Pointer to the section title.
 	 */
 
@@ -99,6 +111,12 @@ struct manual_data_chapter {
 	 */
 
 	xmlChar				*title;
+
+	/**
+	 * Pointer to the first section of the chapter.
+	 */
+
+	struct manual_data_section	*first_section;
 };
 
 /**
