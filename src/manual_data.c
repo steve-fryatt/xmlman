@@ -104,6 +104,7 @@ struct manual_data_section *manual_data_section_create(enum manual_data_object_t
 	section->title = NULL;
 	section->id = NULL;
 	section->next_section = NULL;
+	section->first_block = NULL;
 
 	return section;
 }

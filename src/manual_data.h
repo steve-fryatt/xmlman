@@ -41,6 +41,7 @@ enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_CHAPTER,
 	MANUAL_DATA_OBJECT_TYPE_SECTION,
 	MANUAL_DATA_OBJECT_TYPE_TITLE,
+	MANUAL_DATA_OBJECT_TYPE_PARAGRAPH,
 
 
 	MANUAL_DATA_OBJECT_TYPE_TEXT,
@@ -136,7 +137,13 @@ struct manual_data_section {
 	 * Pointer to the section title.
 	 */
 
-	xmlChar				*title;
+	struct manual_data_block	*title;
+
+	/**
+	 * Pointer to the first section of the chapter.
+	 */
+
+	struct manual_data_block	*first_block;
 };
 
 /**
@@ -179,7 +186,7 @@ struct manual_data_chapter {
 	 * Pointer to the chapter title.
 	 */
 
-	xmlChar				*title;
+	struct manual_data_block	*title;
 
 	/**
 	 * Pointer to the first section of the chapter.
@@ -197,7 +204,7 @@ struct manual_data {
 	 * Pointer to the manual title.
 	 */
 
-	xmlChar				*title;
+	struct manual_data_block	*title;
 
 	/**
 	 * Pointer to the first chapter of the manual.
@@ -231,6 +238,24 @@ struct manual_data_chapter *manual_data_chapter_create(enum manual_data_object_t
  */
 
 struct manual_data_section *manual_data_section_create(enum manual_data_object_type type);
+
+/**
+ * Create a new manual_data_block structure.
+ *
+ * \param type		The type of object to create.
+ * \return		Pointer to the new structure, or NULL on failure.
+ */
+
+struct manual_data_block *manual_data_block_create(enum manual_data_object_type type);
+
+/**
+ * Create a new manual_data_chunk structure.
+ *
+ * \param type		The type of object to create.
+ * \return		Pointer to the new structure, or NULL on failure.
+ */
+
+struct manual_data_chunk *manual_data_chunk_create(enum manual_data_object_type type);
 
 #endif
 

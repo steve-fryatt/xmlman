@@ -51,7 +51,7 @@ static bool parse_process_add_chapter(xmlTextReaderPtr reader, struct parse_stac
 		enum manual_data_object_type type, enum parse_element_type element, struct manual_data_chapter *chapter);
 static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack, enum manual_data_object_type type);
 static void parse_process_section_node(xmlTextReaderPtr reader);
-static void parse_process_title_node(xmlTextReaderPtr reader);
+static void parse_process_block_node(xmlTextReaderPtr reader);
 static void parse_error_handler(void *arg, const char *msg, xmlParserSeverities severity, xmlTextReaderLocatorPtr locator);
 
 
@@ -177,8 +177,8 @@ static void parse_process_node(xmlTextReaderPtr reader, struct manual_data **man
 	case PARSE_STACK_CONTENT_SECTION:
 		parse_process_section_node(reader);
 		break;
-	case PARSE_STACK_CONTENT_TITLE:
-		parse_process_title_node(reader);
+	case PARSE_STACK_CONTENT_BLOCK:
+		parse_process_block_node(reader);
 		break;
 	}
 }
@@ -261,7 +261,7 @@ static void parse_process_manual_node(xmlTextReaderPtr reader, struct manual_dat
 		switch (element) {
 		case PARSE_ELEMENT_TITLE:
 			printf("Found title\n");
-			new_stack = parse_stack_push(PARSE_STACK_CONTENT_TITLE, element);
+			new_stack = parse_stack_push(PARSE_STACK_CONTENT_BLOCK, element);
 			if (new_stack == NULL) {
 				fprintf(stderr, "Failed to allocate stack.\n");
 				break;
@@ -444,7 +444,7 @@ static void parse_process_chapter_node(xmlTextReaderPtr reader)
 		switch (element) {
 		case PARSE_ELEMENT_TITLE:
 			printf("Found title\n");
-			new_stack = parse_stack_push(PARSE_STACK_CONTENT_TITLE, element);
+			new_stack = parse_stack_push(PARSE_STACK_CONTENT_BLOCK, element);
 			if (new_stack == NULL) {
 				fprintf(stderr, "Failed to allocate stack.\n");
 				break;
@@ -477,9 +477,8 @@ static void parse_process_chapter_node(xmlTextReaderPtr reader)
  *
  * \param reader		The XML Reader to read the node from.
  * \param *old_stack		The parent stack entry, within which the
- *				new chapter will be added.
- * \param type			The type of chapter object (Chapter or
- *				Index) to add.
+ *				new section will be added.
+ * \param type			The type of section object (Section) to add.
  * \param element		The XML element to close the object.
  * \return			TRUE on success, or FALSE on failure.
  */
@@ -557,7 +556,7 @@ static void parse_process_section_node(xmlTextReaderPtr reader)
 		switch (element) {
 		case PARSE_ELEMENT_TITLE:
 			printf("Found title\n");
-			new_stack = parse_stack_push(PARSE_STACK_CONTENT_TITLE, element);
+			new_stack = parse_stack_push(PARSE_STACK_CONTENT_BLOCK, element);
 			if (new_stack == NULL) {
 				fprintf(stderr, "Failed to allocate stack.\n");
 				break;
@@ -582,12 +581,91 @@ static void parse_process_section_node(xmlTextReaderPtr reader)
 }
 
 /**
+ * Add a new block to the document structure.
+ *
+ * \param reader		The XML Reader to read the node from.
+ * \param *old_stack		The parent stack entry, within which the
+ *				new block will be added.
+ * \param type			The type of block object (Paragraph or
+ *				Title) to add.
+ * \param element		The XML element to close the object.
+ * \return			TRUE on success, or FALSE on failure.
+ */
+
+static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack,
+		enum manual_data_object_type type, enum parse_element_type element)
+{
+	struct manual_data_block	*new_block;
+	struct parse_stack_entry	*new_stack;
+
+// \TODO -- blocks can appear in many places!
+//
+//	if (old_stack->content != PARSE_STACK_CONTENT_SECTION) {
+//		fprintf(stderr, "Can only create new blocks in sections.\n");
+//		return false;
+//	}
+
+	/* Push the section on to the stack ready to be processed. */
+
+	new_stack = parse_stack_push(PARSE_STACK_CONTENT_BLOCK, element);
+	if (new_stack == NULL) {
+		fprintf(stderr, "Failed to allocate stack.\n");
+		return false;
+	}
+
+	/* Create the new section structure. */
+
+	new_block = manual_data_block_create(type);
+	if (new_block == NULL) {
+		fprintf(stderr, "Failed to create new block data.\n");
+		return false;
+	}
+
+	/* Store the section details on the stack. */
+
+	new_stack->data.block.block = new_block;
+
+	/* Link the new item in to the document structure. */
+
+	switch (type) {
+	case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+		if (old_stack->data.section.current_block == NULL)
+			old_stack->data.section.section->first_block = new_block;
+		else
+			old_stack->data.section.current_block->next_block = new_block;
+
+		old_stack->data.section.current_block = new_block;
+		break;
+	case MANUAL_DATA_OBJECT_TYPE_TITLE:
+		switch (old_stack->content) {
+		case PARSE_STACK_CONTENT_MANUAL:
+			old_stack->data.manual.manual->title = new_block;
+			printf("Setting manual title\n");
+			break;
+		case PARSE_STACK_CONTENT_CHAPTER:
+			old_stack->data.chapter.chapter->title = new_block;
+			printf("Setting chapter title\n");
+			break;
+		case PARSE_STACK_CONTENT_SECTION:
+			old_stack->data.section.section->title = new_block;
+			printf("Setting section title\n");
+			break;
+		default:
+			fprintf(stderr, "Unexpected <title> tag found.\n");
+		}
+		break;
+	}
+
+	return true;
+}
+
+/**
  * Process nodes within a <title> tag.
  *
  * \param reader	The XML Reader to read the node from.
  */
 
-static void parse_process_title_node(xmlTextReaderPtr reader)
+static void parse_process_block_node(xmlTextReaderPtr reader)
 {
 	xmlReaderTypes			type;
 	enum parse_element_type		element;
@@ -595,7 +673,7 @@ static void parse_process_title_node(xmlTextReaderPtr reader)
 	const xmlChar			*value;
 
 	old_stack = parse_stack_peek(PARSE_STACK_TOP);
-	if (old_stack->content != PARSE_STACK_CONTENT_TITLE) {
+	if (old_stack->content != PARSE_STACK_CONTENT_BLOCK) {
 		fprintf(stderr, "Unexpected stack state!\n");
 		return;
 	}
