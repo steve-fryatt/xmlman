@@ -84,7 +84,7 @@ struct manual_data *parse_document(char *filename)
 	chapter = manual->first_child;
 
 	while (chapter != NULL) {
-		if (chapter->type != MANUAL_DATA_OBJECT_TYPE_MANUAL && chapter->type != MANUAL_DATA_OBJECT_TYPE_INDEX) {
+		if (chapter->type != MANUAL_DATA_OBJECT_TYPE_CHAPTER && chapter->type != MANUAL_DATA_OBJECT_TYPE_INDEX) {
 			msg_report(MSG_BAD_TYPE);
 			return NULL;
 		}
