@@ -39,6 +39,7 @@
 
 /* Static Function Prototypes. */
 
+static void output_debug_write_text(enum manual_data_object_type type, struct manual_data *text);
 static char *output_debug_get_text(xmlChar *text);
 
 /**
@@ -50,8 +51,7 @@ static char *output_debug_get_text(xmlChar *text);
 
 bool output_debug(struct manual_data *manual)
 {
-	struct manual_data_chapter	*chapter;
-	struct manual_data_section	*section;
+	struct manual_data *chapter, *section;
 
 	if (manual == NULL)
 		return false;
@@ -60,43 +60,58 @@ bool output_debug(struct manual_data *manual)
 
 	printf("*** Found Manual ***\n");
 
-	if (manual->title != NULL)
-		printf("Manual Title: '%s'\n", manual->title);
-	else
-		printf("<No Title>\n");
+	output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, manual->title);
 
 	/* Output the chapter details. */
 
-	chapter = manual->first_chapter;
+	chapter = manual->first_child;
 
 	while (chapter != NULL) {
-		printf("* Found Chapter '%s' *\n", output_debug_get_text(chapter->title));
+		printf("* Found Chapter *\n");
 
-		printf("Processed: %d\n", chapter->processed);
+		output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, chapter->title);
+
+		printf("Processed: %d\n", chapter->chapter.processed);
 
 		if (chapter->id != NULL)
 			printf("Chapter ID '%s'\n", chapter->id);
 
-		if (chapter->filename != NULL)
-			printf("Associated with file '%s'\n", chapter->filename);
+		if (chapter->chapter.filename != NULL)
+			printf("Associated with file '%s'\n", chapter->chapter.filename);
 
 		/* Output the section details. */
 
-		section = chapter->first_section;
+		section = chapter->first_child;
 	
 		while (section != NULL) {
-			printf("** Found Section '%s' **\n", output_debug_get_text(section->title));
+			printf("** Found Section **\n");
+
+		output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, section->title);
 
 			if (section->id != NULL)
 				printf("Section ID '%s'\n", section->id);
 
-			section = section->next_section;
+			section = section->next;
 		}
 
-		chapter = chapter->next_chapter;
+		chapter = chapter->next;
 	}
 
 	return true;
+}
+
+
+static void output_debug_write_text(enum manual_data_object_type type, struct manual_data *text)
+{
+	if (text == NULL) {
+		printf("*** Text Block NULL ***\n");
+		return;
+	}
+
+	if (text->type != type) {
+		printf("*** Text Block not expected type\n");
+		return;
+	}
 }
 
 

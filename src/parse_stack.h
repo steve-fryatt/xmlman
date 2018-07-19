@@ -48,62 +48,6 @@ enum parse_stack_content {
 };
 
 /**
- * Data associated with a manual entry.
- */
-
-struct parse_stack_entry_manual_data {
-	struct manual_data			*manual;
-	struct manual_data_chapter		*current_chapter;
-};
-
-/**
- * Data associated with a chapter or index entry.
- */
-
-struct parse_stack_entry_chapter_data {
-	struct manual_data_chapter		*chapter;
-	struct manual_data_section		*current_section;
-};
-
-/**
- * Data associated with a section entry.
- */
-
-struct parse_stack_entry_section_data {
-	struct manual_data_section		*section;
-	struct manual_data_block		*current_block;
-};
-
-/**
- * Data associated with a block entry.
- */
-
-struct parse_stack_entry_block_data {
-	struct manual_data_block		*block;
-	struct manual_data_chunk		*current_chunk;
-};
-
-/**
- * Data associated with a chunk entry.
- */
-
-struct parse_stack_entry_chunk_data {
-	struct manual_data_chunk		*chunk;
-};
-
-/**
- * The data associated with the different types of stack entry.
- */
-
-union parse_stack_entry_data {
-	struct parse_stack_entry_manual_data	manual;
-	struct parse_stack_entry_chapter_data	chapter;
-	struct parse_stack_entry_section_data	section;
-	struct parse_stack_entry_block_data	block;
-	struct parse_stack_entry_chunk_data	chunk;
-};
-
-/**
  * An entry in the parse stack.
  */
 
@@ -121,10 +65,16 @@ struct parse_stack_entry {
 	enum parse_element_type			closing_element;
 
 	/**
-	 * Specific data relating to the level content type.
+	 * The parent object.
 	 */
 
-	union parse_stack_entry_data		data;
+	struct manual_data			*parent;
+
+	/**
+	 * The current child object.
+	 */
+
+	struct manual_data			*current_child;
 };
 
 /**

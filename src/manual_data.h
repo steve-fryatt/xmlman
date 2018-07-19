@@ -54,96 +54,19 @@ enum manual_data_object_type {
  */
 
 struct manual_data_chunk {
-	/**
-	 * The chunk's content type.
-	 */
-
-	enum manual_data_object_type	type;
-
-	/**
-	 * The chunk's contents.
-	 */
-
 	union {
-		xmlChar			*text;		/**< Pointer to the chunk text.	*/
-		enum manual_entity_type	entity;		/**< The chunk entity type.	*/
+	/**
+	 * Pointer to the chunk text.
+	 */
+
+		xmlChar				*text;
+
+	/**
+	 * The chunk entity type.
+	 */
+
+		enum manual_entity_type		entity;
 	};
-
-	/**
-	 * Pointer to the next chunk in the data block.
-	 */
-
-	struct manual_data_chunk	*next_chunk;
-};
-
-/**
- * Data for a text-type manual block.
- */
-
-struct manual_data_block_text {
-	struct manual_data_chunk	*first_chunk;
-};
-
-/**
- * Data for a manual block.
- */
-
-struct manual_data_block {
-	/**
-	 * The object's type (Section or otherwise).
-	 */
-
-	enum manual_data_object_type	type;
-
-	/**
-	 * The object's contents.
-	 */
-
-	union {
-		struct manual_data_block_text	text;
-	};
-
-	/**
-	 * Pointer to the next block.
-	 */
-
-	struct manual_data_block	*next_block;
-};
-
-/**
- * Data for a manual page section.
- */
-
-struct manual_data_section {
-	/**
-	 * The object's type (Section or otherwise).
-	 */
-
-	enum manual_data_object_type	type;
-
-	/**
-	 * Pointer to the section's ID, or NULL if one has not been set.
-	 */
-
-	xmlChar				*id;
-
-	/**
-	 * Pointer to the next section of the chapter.
-	 */
-
-	struct manual_data_section	*next_section;
-
-	/**
-	 * Pointer to the section title.
-	 */
-
-	struct manual_data_block	*title;
-
-	/**
-	 * Pointer to the first section of the chapter.
-	 */
-
-	struct manual_data_block	*first_block;
 };
 
 /**
@@ -152,47 +75,17 @@ struct manual_data_section {
 
 struct manual_data_chapter {
 	/**
-	 * The object's type (Index or Chapter).
-	 */
-
-	enum manual_data_object_type	type;
-
-	/**
 	 * Has the chapter been processed, or is this just a placeholder?
 	 */
 
-	bool				processed;
+	bool					processed;
 
 	/**
 	 * Pointer to the chapter filename, or NULL if this is an inline
 	 * chapter.
 	 */
 
-	xmlChar				*filename;
-
-	/**
-	 * Pointer to the chapter's ID, or NULL if one has not been set.
-	 */
-
-	xmlChar				*id;
-
-	/**
-	 * Pointer to the next chapter of the manual.
-	 */
-
-	struct manual_data_chapter	*next_chapter;
-
-	/**
-	 * Pointer to the chapter title.
-	 */
-
-	struct manual_data_block	*title;
-
-	/**
-	 * Pointer to the first section of the chapter.
-	 */
-
-	struct manual_data_section	*first_section;
+	xmlChar					*filename;
 };
 
 /**
@@ -201,61 +94,54 @@ struct manual_data_chapter {
 
 struct manual_data {
 	/**
-	 * Pointer to the manual title.
+	 * The object's content type).
 	 */
 
-	struct manual_data_block	*title;
+	enum manual_data_object_type		type;
 
 	/**
-	 * Pointer to the first chapter of the manual.
+	 * Pointer to the object's ID, or NULL if none has been set.
 	 */
 
-	struct manual_data_chapter	*first_chapter;
+	xmlChar					*id;
+
+	/**
+	 * Pointer to the object's title, or NULL if none has been set.
+	 */
+
+	struct manual_data			*title;
+
+	/**
+	 * Pointer to the object's first child, or NULL if none.
+	 */
+
+	struct manual_data			*first_child;
+
+	/**
+	 * Pointer to the next object, or NULL if none.
+	 */
+
+	struct manual_data			*next;
+
+	/**
+	 * Additional data for specific object types.
+	 */
+
+	union {
+		struct manual_data_chapter	chapter;
+		struct manual_data_chunk	chunk;
+	};
+
 };
 
 /**
  * Create a new manual_data structure.
  *
- * \return		Pointer to the new structure, or NULL on failure.
- */
-
-struct manual_data *manual_data_create(void);
-
-/**
- * Create a new manual_data_chapter structure.
- *
  * \param type		The type of object to create.
  * \return		Pointer to the new structure, or NULL on failure.
  */
 
-struct manual_data_chapter *manual_data_chapter_create(enum manual_data_object_type type);
-
-/**
- * Create a new manual_data_section structure.
- *
- * \param type		The type of object to create.
- * \return		Pointer to the new structure, or NULL on failure.
- */
-
-struct manual_data_section *manual_data_section_create(enum manual_data_object_type type);
-
-/**
- * Create a new manual_data_block structure.
- *
- * \param type		The type of object to create.
- * \return		Pointer to the new structure, or NULL on failure.
- */
-
-struct manual_data_block *manual_data_block_create(enum manual_data_object_type type);
-
-/**
- * Create a new manual_data_chunk structure.
- *
- * \param type		The type of object to create.
- * \return		Pointer to the new structure, or NULL on failure.
- */
-
-struct manual_data_chunk *manual_data_chunk_create(enum manual_data_object_type type);
+struct manual_data *manual_data_create(enum manual_data_object_type type);
 
 #endif
 

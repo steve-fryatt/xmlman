@@ -82,7 +82,9 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Unknown error",				true	},
 	{MSG_ERROR,	"Missing source file",				false	},
 	{MSG_ERROR,	"Failed to open source document '%s'",		false	},
-	{MSG_ERROR,	"Source document '%s' does not validate",	false	}
+	{MSG_ERROR,	"Source document '%s' does not validate",	false	},
+	{MSG_ERROR,	"Unexpected object type found",			false	},
+	{MSG_ERROR,	"Stack error in node",				false	}
 };
 
 /**
