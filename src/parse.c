@@ -51,6 +51,11 @@ static bool parse_process_add_chapter(xmlTextReaderPtr reader, struct parse_stac
 static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack, enum manual_data_object_type type);
 static bool parse_process_add_section(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack,
 		enum manual_data_object_type type, enum parse_element_type element);
+
+static struct manual_data *parse_create_new_stacked_object(enum parse_stack_content content,
+		enum parse_element_type element, enum manual_data_object_type type,
+		struct manual_data *object);
+static void parse_link_to_chain(struct parse_stack_entry *parent, struct manual_data *object);
 static void parse_error_handler(void *arg, const char *msg, xmlParserSeverities severity, xmlTextReaderLocatorPtr locator);
 
 
@@ -89,10 +94,8 @@ struct manual_data *parse_document(char *filename)
 			return NULL;
 		}
 
-		if (!chapter->chapter.processed) {
+		if (!chapter->chapter.processed)
 			parse_file(chapter->chapter.filename, &manual, &chapter);
-			chapter->chapter.processed = true;
-		}
 
 		chapter = chapter->next;
 	}
@@ -224,7 +227,7 @@ static void parse_process_outer_node(xmlTextReaderPtr reader, struct manual_data
 
 		/* Record the current manual on the stack. */
 
-		new_stack->parent = *manual;
+		new_stack->object = *manual;
 		break;
 	}
 }
@@ -345,58 +348,25 @@ static bool parse_process_add_chapter(xmlTextReaderPtr reader, struct parse_stac
 		enum manual_data_object_type type, enum parse_element_type element, struct manual_data *chapter)
 {
 	struct manual_data		*new_chapter;
-	struct parse_stack_entry	*new_stack;
 
-	if (old_stack->content != PARSE_STACK_CONTENT_MANUAL) {
-		fprintf(stderr, "Can only create new chapters in manuals.\n");
+	new_chapter = parse_create_new_stacked_object(PARSE_STACK_CONTENT_CHAPTER, element, type, chapter);
+	if (new_chapter == NULL)
 		return false;
-	}
 
-	/* Push the chapter on to the stack ready to be processed. */
+	/* We've now processed the actual chapter data. */
 
-	new_stack = parse_stack_push(PARSE_STACK_CONTENT_CHAPTER, element);
-	if (new_stack == NULL) {
-		fprintf(stderr, "Failed to allocate stack.\n");
-		return false;
-	}
-
-	/* If this is a complete chapter that we're going to process from
-	 * scratch, create a new chapter structure. Otherwise, just
-	 * reference the pre-existing chapter from the place-holder.
-	 */
-
-	if (chapter == NULL) {
-		new_chapter = manual_data_create(type);
-		if (new_chapter == NULL) {
-			fprintf(stderr, "Failed to create new chapter data.\n");
-			return false;
-		}
-
-		new_chapter->chapter.processed = true;
-	} else {
-		new_chapter = chapter;
-	}
+	new_chapter->chapter.processed = true;
 
 	/* Process any entities which are found. */
 
 	new_chapter->id = xmlTextReaderGetAttribute(reader, (const xmlChar *) "id");
 
-	/* Store the chapter details on the stack. */
-
-	new_stack->parent = new_chapter;
-
 	/* If this isn't a pre-existing chapter, link the new item in to
 	 * the document structure.
 	 */
 
-	if (chapter == NULL) {
-		if (old_stack->current_child == NULL)
-			old_stack->parent->first_child = new_chapter;
-		else
-			old_stack->current_child->next = new_chapter;
-
-		old_stack->current_child = new_chapter;
-	}
+	if (chapter == NULL)
+		parse_link_to_chain(old_stack, new_chapter);
 
 	return true;
 }
@@ -416,11 +386,6 @@ static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struc
 {
 	struct manual_data	*new_chapter;
 
-	if (old_stack->content != PARSE_STACK_CONTENT_MANUAL) {
-		fprintf(stderr, "Can only create new chapters in manuals.\n");
-		return false;
-	}
-
 	/* Create a new chapter structure. */
 
 	new_chapter = manual_data_create(type);
@@ -435,16 +400,10 @@ static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struc
 
 	/* Link the new item in to the document structure. */
 
-	if (old_stack->current_child == NULL)
-		old_stack->parent->first_child = new_chapter;
-	else
-		old_stack->current_child->next = new_chapter;
-
-	old_stack->current_child = new_chapter;
+	parse_link_to_chain(old_stack, new_chapter);
 
 	return true;
 }
-
 
 /**
  * Add a new section to the document structure.
@@ -461,48 +420,22 @@ static bool parse_process_add_section(xmlTextReaderPtr reader, struct parse_stac
 		enum manual_data_object_type type, enum parse_element_type element)
 {
 	struct manual_data		*new_section;
-	struct parse_stack_entry	*new_stack;
 
-	if (old_stack->content != PARSE_STACK_CONTENT_CHAPTER) {
-		fprintf(stderr, "Can only create new sections in chapters.\n");
+	new_section = parse_create_new_stacked_object(PARSE_STACK_CONTENT_SECTION, element, type, NULL);
+	if (new_section == NULL)
 		return false;
-	}
-
-	/* Push the section on to the stack ready to be processed. */
-
-	new_stack = parse_stack_push(PARSE_STACK_CONTENT_SECTION, element);
-	if (new_stack == NULL) {
-		fprintf(stderr, "Failed to allocate stack.\n");
-		return false;
-	}
-
-	/* Create the new section structure. */
-
-	new_section = manual_data_create(type);
-	if (new_section == NULL) {
-		fprintf(stderr, "Failed to create new section data.\n");
-		return false;
-	}
 
 	/* Process any entities which are found. */
 
 	new_section->id = xmlTextReaderGetAttribute(reader, (const xmlChar *) "id");
 
-	/* Store the section details on the stack. */
-
-	new_stack->parent = new_section;
-
 	/* Link the new item in to the document structure. */
 
-	if (old_stack->current_child == NULL)
-		old_stack->parent->first_child = new_section;
-	else
-		old_stack->current_child->next = new_section;
-
-	old_stack->current_child = new_section;
+	parse_link_to_chain(old_stack, new_section);
 
 	return true;
 }
+
 
 /**
  * Add a new block to the document structure.
@@ -522,46 +455,19 @@ static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_
 	struct manual_data		*new_block;
 	struct parse_stack_entry	*new_stack;
 
-// \TODO -- blocks can appear in many places!
-//
-//	if (old_stack->content != PARSE_STACK_CONTENT_SECTION) {
-//		fprintf(stderr, "Can only create new blocks in sections.\n");
-//		return false;
-//	}
-
-	/* Push the section on to the stack ready to be processed. */
-return
-	new_stack = parse_stack_push(PARSE_STACK_CONTENT_BLOCK, element);
-	if (new_stack == NULL) {
-		fprintf(stderr, "Failed to allocate stack.\n");
+	new_block = parse_create_new_stacked_object(PARSE_STACK_CONTENT_BLOCK, element, type, NULL);
+	if (new_block == NULL)
 		return false;
-	}
 
-	/* Create the new section structure. */
-
-	new_block = manual_data_create(type);
-	if (new_block == NULL) {
-		fprintf(stderr, "Failed to create new block data.\n");
-		return false;
-	}
-
-	/* Store the section details on the stack. */
-
-	new_stack->parent = new_block;
-
+return;
 	/* Link the new item in to the document structure. */
 
 	switch (type) {
 	case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
-		if (old_stack->current_child == NULL)
-			old_stack->parent->first_child = new_block;
-		else
-			old_stack->current_child->next = new_block;
-
-		old_stack->current_child = new_block;
+		parse_link_to_chain(old_stack, new_block);
 		break;
 	case MANUAL_DATA_OBJECT_TYPE_TITLE:
-		old_stack->parent->title = new_block;
+		old_stack->object->title = new_block;
 		printf("Setting manual title\n");
 		break;
 	}
@@ -599,6 +505,83 @@ return
 	}
 */
 
+
+/**
+ * Create a new object which is pushed on to the stack.
+ *
+ * \param content		The type of stack content to push.
+ * \param element		The type of element holding the object.
+ * \param type			The required object type.
+ * \param *object		Pointer to the object to push, or NULL
+ *				to allocate one.
+ * \return			Pointer to the newly created object, or
+ *				NULL on failure.
+ */
+
+static struct manual_data *parse_create_new_stacked_object(enum parse_stack_content content,
+		enum parse_element_type element, enum manual_data_object_type type,
+		struct manual_data *object)
+{
+	struct parse_stack_entry	*stack = NULL;
+
+	/* Any pre-existing object must have the correct type. */
+
+	if (object != NULL && object->type != type) {
+		fprintf(stderr, "Mismatched pre-existing object type.\n");
+		return NULL;
+	}
+
+	/* Push an entry on to the stack ready to be processed. */
+
+	stack = parse_stack_push(content, element);
+	if (stack == NULL) {
+		fprintf(stderr, "Failed to allocate stack.\n");
+		return NULL;
+	}
+
+	/* Create the new object structure, if one wasn't supplied. */
+
+	if (object == NULL) {
+		object = manual_data_create(type);
+		if (object == NULL) {
+			fprintf(stderr, "Failed to create new object data.\n");
+			return NULL;
+		}
+	}
+
+	/* Link the object into the stack. */
+
+	stack->object = object;
+
+	printf("Opened element type <%s>\n", parse_element_find_tag(element));
+
+	return object;
+}
+
+/**
+ * Link an object on to the end of an object chain held on the stack.
+ *
+ * \param *parent		The stack entry referencing the chain
+ *				parent object.
+ * \param *object		The object to be linked.
+ */
+
+static void parse_link_to_chain(struct parse_stack_entry *parent, struct manual_data *object)
+{
+	/* If the items are already linked, there's nothing to do. */
+
+	if (parent->current_child == object)
+		return;
+
+	/* Link the new object on to the end of the chain. */
+
+	if (parent->current_child == NULL)
+		parent->object->first_child = object;
+	else
+		parent->current_child->next = object;
+
+	parent->current_child = object;
+}
 
 
 static void parse_error_handler(void *arg, const char *msg, xmlParserSeverities severity, xmlTextReaderLocatorPtr locator)

@@ -68,7 +68,7 @@ struct parse_stack_entry {
 	 * The parent object.
 	 */
 
-	struct manual_data			*parent;
+	struct manual_data			*object;
 
 	/**
 	 * The current child object.

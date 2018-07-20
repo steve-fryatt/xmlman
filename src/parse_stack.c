@@ -83,7 +83,7 @@ struct parse_stack_entry *parse_stack_push(enum parse_stack_content content, enu
 	parse_stack[parse_stack_size].content = content;
 	parse_stack[parse_stack_size].closing_element = closing_element;
 
-	parse_stack[parse_stack_size].parent = NULL;
+	parse_stack[parse_stack_size].object = NULL;
 	parse_stack[parse_stack_size].current_child = NULL;
 
 	parse_stack_size++;
