@@ -56,8 +56,8 @@ struct manual_data *manual_data_create(enum manual_data_object_type type)
 	data->next = NULL;
 
 	switch (type) {
-	MANUAL_DATA_OBJECT_TYPE_INDEX:
-	MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 		data->chapter.filename = NULL;
 		data->chapter.processed = false;
 		break;
