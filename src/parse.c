@@ -53,7 +53,7 @@ static bool parse_process_add_section(xmlTextReaderPtr reader, struct parse_stac
 		enum manual_data_object_type type, enum parse_element_type element);
 static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack,
 		enum manual_data_object_type type, enum parse_element_type element);
-
+static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack, xmlReaderTypes type);
 
 static struct manual_data *parse_create_new_stacked_object(enum parse_stack_content content,
 		enum parse_element_type element, enum manual_data_object_type type,
@@ -298,6 +298,13 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 		}
 		break;
 
+	case XML_READER_TYPE_TEXT:
+	case XML_READER_TYPE_CDATA:
+	case XML_READER_TYPE_ENTITY:
+	case XML_READER_TYPE_ENTITY_REFERENCE:
+		parse_process_add_content(reader, old_stack, type);
+		break;
+
 	case XML_READER_TYPE_END_ELEMENT:
 		element = parse_element_find_type(reader);
 
@@ -437,7 +444,6 @@ static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_
 		enum manual_data_object_type type, enum parse_element_type element)
 {
 	struct manual_data		*new_block;
-	struct parse_stack_entry	*new_stack;
 
 	new_block = parse_create_new_stacked_object(PARSE_STACK_CONTENT_BLOCK, element, type, NULL);
 	if (new_block == NULL)
@@ -459,6 +465,62 @@ static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_
 }
 
 
+static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack, xmlReaderTypes type)
+{
+	struct manual_data		*new_object;
+	enum manual_data_object_type	object_type;
+	const xmlChar			*value;
+
+	/* Content can only be stored within block objects. */
+
+	if (old_stack->content != PARSE_STACK_CONTENT_BLOCK) {
+		fprintf(stderr, "Unexpected content.\n");
+		return true;
+	}
+
+	/* Create the new object. */
+
+	switch (type) {
+	case XML_READER_TYPE_TEXT:
+	case XML_READER_TYPE_CDATA:
+		object_type = MANUAL_DATA_OBJECT_TYPE_TEXT;
+		break;
+
+	case XML_READER_TYPE_ENTITY:
+	case XML_READER_TYPE_ENTITY_REFERENCE:
+		object_type = MANUAL_DATA_OBJECT_TYPE_TEXT;
+		break;
+
+	default:
+		fprintf(stderr, "Unhandled object type\n");
+		return false;
+	}
+
+	new_object = manual_data_create(object_type);
+	if (new_object == NULL) {
+		fprintf(stderr, "Failed to create new object data.\n");
+		return false;
+	}
+
+	parse_link_to_chain(old_stack, new_object);
+
+	switch (type) {
+	case XML_READER_TYPE_TEXT:
+	case XML_READER_TYPE_CDATA:
+		value = xmlTextReaderConstValue(reader);
+		if (value != NULL) {
+			new_object->chunk.text = xmlStrdup(value);
+			printf("Processed data: %s\n", value);
+		}
+		break;
+
+	case XML_READER_TYPE_ENTITY:
+	case XML_READER_TYPE_ENTITY_REFERENCE:
+		break;
+	}
+
+	return true;
+}
 
 /*
 	const		xmlChar *name, *value;
