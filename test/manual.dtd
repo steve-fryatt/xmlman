@@ -94,6 +94,7 @@
 <!ELEMENT menu (#PCDATA)>
 <!ELEMENT mouse (#PCDATA)>
 <!ELEMENT name (#PCDATA)>
+<!ELEMENT strong (#PCDATA)>
 <!ELEMENT swi (#PCDATA)>
 <!ELEMENT variable (#PCDATA)>
 

@@ -488,7 +488,7 @@ static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stac
 
 	case XML_READER_TYPE_ENTITY:
 	case XML_READER_TYPE_ENTITY_REFERENCE:
-		object_type = MANUAL_DATA_OBJECT_TYPE_TEXT;
+		object_type = MANUAL_DATA_OBJECT_TYPE_ENTITY;
 		break;
 
 	default:
@@ -516,6 +516,7 @@ static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stac
 
 	case XML_READER_TYPE_ENTITY:
 	case XML_READER_TYPE_ENTITY_REFERENCE:
+		new_object->chunk.entity = manual_entity_find_type(reader);
 		break;
 	}
 

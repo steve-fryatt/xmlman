@@ -37,6 +37,8 @@
 
 #include "output_debug.h"
 
+#include "manual_data.h"
+
 /* Static Function Prototypes. */
 
 static void output_debug_write_text(enum manual_data_object_type type, struct manual_data *text);
@@ -103,6 +105,8 @@ bool output_debug(struct manual_data *manual)
 
 static void output_debug_write_text(enum manual_data_object_type type, struct manual_data *text)
 {
+	struct manual_data *chunk;
+
 	if (text == NULL) {
 		printf("*** Text Block NULL ***\n");
 		return;
@@ -111,6 +115,23 @@ static void output_debug_write_text(enum manual_data_object_type type, struct ma
 	if (text->type != type) {
 		printf("*** Text Block not expected type\n");
 		return;
+	}
+
+	chunk = text->first_child;
+
+	while (chunk != NULL) {
+		switch (chunk->type) {
+		case MANUAL_DATA_OBJECT_TYPE_TEXT:
+			printf("--- Chunk text: %s\n", output_debug_get_text(chunk->chunk.text));
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
+			printf("--- Chunk entity: %s\n", manual_entity_find_name(chunk->chunk.entity));
+			break;
+		default:
+			printf("*** Unexpected chunk type! ***\n");
+		}
+
+		chunk = chunk->next;
 	}
 }
 
