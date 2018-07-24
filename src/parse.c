@@ -292,6 +292,9 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 			case PARSE_ELEMENT_TITLE:
 				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_TITLE, element);
 				break;
+			case PARSE_ELEMENT_PARAGRAPH:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, element);
+				break;
 			}
 			break;
 

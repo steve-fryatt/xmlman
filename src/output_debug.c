@@ -53,7 +53,7 @@ static char *output_debug_get_text(xmlChar *text);
 
 bool output_debug(struct manual_data *manual)
 {
-	struct manual_data *chapter, *section;
+	struct manual_data *chapter, *section, *block;
 
 	if (manual == NULL)
 		return false;
@@ -88,10 +88,22 @@ bool output_debug(struct manual_data *manual)
 		while (section != NULL) {
 			printf("** Found Section **\n");
 
-		output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, section->title);
+			output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, section->title);
 
 			if (section->id != NULL)
 				printf("Section ID '%s'\n", section->id);
+
+			/* Output the block details. */
+
+			block = section->first_child;
+
+			while (block != NULL) {
+				printf("*** Found Block **\n");
+
+				output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block);
+
+				block = block->next;
+			}
 
 			section = section->next;
 		}
@@ -113,7 +125,7 @@ static void output_debug_write_text(enum manual_data_object_type type, struct ma
 	}
 
 	if (text->type != type) {
-		printf("*** Text Block not expected type\n");
+		printf("*** Text Block not expected type (expected %d, found %d)\n", type, text->type);
 		return;
 	}
 
