@@ -539,34 +539,6 @@ static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stac
 	return true;
 }
 
-/*
-	const		xmlChar *name, *value;
-
-	name = xmlTextReaderConstName(reader);
-	if (name == NULL)
-		name = BAD_CAST "--";
-
-
-	value = xmlTextReaderConstValue(reader);
-
-
-	printf("%d %d %s %d %d", 
-		xmlTextReaderDepth(reader),
-		type,
-		name,
-		xmlTextReaderIsEmptyElement(reader),
-		xmlTextReaderHasValue(reader));
-
-	if (value == NULL) {
-		printf("\n");
-	} else {
-		if (xmlStrlen(value) > 40)
-			printf(" %.40s...\n", value);
-		else
-			printf(" %s\n", value);
-	}
-*/
-
 
 /**
  * Create a new object which is pushed on to the stack.
