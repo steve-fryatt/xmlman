@@ -298,6 +298,17 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 			}
 			break;
 
+		case PARSE_STACK_CONTENT_BLOCK:
+			switch (element) {
+			case PARSE_ELEMENT_EMPHASIS:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, element);
+				break;
+			case PARSE_ELEMENT_STRONG:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, element);
+				break;
+			}
+			break;
+
 		}
 		break;
 
@@ -456,11 +467,12 @@ static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_
 
 	switch (type) {
 	case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+	case MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS:
+	case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
 		parse_link_to_chain(old_stack, new_block);
 		break;
 	case MANUAL_DATA_OBJECT_TYPE_TITLE:
 		old_stack->object->title = new_block;
-		printf("Setting manual title\n");
 		break;
 	}
 

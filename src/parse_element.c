@@ -50,6 +50,8 @@ struct parse_element_definition {
  */
 
 static struct parse_element_definition parse_element_tags[] = {
+	{PARSE_ELEMENT_EMPHASIS,	"em"},
+	{PARSE_ELEMENT_STRONG,		"strong"},
 	{PARSE_ELEMENT_PARAGRAPH,	"p"},
 	{PARSE_ELEMENT_SECTION,		"section"},
 	{PARSE_ELEMENT_TITLE,		"title"},

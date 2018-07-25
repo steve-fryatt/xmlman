@@ -133,6 +133,16 @@ static void output_debug_write_text(enum manual_data_object_type type, struct ma
 
 	while (chunk != NULL) {
 		switch (chunk->type) {
+		case MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS:
+			printf(">>> Light Emphasis...\n");
+			output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, chunk);
+			printf("<<< end\n");
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
+			printf(">>> STRONG Emphasis...\n");
+			output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, chunk);
+			printf("<<< END\n");
+			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
 			printf("--- Chunk text: `%s`\n", output_debug_get_text(chunk->chunk.text));
 			break;
