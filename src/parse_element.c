@@ -50,8 +50,16 @@ struct parse_element_definition {
  */
 
 static struct parse_element_definition parse_element_tags[] = {
+	{PARSE_ELEMENT_CITE,		"cite"},
+	{PARSE_ELEMENT_CODE,		"code"},
 	{PARSE_ELEMENT_EMPHASIS,	"em"},
+	{PARSE_ELEMENT_ENTRY,		"entry"},
+	{PARSE_ELEMENT_FILE,		"file"},
+	{PARSE_ELEMENT_ICON,		"icon"},
+	{PARSE_ELEMENT_KEY,		"key"},
+	{PARSE_ELEMENT_MOUSE,		"mouse"},
 	{PARSE_ELEMENT_STRONG,		"strong"},
+	{PARSE_ELEMENT_WINDOW,		"window"},
 	{PARSE_ELEMENT_PARAGRAPH,	"p"},
 	{PARSE_ELEMENT_SECTION,		"section"},
 	{PARSE_ELEMENT_TITLE,		"title"},

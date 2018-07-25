@@ -44,8 +44,8 @@
 <!ELEMENT section (title | p | table | codeblock | image | download)*>
 <!ATTLIST section id CDATA #IMPLIED>
 
-<!ELEMENT summary (#PCDATA | code | command | const | em | event | file | function | icon | intro | key | link | maths | menu | mouse | name | reference | swi | variable)*> <!-- Needs to match P -->
-<!ELEMENT p (#PCDATA | code | command | const | em | event | file | function | icon | intro | key | link | maths | menu | mouse | name | reference | swi | variable)*> <!-- Needs to match P -->
+<!ELEMENT summary (#PCDATA | code | command | const | em | event | file | function | icon | intro | key | link | maths | menu | mouse | name | reference | strong | swi | variable)*> <!-- Needs to match P -->
+<!ELEMENT p (#PCDATA | code | command | const | em | event | file | function | icon | intro | key | link | maths | menu | mouse | name | reference | strong | swi | variable)*> <!-- Needs to match P -->
 
 <!-- Table -->
 
@@ -56,7 +56,7 @@
 
 <!ELEMENT row (col+)>
 
-<!ELEMENT col (#PCDATA | code | command | const | em | event | file | function | icon | intro | key | link | maths | menu | mouse | name | reference | swi | variable)*> <!-- Needs to match P -->
+<!ELEMENT col (#PCDATA | code | command | const | em | event | file | function | icon | intro | key | link | maths | menu | mouse | name | reference | strong | swi | variable)*> <!-- Needs to match P -->
 <!ATTLIST col align CDATA #IMPLIED>
 
 <!-- Code -->

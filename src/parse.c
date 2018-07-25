@@ -53,8 +53,7 @@ static bool parse_process_add_section(xmlTextReaderPtr reader, struct parse_stac
 		enum manual_data_object_type type, enum parse_element_type element);
 static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack,
 		enum manual_data_object_type type, enum parse_element_type element);
-static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack, xmlReaderTypes type);
-
+static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack);
 static struct manual_data *parse_create_new_stacked_object(enum parse_stack_content content,
 		enum parse_element_type element, enum manual_data_object_type type,
 		struct manual_data *object);
@@ -299,11 +298,35 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 
 		case PARSE_STACK_CONTENT_BLOCK:
 			switch (element) {
+			case PARSE_ELEMENT_CITE:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_CITATION, element);
+				break;
+			case PARSE_ELEMENT_CODE:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_CODE, element);
+				break;
+			case PARSE_ELEMENT_ENTRY:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_USER_ENTRY, element);
+				break;
 			case PARSE_ELEMENT_EMPHASIS:
 				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, element);
 				break;
+			case PARSE_ELEMENT_FILE:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_FILENAME, element);
+				break;
+			case PARSE_ELEMENT_ICON:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_ICON, element);
+				break;
+			case PARSE_ELEMENT_KEY:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_KEY, element);
+				break;
+			case PARSE_ELEMENT_MOUSE:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_MOUSE, element);
+				break;
 			case PARSE_ELEMENT_STRONG:
 				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, element);
+				break;
+			case PARSE_ELEMENT_WINDOW:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_WINDOW, element);
 				break;
 			}
 			break;
@@ -315,7 +338,7 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 	case XML_READER_TYPE_CDATA:
 	case XML_READER_TYPE_ENTITY:
 	case XML_READER_TYPE_ENTITY_REFERENCE:
-		parse_process_add_content(reader, old_stack, type);
+		parse_process_add_content(reader, old_stack);
 		break;
 
 	case XML_READER_TYPE_END_ELEMENT:
@@ -463,8 +486,16 @@ static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_
 
 	switch (type) {
 	case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+	case MANUAL_DATA_OBJECT_TYPE_CITATION:
+	case MANUAL_DATA_OBJECT_TYPE_CODE:
+	case MANUAL_DATA_OBJECT_TYPE_USER_ENTRY:
 	case MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS:
+	case MANUAL_DATA_OBJECT_TYPE_FILENAME:
+	case MANUAL_DATA_OBJECT_TYPE_ICON:
+	case MANUAL_DATA_OBJECT_TYPE_KEY:
+	case MANUAL_DATA_OBJECT_TYPE_MOUSE:
 	case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
+	case MANUAL_DATA_OBJECT_TYPE_WINDOW:
 		parse_link_to_chain(old_stack, new_block);
 		break;
 	case MANUAL_DATA_OBJECT_TYPE_TITLE:
@@ -476,11 +507,21 @@ static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_
 }
 
 
-static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack, xmlReaderTypes type)
+/**
+ * Add a content node to the document structure.
+ *
+ * \param reader		The XML Reader to read the node from.
+ * \param *old_stack		The parent stack entry, within which the
+ *				new block will be added.
+ * \return			True on success; False on failure.
+ */
+
+static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack)
 {
 	struct manual_data		*new_object;
 	enum manual_data_object_type	object_type;
 	const xmlChar			*value;
+	xmlReaderTypes			node_type;
 
 	/* Content can only be stored within block objects. */
 
@@ -491,7 +532,9 @@ static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stac
 
 	/* Create the new object. */
 
-	switch (type) {
+	node_type = xmlTextReaderNodeType(reader);
+
+	switch (node_type) {
 	case XML_READER_TYPE_TEXT:
 	case XML_READER_TYPE_CDATA:
 		object_type = MANUAL_DATA_OBJECT_TYPE_TEXT;
@@ -515,7 +558,7 @@ static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stac
 
 	parse_link_to_chain(old_stack, new_object);
 
-	switch (type) {
+	switch (node_type) {
 	case XML_READER_TYPE_TEXT:
 	case XML_READER_TYPE_CDATA:
 		value = xmlTextReaderConstValue(reader);
