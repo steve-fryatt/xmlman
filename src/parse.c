@@ -216,7 +216,6 @@ static void parse_process_outer_node(xmlTextReaderPtr reader, struct manual_data
 	element = parse_element_find_type(reader);
 	switch (element) {
 	case PARSE_ELEMENT_MANUAL:
-		printf("Found manual\n");
 		new_stack = parse_stack_push(PARSE_STACK_CONTENT_MANUAL, element);
 		if (new_stack == NULL) {
 			fprintf(stderr, "Failed to allocate stack.\n");
@@ -327,7 +326,6 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 			break;
 		}
 
-		printf("Closed element type <%s>\n", parse_element_find_tag(element));
 		parse_stack_pop();
 		break;
 	}
@@ -404,8 +402,6 @@ static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struc
 	/* Link the new item in to the document structure. */
 
 	parse_link_to_chain(old_stack, new_chapter);
-
-	printf("Found <chapter /> placeholder\n");
 
 	return true;
 }
@@ -526,7 +522,6 @@ static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stac
 		if (value != NULL) {
 			new_object->chunk.text = xmlStrdup(value);
 			parse_flatten_whitespace(new_object->chunk.text);
-			printf("Processed data: %s\n", value);
 		}
 		break;
 
@@ -586,8 +581,6 @@ static struct manual_data *parse_create_new_stacked_object(enum parse_stack_cont
 	/* Link the object into the stack. */
 
 	stack->object = object;
-
-	printf("Opened element type <%s>\n", parse_element_find_tag(element));
 
 	return object;
 }
@@ -651,6 +644,15 @@ static void parse_flatten_whitespace(xmlChar *text)
 	*tail = '\0';
 }
 
+
+/**
+ * Handle errors reported by the XML Reader.
+ *
+ * \param *arg			Client data.
+ * \param *msg			The error message to be reported.
+ * \param severity		The severity of the error.
+ * \param locator		The location of the error.
+ */
 
 static void parse_error_handler(void *arg, const char *msg, xmlParserSeverities severity, xmlTextReaderLocatorPtr locator)
 {
