@@ -23,7 +23,10 @@
 <filename>index.html</filename>
 <title>Manual Index</title>
 <section>
-<p>Like many other RISC&nbsp;OS users, I started programming in BBC&nbsp;BASIC. Although it served me well, I began to find that it didn&rsquo;t always scale well &ndash; especially when software had to handle large, variable amounts of data or multiple documents.</p>
+<p>Like many other RISC&nbsp;OS users,   I started programming in
+BBC&nbsp;BASIC. Although it served me well, I began to find that it
+didn&rsquo;t always scale well &ndash; especially when software had to
+handle large, variable amounts of data or   multiple documents.</p>
 
 <p>After learning C on Unix systems, <em>I began to investigate how</em> it could be used on <strong>RISC&nbsp;OS. My first efforts</strong> directly copied the techniques used in BASIC, and quickly became just as unweildy as their predecessors.</p>
 

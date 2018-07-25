@@ -59,8 +59,8 @@ static struct manual_data *parse_create_new_stacked_object(enum parse_stack_cont
 		enum parse_element_type element, enum manual_data_object_type type,
 		struct manual_data *object);
 static void parse_link_to_chain(struct parse_stack_entry *parent, struct manual_data *object);
+static void parse_flatten_whitespace(xmlChar *text);
 static void parse_error_handler(void *arg, const char *msg, xmlParserSeverities severity, xmlTextReaderLocatorPtr locator);
-
 
 /**
  * Parse an XML file and its descendents.
@@ -513,6 +513,7 @@ static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stac
 		value = xmlTextReaderConstValue(reader);
 		if (value != NULL) {
 			new_object->chunk.text = xmlStrdup(value);
+			parse_flatten_whitespace(new_object->chunk.text);
 			printf("Processed data: %s\n", value);
 		}
 		break;
@@ -630,6 +631,40 @@ static void parse_link_to_chain(struct parse_stack_entry *parent, struct manual_
 		parent->current_child->next = object;
 
 	parent->current_child = object;
+}
+
+
+/**
+ * Flatten down the white space in a text string, so that multiple spaces
+ * and newlines become a single ASCII space.
+ *
+ * \param *text			The text to be flattened.
+ */
+
+static void parse_flatten_whitespace(xmlChar *text)
+{
+	unsigned char	*head, *tail;
+	bool		space = false, whitespace = false;
+
+	head = (unsigned char*) text;
+	tail = head;
+
+	while (*head != '\0') {
+		space = (*head == '\t' || *head == '\r' || *head == '\n' || *head == ' ');
+
+		if (space && whitespace) {
+			head++;
+		} else if (space == true) {
+			*tail++ = ' ';
+			head++;
+			whitespace = space;
+		} else {
+			*tail++ = *head++;
+			whitespace = space;
+		}
+	}
+
+	*tail = '\0';
 }
 
 
