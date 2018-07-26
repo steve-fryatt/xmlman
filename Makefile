@@ -33,6 +33,7 @@ else
 endif
 
 OBJS := args.o			\
+	encoding.o		\
 	manual_data.o		\
 	manual_entity.o		\
 	msg.o			\
