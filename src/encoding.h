@@ -33,6 +33,15 @@
 #include <libxml/xmlreader.h>
 
 /**
+ * A list of possible target encodings.
+ */
+
+enum encoding_target {
+	ENCODING_TARGET_UTF8,
+	ENCLDING_TARGET_LATIN1
+};
+
+/**
  * Flatten down the white space in a text string, so that multiple spaces
  * and newlines become a single ASCII space. The supplied buffer is
  * assumed to be zero terminated, and its contents will be updated.
