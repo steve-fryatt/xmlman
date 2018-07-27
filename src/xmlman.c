@@ -104,6 +104,10 @@ int main(int argc, char *argv[])
 	}
 
 	encoding_select_table(ENCODING_TARGET_ACORN_LATIN1);
+
+	encoding_parse_utf8_string("Hello World! £100.");
+	while (encoding_parse_utf8_string(NULL) != 0);
+
 	return EXIT_SUCCESS;
 
 	/* Parse the source XML documents. */

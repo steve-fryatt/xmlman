@@ -53,6 +53,18 @@ enum encoding_target {
 bool encoding_select_table(enum encoding_target target);
 
 /**
+ * Parse a UTF8 string, returning the individual characters in the current
+ * target encoding. State is held across calls, so that a string is returned
+ * character by character.
+ *
+ * \param *text			The UTF8 string to parse, or NULL to continue
+ *				with the current string.
+ * \return			The next character in the text.
+ */
+
+int encoding_parse_utf8_string(xmlChar *text);
+
+/**
  * Flatten down the white space in a text string, so that multiple spaces
  * and newlines become a single ASCII space. The supplied buffer is
  * assumed to be zero terminated, and its contents will be updated.

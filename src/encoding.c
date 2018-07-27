@@ -185,8 +185,16 @@ static struct encoding_table encoding_list[] = {
 	{ENCODING_TARGET_ACORN_LATIN1,	encoding_acorn_latin1}
 };
 
+/**
+ * The active encoding map, or NULL to pass out UTF8.
+ */
 
 static struct encoding_map *encoding_current_map = NULL;
+
+/* Static Function Prototypes. */
+
+static int encoding_find_mapped_character(int utf8);
+
 
 /**
  * Select an encoding table.
@@ -231,9 +239,7 @@ bool encoding_select_table(enum encoding_target target)
 	 * map targets.
 	 */
 
-	i = 0;
-
-	while (encoding_current_map[i].utf8 != 0) {
+	for (i = 0; encoding_current_map[i].utf8 != 0; i++) {
 		if (encoding_current_map[i].utf8 <= current_code)
 			fprintf(stderr, "Encoding %d is out of sequence at line %d of table.\n", encoding_current_map[i].utf8, i);
 
@@ -246,8 +252,6 @@ bool encoding_select_table(enum encoding_target target)
 		map[encoding_current_map[i].target] = true;
 
 		current_code = encoding_current_map[i].utf8;
-
-		i++;
 	}
 
 	for (i = 128; i < 256; i++) {
@@ -258,6 +262,98 @@ bool encoding_select_table(enum encoding_target target)
 	return true;
 }
 
+
+/**
+ * Parse a UTF8 string, returning the individual characters in the current
+ * target encoding. State is held across calls, so that a string is returned
+ * character by character.
+ *
+ * \param *text			The UTF8 string to parse, or NULL to continue
+ *				with the current string.
+ * \return			The next character in the text.
+ */
+
+int encoding_parse_utf8_string(xmlChar *text)
+{
+	static xmlChar	*current_text = NULL;
+	int		current_char = 0, bytes_remaining = 0;
+
+	if (text != NULL) {
+		printf("Setting text to %s\n", text);
+		current_text = text;
+	}
+
+	if (current_text == NULL || *current_text == '\0') {
+		printf("No string, or end of string.\n");
+		return 0;
+	}
+
+	if ((bytes_remaining == 0) && ((*current_text & 0x80) == 0)) {
+		printf("Standard ASCII: %d\n", *current_text);
+		return *current_text++;
+	} else if ((bytes_remaining == 0) && ((*current_text & 0xe0) == 0xc0)) {
+		printf("Opening of two-byte Unicode\n");
+		current_char = (*current_text++ & 0x1f) << 6;
+		bytes_remaining = 1;
+	} else if ((bytes_remaining == 0) && ((*current_text & 0xf0) == 0xe0)) {
+		printf("Opening of three-byte Unicode\n");
+		current_char = (*current_text++ & 0x0f) << 12;
+		bytes_remaining = 2;
+	} else if ((bytes_remaining == 0) && ((*current_text & 0xf8) == 0xf0)) {
+		printf("Opening of four-byte Unicode\n");
+		current_char = (*current_text++ & 0x07) << 18;
+		bytes_remaining = 3;
+	} else {
+		fprintf(stderr, "Unexpected UTF8 sequence.\n");
+		return 0;
+	}
+
+	while (bytes_remaining > 0) {
+		if ((*current_text == 0) || ((*current_text & 0xc0) != 0x80)) {
+			fprintf(stderr, "Unexpected UTF8 sequence.\n");
+			return 0;
+		}
+
+		printf("Additional UTF8 byte code.\n");
+		current_char += (*current_text++ & 0x3f) << (6 * --bytes_remaining);
+	}
+
+	printf("UTF8: %d\n", current_char);
+
+	if (current_char >= 0 && current_char < 128)
+		return current_char;
+
+	return encoding_find_mapped_character(current_char);
+}
+
+/**
+ * Convert a UTF8 character into the appropriate code in the current encoding.
+ * Characters which can't be mapped are returned as '?'.
+ *
+ * \param utf8			The UTF8 character to convert.
+ * \return			The encoded character, or '?'.
+ */
+
+static int encoding_find_mapped_character(int utf8)
+{
+	int i;
+
+	if (encoding_current_map == NULL) {
+		printf("No mapping is in force.\n");
+		return utf8;
+	}
+
+	for (i = 0; encoding_current_map[i].utf8 != 0; i++) {
+		if (encoding_current_map[i].utf8 == utf8) {
+			printf("Found mapping to %d.\n", encoding_current_map[i].target);
+			return encoding_current_map[i].target;
+		}
+	}
+
+	printf("No mapping found in current encoding.\n");
+
+	return '?';
+}
 
 /**
  * Flatten down the white space in a text string, so that multiple spaces
