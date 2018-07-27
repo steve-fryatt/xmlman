@@ -52,24 +52,13 @@ struct encoding_table {
  * UTF8 to RISC OS Latin 1
  */
 
-static struct encoding_map Latin1 = {
-	{372,	'\x81',	"&Wcirc;"},	/* LATIN CAPITAL LETTER W WITH CIRCUMFLEX	*/
-	{373,	'\x82',	"&wcirc;"},	/* LATIN SMALL LETTER W WITH CIRCUMFLEX		*/
-	{374,	'\x85',	"&Ycirc;"},	/* LATIN CAPITAL LETTER Y WITH CIRCUMFLEX	*/
-	{375,	'\x86',	"&ycirc;"},	/* LATIN SMALL LETTER Y WITH CIRCUMFLEX		*/
-	{8230,	'\x8c',	"&hellip;"},	/* HORIZONTAL ELLIPSIS				*/
-	{8482,	'\x8d',	"&trade;"},	/* TRADE MARK SIGN				*/
-	{8240,	'\x8e',	"&permil;"},	/* PER MILLE SIGN				*/
-	{8226,	'\x8f',	"&bull;"},	/* BULLET					*/
-
-/* 0x9X */
-
-	{160,	'\xa0', "&nbsp;"}	/* NO-BREAK SPACE				*/
-	{161,	'\xa1',	"&iexcl;"}	/* INVERTED EXCLAMATION MARK			*/
-	{162,	'\xa2',	"&cent;"}	/* CENT SIGN					*/
-	{163,	'\xa3',	"&pound;"}	/* POUND SIGN					*/
-	{164,	'\xa4',	"&curren;"}	/* CURRENCY SIGN				*/
-	{165,	'\xa5',	"&yen;"}	/* YEN SIGN					*/
+static struct encoding_map AcornLatin1[] = {
+	{160,	'\xa0', "&nbsp;"},	/* NO-BREAK SPACE				*/
+	{161,	'\xa1',	"&iexcl;"},	/* INVERTED EXCLAMATION MARK			*/
+	{162,	'\xa2',	"&cent;"},	/* CENT SIGN					*/
+	{163,	'\xa3',	"&pound;"},	/* POUND SIGN					*/
+	{164,	'\xa4',	"&curren;"},	/* CURRENCY SIGN				*/
+	{165,	'\xa5',	"&yen;"},	/* YEN SIGN					*/
 	{166,	'\xa6',	"&brvbar;"},	/* BROKEN BAR					*/
 	{167,	'\xa7',	"&sect;"},	/* SECTION SIGN					*/
 	{168,	'\xa8',	"&uml;"},	/* DIAERESIS					*/
@@ -159,8 +148,35 @@ static struct encoding_map Latin1 = {
 	{252,	'\xfc',	"&uuml;"},	/* LATIN SMALL LETTER U WITH DIAERESIS		*/
 	{253,	'\xfd',	"&yacute;"},	/* LATIN SMALL LETTER Y WITH ACUTE		*/
 	{254,	'\xfe',	"&thorn;"},	/* LATIN SMALL LETTER THORN			*/
-	{255,	'\xff',	"&yuml;"}	/* LATIN SMALL LETTER Y WITH DIAERESIS		*/
+	{255,	'\xff',	"&yuml;"},	/* LATIN SMALL LETTER Y WITH DIAERESIS		*/
+	{338,	'\x9a',	"&OElig;"},	/* LATIN CAPITAL LIGATURE OE			*/
+	{339,	'\x9b',	"&oelig;"},	/* LATIN SMALL LIGATURE OE			*/
+	{372,	'\x81',	"&Wcirc;"},	/* LATIN CAPITAL LETTER W WITH CIRCUMFLEX	*/
+	{373,	'\x82',	"&wcirc;"},	/* LATIN SMALL LETTER W WITH CIRCUMFLEX		*/
+	{374,	'\x85',	"&Ycirc;"},	/* LATIN CAPITAL LETTER Y WITH CIRCUMFLEX	*/
+	{375,	'\x86',	"&ycirc;"},	/* LATIN SMALL LETTER Y WITH CIRCUMFLEX		*/
+	{8211,	'\x97',	"&ndash;"},	/* EN DASH					*/
+	{8212,	'\x98',	"&mdash;"},	/* EM DASH					*/
+	{8216,	'\x90',	"&lsquo;"},	/* LEFT SINGLE QUOTATION MARK			*/
+	{8217,	'\x91',	"&rsquo;"},	/* RIGHT SINGLE QUOTATION MARK			*/
+	{8220,	'\x94',	"&ldquo;"},	/* LEFT DOUBLE QUOTATION MARK			*/
+	{8221,	'\x95',	"&rdquo;"},	/* RIGHT DOUBLE QUOTATION MARK			*/
+	{8222,	'\x96',	"&bdquo;"},	/* DOUBLE LOW-9 QUOTATION MARK			*/
+	{8224,	'\x9c',	"&dagger;"},	/* DAGGER					*/
+	{8225,	'\x9d',	"&Dagger;"},	/* DOUBLE DAGGER				*/
+	{8226,	'\x8f',	"&bull;"},	/* BULLET					*/
+	{8230,	'\x8c',	"&hellip;"},	/* HORIZONTAL ELLIPSIS				*/
+	{8240,	'\x8e',	"&permil;"},	/* PER MILLE SIGN				*/
+	{8249,	'\x92',	"&lsaquo;"},	/* SINGLE LEFT-POINTING ANGLE QUOTATION MARK	*/
+	{8250,	'\x93',	"&rsaquo;"},	/* SINGLE RIGHT-POINTING ANGLE QUOTATION MARK	*/
+	{8482,	'\x8d',	"&trade;"},	/* TRADE MARK SIGN				*/
+	{8722,	'\x99',	"&minus;"},	/* MINUS SIGN					*/
+	{64257,	'\x9e',	"&filig;"},	/* Latin Small Ligature Fi			*/
+	{64258,	'\x9f',	"&fllig;"}	/* Latin Small Ligature Fl			*/
 };
+
+
+
 
 
 /**
