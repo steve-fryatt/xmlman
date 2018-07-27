@@ -41,6 +41,7 @@
 #include "parse.h"
 #include "manual_data.h"
 #include "output_debug.h"
+#include "encoding.h"
 
 /* OSLib source headers. */
 
@@ -101,6 +102,9 @@ int main(int argc, char *argv[])
 
 		return (output_help) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
+
+	encoding_select_table(ENCODING_TARGET_ACORN_LATIN1);
+	return EXIT_SUCCESS;
 
 	/* Parse the source XML documents. */
 

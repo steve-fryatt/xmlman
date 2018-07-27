@@ -45,14 +45,14 @@ struct encoding_map {
 
 struct encoding_table {
 	enum encoding_target	encoding;
-	struct encoding_table	*table;
+	struct encoding_map	*table;
 };
 
 /**
  * UTF8 to RISC OS Latin 1
  */
 
-static struct encoding_map AcornLatin1[] = {
+static struct encoding_map encoding_acorn_latin1[] = {
 	{160,	'\xa0', "&nbsp;"},	/* NO-BREAK SPACE				*/
 	{161,	'\xa1',	"&iexcl;"},	/* INVERTED EXCLAMATION MARK			*/
 	{162,	'\xa2',	"&cent;"},	/* CENT SIGN					*/
@@ -172,11 +172,91 @@ static struct encoding_map AcornLatin1[] = {
 	{8482,	'\x8d',	"&trade;"},	/* TRADE MARK SIGN				*/
 	{8722,	'\x99',	"&minus;"},	/* MINUS SIGN					*/
 	{64257,	'\x9e',	"&filig;"},	/* Latin Small Ligature Fi			*/
-	{64258,	'\x9f',	"&fllig;"}	/* Latin Small Ligature Fl			*/
+	{64258,	'\x9f',	"&fllig;"},	/* Latin Small Ligature Fl			*/
+	{0,	'\0',	NULL}		/* End of Table					*/
+};
+
+/**
+ * The available encoding tables.
+ */
+
+static struct encoding_table encoding_list[] = {
+	{ENCODING_TARGET_UTF8,		NULL},
+	{ENCODING_TARGET_ACORN_LATIN1,	encoding_acorn_latin1}
 };
 
 
+static struct encoding_map *encoding_current_map = NULL;
 
+/**
+ * Select an encoding table.
+ *
+ * \param target		The encoding target to use.
+ */
+
+bool encoding_select_table(enum encoding_target target)
+{
+	int	i = 0, current_code = 0;
+	bool	map[256];
+
+	/* Reset the current map selection. */
+
+	encoding_current_map = NULL;
+
+	/* Check that the requested map actually exists. */
+
+	if (target < 0 || target >= ENCODING_TARGET_MAX)
+		return false;
+
+	/* Does the encoding's table entry make sense? */
+
+	if (encoding_list[target].encoding != target)
+		return false;
+
+	/* Set the current map table. */
+
+	encoding_current_map = encoding_list[target].table;
+
+	/* If the table isn't allocated, there's nothing else to check. */
+
+	if (encoding_current_map == NULL)
+		return true;
+
+	/* Reset the map target flags. */
+
+	for (i = 0; i < 256; i++)
+		map[i] = false;
+
+	/* Scan the table, looking for out of sequence UTF8 codes and duplicate
+	 * map targets.
+	 */
+
+	i = 0;
+
+	while (encoding_current_map[i].utf8 != 0) {
+		if (encoding_current_map[i].utf8 <= current_code)
+			fprintf(stderr, "Encoding %d is out of sequence at line %d of table.\n", encoding_current_map[i].utf8, i);
+
+		if (encoding_current_map[i].target < 0 || encoding_current_map[i].target >= 256)
+			fprintf(stderr, "Encoding %d has target out of range at line %d of table.\n", encoding_current_map[i].utf8, i);
+
+		if (map[encoding_current_map[i].target] == true)
+			fprintf(stderr, "Encoding %d has duplicate target %d at line %d of table.\n", encoding_current_map[i].utf8, encoding_current_map[i].target, i);
+
+		map[encoding_current_map[i].target] = true;
+
+		current_code = encoding_current_map[i].utf8;
+
+		i++;
+	}
+
+	for (i = 128; i < 256; i++) {
+		if (map[i] == false)
+			printf("Character %d (0x%x) is not mapped to UTF8\n", i, i);
+	}
+
+	return true;
+}
 
 
 /**

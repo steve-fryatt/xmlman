@@ -34,12 +34,23 @@
 
 /**
  * A list of possible target encodings.
+ *
+ * The order of this list must match the encoding_list table in encoding.c
  */
 
 enum encoding_target {
-	ENCODING_TARGET_UTF8,
-	ENCLDING_TARGET_LATIN1
+	ENCODING_TARGET_UTF8,		/**< UTF8 encoding.			*/
+	ENCODING_TARGET_ACORN_LATIN1,	/**< RISC OS Latin 1 encoding.		*/
+	ENCODING_TARGET_MAX		/**< The maximum nubmber of encodings.	*/
 };
+
+/**
+ * Select an encoding table.
+ *
+ * \param target		The encoding target to use.
+ */
+
+bool encoding_select_table(enum encoding_target target);
 
 /**
  * Flatten down the white space in a text string, so that multiple spaces
