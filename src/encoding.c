@@ -51,101 +51,101 @@ struct encoding_map {
  */
 
 static struct encoding_map encoding_acorn_latin1[] = {
-	{160,	'\xa0', "&nbsp;"},	/* NO-BREAK SPACE				*/
-	{161,	'\xa1',	"&iexcl;"},	/* INVERTED EXCLAMATION Mark			*/
-	{162,	'\xa2',	"&cent;"},	/* CENT Sign					*/
-	{163,	'\xa3',	"&pound;"},	/* POUND Sign					*/
-	{164,	'\xa4',	"&curren;"},	/* CURRENCY Sign				*/
-	{165,	'\xa5',	"&yen;"},	/* YEN Sign					*/
-	{166,	'\xa6',	"&brvbar;"},	/* BROKEN BAR					*/
-	{167,	'\xa7',	"&sect;"},	/* SECTION Sign					*/
+	{160,	'\xa0', "&nbsp;"},	/* No-Break Space				*/
+	{161,	'\xa1',	"&iexcl;"},	/* Inverted Exclamation Mark			*/
+	{162,	'\xa2',	"&cent;"},	/* Cent Sign					*/
+	{163,	'\xa3',	"&pound;"},	/* Pound Sign					*/
+	{164,	'\xa4',	"&curren;"},	/* Currency Sign				*/
+	{165,	'\xa5',	"&yen;"},	/* Yen Sign					*/
+	{166,	'\xa6',	"&brvbar;"},	/* Broken Bar					*/
+	{167,	'\xa7',	"&sect;"},	/* Section Sign					*/
 	{168,	'\xa8',	"&uml;"},	/* Diaeresis					*/
-	{169,	'\xa9',	"&copy;"},	/* COPYRIGHT Sign				*/
-	{170,	'\xaa',	"&ordf;"},	/* FEMININE ORDINAL INDICATOR			*/
-	{171,	'\xab',	"&laquo;"},	/* LEFT-POINTING Double ANGLE Quotation Mark	*/
-	{172,	'\xac',	"&not;"},	/* NOT Sign					*/
-	{173,	'\xad',	"&shy;"},	/* SOFT HYPHEN					*/
-	{174,	'\xae',	"&reg;"},	/* REGISTERED Sign				*/
-	{175,	'\xaf',	"&macr;"},	/* MACRON					*/
+	{169,	'\xa9',	"&copy;"},	/* Copyright Sign				*/
+	{170,	'\xaa',	"&ordf;"},	/* Feminine Ordinal Indicator			*/
+	{171,	'\xab',	"&laquo;"},	/* Left-Pointing Double Angle Quotation Mark	*/
+	{172,	'\xac',	"&not;"},	/* Not Sign					*/
+	{173,	'\xad',	"&shy;"},	/* Soft Hyphen					*/
+	{174,	'\xae',	"&reg;"},	/* Registered Sign				*/
+	{175,	'\xaf',	"&macr;"},	/* Macron					*/
 	{176,	'\xb0',	"&deg;"},	/* Degree Sign					*/
-	{177,	'\xb1',	"&plusmn;"},	/* PLUS-MINUS Sign				*/
-	{178,	'\xb2',	"&sup2;"},	/* SUPERSCRIPT TWO				*/
-	{179,	'\xb3',	"&sup3;"},	/* SUPERSCRIPT THREE				*/
+	{177,	'\xb1',	"&plusmn;"},	/* Plus-Minus Sign				*/
+	{178,	'\xb2',	"&sup2;"},	/* Superscript Two				*/
+	{179,	'\xb3',	"&sup3;"},	/* Superscript Three				*/
 	{180,	'\xb4',	"&acute;"},	/* Acute Accent					*/
-	{181,	'\xb5',	"&micro;"},	/* MICRO Sign					*/
-	{182,	'\xb6',	"&para;"},	/* PILCROW Sign					*/
-	{183,	'\xb7',	"&middot;"},	/* MIDDLE DOT					*/
+	{181,	'\xb5',	"&micro;"},	/* Micro Sign					*/
+	{182,	'\xb6',	"&para;"},	/* Pilcrow Sign					*/
+	{183,	'\xb7',	"&middot;"},	/* Middle Dot					*/
 	{184,	'\xb8',	"&cedil;"},	/* Cedilla					*/
-	{185,	'\xb9',	"&sup1;"},	/* SUPERSCRIPT ONE				*/
-	{186,	'\xba',	"&ordm;"},	/* MASCULINE ORDINAL INDICATOR			*/
-	{187,	'\xbb',	"&raquo;"},	/* RIGHT-POINTING Double ANGLE Quotation Mark	*/
-	{188,	'\xbc',	"&frac14;"},	/* VULGAR FRACTION ONE QUARTER			*/
-	{189,	'\xbd',	"&frac12;"},	/* VULGAR FRACTION ONE HALF			*/
-	{190,	'\xbe',	"&frac34;"},	/* VULGAR FRACTION THREE QUARTERS		*/
-	{191,	'\xbf',	"&iquest;"},	/* INVERTED QUESTION Mark			*/
-	{192,	'\xc0',	"&Agrave;"},	/* Latin Capital Letter A With GRAVE		*/
+	{185,	'\xb9',	"&sup1;"},	/* Superscript One				*/
+	{186,	'\xba',	"&ordm;"},	/* Masculine Ordinal Indicator			*/
+	{187,	'\xbb',	"&raquo;"},	/* Right-Pointing Double Angle Quotation Mark	*/
+	{188,	'\xbc',	"&frac14;"},	/* Vulgar Fraction One Quarter			*/
+	{189,	'\xbd',	"&frac12;"},	/* Vulgar Fraction One Half			*/
+	{190,	'\xbe',	"&frac34;"},	/* Vulgar Fraction Three Quarters		*/
+	{191,	'\xbf',	"&iquest;"},	/* Inverted Question Mark			*/
+	{192,	'\xc0',	"&Agrave;"},	/* Latin Capital Letter A With Grave		*/
 	{193,	'\xc1',	"&Aacute;"},	/* Latin Capital Letter A With Acute		*/
 	{194,	'\xc2',	"&Acirc;"},	/* Latin Capital Letter A With Circumflex	*/
-	{195,	'\xc3',	"&Atilde;"},	/* Latin Capital Letter A With TILDE		*/
+	{195,	'\xc3',	"&Atilde;"},	/* Latin Capital Letter A With Tilde		*/
 	{196,	'\xc4',	"&Auml;"},	/* Latin Capital Letter A With Diaeresis	*/
 	{197,	'\xc5',	"&Aring;"},	/* Latin Capital Letter A With Ring Above	*/
 	{198,	'\xc6',	"&AElig;"},	/* Latin Capital Letter AE			*/
 	{199,	'\xc7',	"&Ccedil;"},	/* Latin Capital Letter C With Cedilla		*/
-	{200,	'\xc8',	"&Egrave;"},	/* Latin Capital Letter E With GRAVE		*/
+	{200,	'\xc8',	"&Egrave;"},	/* Latin Capital Letter E With Grave		*/
 	{201,	'\xc9',	"&Eacute;"},	/* Latin Capital Letter E With Acute		*/
 	{202,	'\xca',	"&Ecirc;"},	/* Latin Capital Letter E With Circumflex	*/
 	{203,	'\xcb',	"&Euml;"},	/* Latin Capital Letter E With Diaeresis	*/
-	{204,	'\xcc',	"&Igrave;"},	/* Latin Capital Letter I With GRAVE		*/
+	{204,	'\xcc',	"&Igrave;"},	/* Latin Capital Letter I With Grave		*/
 	{205,	'\xcd',	"&Iacute;"},	/* Latin Capital Letter I With Acute		*/
 	{206,	'\xce',	"&Icirc;"},	/* Latin Capital Letter I With Circumflex	*/
 	{207,	'\xcf',	"&Iuml;"},	/* Latin Capital Letter I With Diaeresis	*/
-	{208,	'\xd0',	"&ETH;"},	/* Latin Capital Letter ETH			*/
-	{209,	'\xd1',	"&Ntilde;"},	/* Latin Capital Letter N With TILDE		*/
-	{210,	'\xd2',	"&Ograve;"},	/* Latin Capital Letter O With GRAVE		*/
+	{208,	'\xd0',	"&ETH;"},	/* Latin Capital Letter Eth			*/
+	{209,	'\xd1',	"&Ntilde;"},	/* Latin Capital Letter N With Tilde		*/
+	{210,	'\xd2',	"&Ograve;"},	/* Latin Capital Letter O With Grave		*/
 	{211,	'\xd3',	"&Oacute;"},	/* Latin Capital Letter O With Acute		*/
 	{212,	'\xd4',	"&Ocirc;"},	/* Latin Capital Letter O With Circumflex	*/
-	{213,	'\xd5',	"&Otilde;"},	/* Latin Capital Letter O With TILDE		*/
+	{213,	'\xd5',	"&Otilde;"},	/* Latin Capital Letter O With Tilde		*/
 	{214,	'\xd6',	"&Ouml;"},	/* Latin Capital Letter O With Diaeresis	*/
 	{215,	'\xd7',	"&times;"},	/* Multiplication Sign				*/
-	{216,	'\xd8',	"&Oslash;"},	/* Latin Capital Letter O With STROKE		*/
-	{217,	'\xd9',	"&Ugrave;"},	/* Latin Capital Letter U With GRAVE		*/
+	{216,	'\xd8',	"&Oslash;"},	/* Latin Capital Letter O With Stroke		*/
+	{217,	'\xd9',	"&Ugrave;"},	/* Latin Capital Letter U With Grave		*/
 	{218,	'\xda',	"&Uacute;"},	/* Latin Capital Letter U With Acute		*/
 	{219,	'\xdb',	"&Ucirc;"},	/* Latin Capital Letter U With Circumflex	*/
 	{220,	'\xdc',	"&Uuml;"},	/* Latin Capital Letter U With Diaeresis	*/
 	{221,	'\xdd',	"&Yacute;"},	/* Latin Capital Letter Y With Acute		*/
-	{222,	'\xde',	"&THORN;"},	/* Latin Capital Letter THORN			*/
+	{222,	'\xde',	"&THORN;"},	/* Latin Capital Letter Thorn			*/
 	{223,	'\xdf',	"&szlig;"},	/* Latin Small Letter Sharp S			*/
-	{224,	'\xe0',	"&agrave;"},	/* Latin Small Letter A With GRAVE		*/
+	{224,	'\xe0',	"&agrave;"},	/* Latin Small Letter A With Grave		*/
 	{225,	'\xe1',	"&aacute;"},	/* Latin Small Letter A With Acute		*/
 	{226,	'\xe2',	"&acirc;"},	/* Latin Small Letter A With Circumflex		*/
-	{227,	'\xe3',	"&atilde;"},	/* Latin Small Letter A With TILDE		*/
+	{227,	'\xe3',	"&atilde;"},	/* Latin Small Letter A With Tilde		*/
 	{228,	'\xe4',	"&auml;"},	/* Latin Small Letter A With Diaeresis		*/
 	{229,	'\xe5',	"&aring;"},	/* Latin Small Letter A With Ring Above		*/
 	{230,	'\xe6',	"&aelig;"},	/* Latin Small Letter AE			*/
 	{231,	'\xe7',	"&ccedil;"},	/* Latin Small Letter C With Cedilla		*/
-	{232,	'\xe8',	"&egrave;"},	/* Latin Small Letter E With GRAVE		*/
+	{232,	'\xe8',	"&egrave;"},	/* Latin Small Letter E With Grave		*/
 	{233,	'\xe9',	"&eacute;"},	/* Latin Small Letter E With Acute		*/
 	{234,	'\xea',	"&ecirc;"},	/* Latin Small Letter E With Circumflex		*/
 	{235,	'\xeb',	"&euml;"},	/* Latin Small Letter E With Diaeresis		*/
-	{236,	'\xec',	"&igrave;"},	/* Latin Small Letter I With GRAVE		*/
+	{236,	'\xec',	"&igrave;"},	/* Latin Small Letter I With Grave		*/
 	{237,	'\xed',	"&iacute;"},	/* Latin Small Letter I With Acute		*/
 	{238,	'\xee',	"&icirc;"},	/* Latin Small Letter I With Circumflex		*/
 	{239,	'\xef',	"&iuml;"},	/* Latin Small Letter I With Diaeresis		*/
-	{240,	'\xf0',	"&eth;"},	/* Latin Small Letter ETH			*/
-	{241,	'\xf1',	"&ntilde;"},	/* Latin Small Letter N With TILDE		*/
-	{242,	'\xf2',	"&ograve;"},	/* Latin Small Letter O With GRAVE		*/
+	{240,	'\xf0',	"&eth;"},	/* Latin Small Letter Eth			*/
+	{241,	'\xf1',	"&ntilde;"},	/* Latin Small Letter N With Tilde		*/
+	{242,	'\xf2',	"&ograve;"},	/* Latin Small Letter O With Grave		*/
 	{243,	'\xf3',	"&oacute;"},	/* Latin Small Letter O With Acute		*/
 	{244,	'\xf4',	"&ocirc;"},	/* Latin Small Letter O With Circumflex		*/
-	{245,	'\xf5',	"&otilde;"},	/* Latin Small Letter O With TILDE		*/
+	{245,	'\xf5',	"&otilde;"},	/* Latin Small Letter O With Tilde		*/
 	{246,	'\xf6',	"&ouml;"},	/* Latin Small Letter O With Diaeresis		*/
 	{247,	'\xf7',	"&divide;"},	/* Division Sign				*/
-	{248,	'\xf8',	"&oslash;"},	/* Latin Small Letter O With STROKE		*/
-	{249,	'\xf9',	"&ugrave;"},	/* Latin Small Letter U With GRAVE		*/
+	{248,	'\xf8',	"&oslash;"},	/* Latin Small Letter O With Stroke		*/
+	{249,	'\xf9',	"&ugrave;"},	/* Latin Small Letter U With Grave		*/
 	{250,	'\xfa',	"&uacute;"},	/* Latin Small Letter U With Acute		*/
 	{251,	'\xfb',	"&ucirc;"},	/* Latin Small Letter U With Circumflex		*/
 	{252,	'\xfc',	"&uuml;"},	/* Latin Small Letter U With Diaeresis		*/
 	{253,	'\xfd',	"&yacute;"},	/* Latin Small Letter Y With Acute		*/
-	{254,	'\xfe',	"&thorn;"},	/* Latin Small Letter THORN			*/
+	{254,	'\xfe',	"&thorn;"},	/* Latin Small Letter Thorn			*/
 	{255,	'\xff',	"&yuml;"},	/* Latin Small Letter Y With Diaeresis		*/
 	{338,	'\x9a',	"&OElig;"},	/* Latin Capital Ligature OE			*/
 	{339,	'\x9b',	"&oelig;"},	/* Latin Small Ligature OE			*/
@@ -153,22 +153,22 @@ static struct encoding_map encoding_acorn_latin1[] = {
 	{373,	'\x82',	"&wcirc;"},	/* Latin Small Letter W With Circumflex		*/
 	{374,	'\x85',	"&Ycirc;"},	/* Latin Capital Letter Y With Circumflex	*/
 	{375,	'\x86',	"&ycirc;"},	/* Latin Small Letter Y With Circumflex		*/
-	{8211,	'\x97',	"&ndash;"},	/* EN DASH					*/
-	{8212,	'\x98',	"&mdash;"},	/* EM DASH					*/
-	{8216,	'\x90',	"&lsquo;"},	/* LEFT Single Quotation Mark			*/
-	{8217,	'\x91',	"&rsquo;"},	/* RIGHT Single Quotation Mark			*/
-	{8220,	'\x94',	"&ldquo;"},	/* LEFT Double Quotation Mark			*/
-	{8221,	'\x95',	"&rdquo;"},	/* RIGHT Double Quotation Mark			*/
-	{8222,	'\x96',	"&bdquo;"},	/* Double LOW-9 Quotation Mark			*/
-	{8224,	'\x9c',	"&dagger;"},	/* DAGGER					*/
-	{8225,	'\x9d',	"&Dagger;"},	/* Double DAGGER				*/
-	{8226,	'\x8f',	"&bull;"},	/* BULLET					*/
-	{8230,	'\x8c',	"&hellip;"},	/* HORIZONTAL ELLIPSIS				*/
-	{8240,	'\x8e',	"&permil;"},	/* PER MILLE Sign				*/
-	{8249,	'\x92',	"&lsaquo;"},	/* Single LEFT-POINTING ANGLE Quotation Mark	*/
-	{8250,	'\x93',	"&rsaquo;"},	/* Single RIGHT-POINTING ANGLE Quotation Mark	*/
-	{8482,	'\x8d',	"&trade;"},	/* TRADE Mark Sign				*/
-	{8722,	'\x99',	"&minus;"},	/* MINUS Sign					*/
+	{8211,	'\x97',	"&ndash;"},	/* En Dash					*/
+	{8212,	'\x98',	"&mdash;"},	/* Em Dash					*/
+	{8216,	'\x90',	"&lsquo;"},	/* Left Single Quotation Mark			*/
+	{8217,	'\x91',	"&rsquo;"},	/* Right Single Quotation Mark			*/
+	{8220,	'\x94',	"&ldquo;"},	/* Left Double Quotation Mark			*/
+	{8221,	'\x95',	"&rdquo;"},	/* Right Double Quotation Mark			*/
+	{8222,	'\x96',	"&bdquo;"},	/* Double Low-9 Quotation Mark			*/
+	{8224,	'\x9c',	"&dagger;"},	/* Dagger					*/
+	{8225,	'\x9d',	"&Dagger;"},	/* Double Dagger				*/
+	{8226,	'\x8f',	"&bull;"},	/* Bullet					*/
+	{8230,	'\x8c',	"&hellip;"},	/* Horizontal Ellipsis				*/
+	{8240,	'\x8e',	"&permil;"},	/* Per Mille Sign				*/
+	{8249,	'\x92',	"&lsaquo;"},	/* Single Left-Pointing Angle Quotation Mark	*/
+	{8250,	'\x93',	"&rsaquo;"},	/* Single Right-Pointing Angle Quotation Mark	*/
+	{8482,	'\x8d',	"&trade;"},	/* Trade Mark Sign				*/
+	{8722,	'\x99',	"&minus;"},	/* Minus Sign					*/
 	{64257,	'\x9e',	"&filig;"},	/* Latin Small Ligature Fi			*/
 	{64258,	'\x9f',	"&fllig;"},	/* Latin Small Ligature Fl			*/
 	{0,	'\0',	NULL}		/* End of Table					*/
@@ -179,11 +179,11 @@ static struct encoding_map encoding_acorn_latin1[] = {
  */
 
 static struct encoding_map encoding_acorn_latin2[] = {
-	{160,	'\xa0', "&nbsp;"},	/* NO-BREAK SPACE				*/
-	{164,	'\xa4',	"&curren;"},	/* CURRENCY Sign				*/
-	{167,	'\xa7',	"&sect;"},	/* SECTION Sign					*/
+	{160,	'\xa0', "&nbsp;"},	/* No-Break Space				*/
+	{164,	'\xa4',	"&curren;"},	/* Currency Sign				*/
+	{167,	'\xa7',	"&sect;"},	/* Section Sign					*/
 	{168,	'\xa8',	"&uml;"},	/* Diaeresis					*/
-	{173,	'\xad',	"&shy;"},	/* SOFT HYPHEN					*/
+	{173,	'\xad',	"&shy;"},	/* Soft Hyphen					*/
 	{176,	'\xb0',	"&deg;"},	/* Degree Sign					*/
 	{180,	'\xb4',	"&acute;"},	/* Acute Accent					*/
 	{184,	'\xb8',	"&cedil;"},	/* Cedilla					*/
@@ -228,8 +228,8 @@ static struct encoding_map encoding_acorn_latin2[] = {
 	{269,	'\xe8',	"&ccaron;"},	/* Latin Small Letter C With Caron		*/
 	{270,	'\xcf',	"&Dcaron;"},	/* Latin Capital Letter D With Caron		*/
 	{271,	'\xef',	"&dcaron;"},	/* Latin Small Letter D With Caron		*/
-	{272,	'\xd0',	"&Dstrok;"},	/* Latin Capital Letter D With STROKE		*/
-	{273,	'\xf0',	"&dstrok;"},	/* Latin Small Letter D With STROKE		*/
+	{272,	'\xd0',	"&Dstrok;"},	/* Latin Capital Letter D With Stroke		*/
+	{273,	'\xf0',	"&dstrok;"},	/* Latin Small Letter D With Stroke		*/
 	{280,	'\xca',	"&Eogon;"},	/* Latin Capital Letter E With Ogonek		*/
 	{281,	'\xea',	"&eogon;"},	/* Latin Small Letter E With Ogonek		*/
 	{282,	'\xcc',	"&Ecaron;"},	/* Latin Capital Letter E With Caron		*/
@@ -238,8 +238,8 @@ static struct encoding_map encoding_acorn_latin2[] = {
 	{314,	'\xe5',	"&lacute;"},	/* Latin Small Letter L With Acute		*/
 	{317,	'\xa5',	"&Lcaron;"},	/* Latin Capital Letter L With Caron		*/
 	{318,	'\xb5',	"&lcaron;"},	/* Latin Small Letter L With Caron		*/
-	{321,	'\xa3',	"&Lstrok;"},	/* Latin Capital Letter L With STROKE		*/
-	{322,	'\xb3',	"&lstrok;"},	/* Latin Small Letter L With STROKE		*/
+	{321,	'\xa3',	"&Lstrok;"},	/* Latin Capital Letter L With Stroke		*/
+	{322,	'\xb3',	"&lstrok;"},	/* Latin Small Letter L With Stroke		*/
 	{323,	'\xd1',	"&Nacute;"},	/* Latin Capital Letter N With Acute		*/
 	{324,	'\xf1',	"&nacute;"},	/* Latin Small Letter N With Acute		*/
 	{327,	'\xd2',	"&Ncaron;"},	/* Latin Capital Letter N With Caron		*/
@@ -268,31 +268,31 @@ static struct encoding_map encoding_acorn_latin2[] = {
 	{369,	'\xfb',	"&udblac;"},	/* Latin Small Letter U With Double Acute	*/
 	{377,	'\xac',	"&Zacute;"},	/* Latin Capital Letter Z With Acute		*/
 	{378,	'\xbc',	"&zacute;"},	/* Latin Small Letter Z With Acute		*/
-	{379,	'\xaf',	"&Zdot;"},	/* Latin Capital Letter Z With DOT Above	*/
-	{380,	'\xbf',	"&zdot;"},	/* Latin Small Letter Z With DOT Above		*/
+	{379,	'\xaf',	"&Zdot;"},	/* Latin Capital Letter Z With Dot Above	*/
+	{380,	'\xbf',	"&zdot;"},	/* Latin Small Letter Z With Dot Above		*/
 	{381,	'\xae',	"&Zcaron;"},	/* Latin Capital Letter Z With Caron		*/
 	{382,	'\xbe',	"&zcaron;"},	/* Latin Small Letter Z With Caron		*/
 	{774,	'\xa2',	NULL},		/* Breve					*/
-	{775,	'\xff',	NULL},	 	/* DOT Above					*/
+	{775,	'\xff',	NULL},	 	/* Dot Above					*/
 	{779,	'\xbd', NULL},		/* Double Acute Accent				*/
 	{780,	'\xb7',	NULL},		/* Caron					*/
 	{808,	'\xb2',	NULL},		/* Ogonek					*/
-	{8211,	'\x97',	"&ndash;"},	/* EN DASH					*/
-	{8212,	'\x98',	"&mdash;"},	/* EM DASH					*/
-	{8216,	'\x90',	"&lsquo;"},	/* LEFT Single Quotation Mark			*/
-	{8217,	'\x91',	"&rsquo;"},	/* RIGHT Single Quotation Mark			*/
-	{8220,	'\x94',	"&ldquo;"},	/* LEFT Double Quotation Mark			*/
-	{8221,	'\x95',	"&rdquo;"},	/* RIGHT Double Quotation Mark			*/
-	{8222,	'\x96',	"&bdquo;"},	/* Double LOW-9 Quotation Mark			*/
-	{8224,	'\x9c',	"&dagger;"},	/* DAGGER					*/
-	{8225,	'\x9d',	"&Dagger;"},	/* Double DAGGER				*/
-	{8226,	'\x8f',	"&bull;"},	/* BULLET					*/
-	{8230,	'\x8c',	"&hellip;"},	/* HORIZONTAL ELLIPSIS				*/
-	{8240,	'\x8e',	"&permil;"},	/* PER MILLE Sign				*/
-	{8249,	'\x92',	"&lsaquo;"},	/* Single LEFT-POINTING ANGLE Quotation Mark	*/
-	{8250,	'\x93',	"&rsaquo;"},	/* Single RIGHT-POINTING ANGLE Quotation Mark	*/
-	{8482,	'\x8d',	"&trade;"},	/* TRADE Mark Sign				*/
-	{8722,	'\x99',	"&minus;"},	/* MINUS Sign					*/
+	{8211,	'\x97',	"&ndash;"},	/* En Dash					*/
+	{8212,	'\x98',	"&mdash;"},	/* Em Dash					*/
+	{8216,	'\x90',	"&lsquo;"},	/* Left Single Quotation Mark			*/
+	{8217,	'\x91',	"&rsquo;"},	/* Right Single Quotation Mark			*/
+	{8220,	'\x94',	"&ldquo;"},	/* Left Double Quotation Mark			*/
+	{8221,	'\x95',	"&rdquo;"},	/* Right Double Quotation Mark			*/
+	{8222,	'\x96',	"&bdquo;"},	/* Double Low-9 Quotation Mark			*/
+	{8224,	'\x9c',	"&dagger;"},	/* Dagger					*/
+	{8225,	'\x9d',	"&Dagger;"},	/* Double Dagger				*/
+	{8226,	'\x8f',	"&bull;"},	/* Bullet					*/
+	{8230,	'\x8c',	"&hellip;"},	/* Horizontal Ellipsis				*/
+	{8240,	'\x8e',	"&permil;"},	/* Per Mille Sign				*/
+	{8249,	'\x92',	"&lsaquo;"},	/* Single Left-Pointing Angle Quotation Mark	*/
+	{8250,	'\x93',	"&rsaquo;"},	/* Single Right-Pointing Angle Quotation Mark	*/
+	{8482,	'\x8d',	"&trade;"},	/* Trade Mark Sign				*/
+	{8722,	'\x99',	"&minus;"},	/* Minus Sign					*/
 	{64257,	'\x9e',	"&filig;"},	/* Latin Small Ligature Fi			*/
 	{64258,	'\x9f',	"&fllig;"},	/* Latin Small Ligature Fl			*/
 	{0,	'\0',	NULL}		/* End of Table					*/
