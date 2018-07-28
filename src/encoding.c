@@ -323,6 +323,12 @@ static struct encoding_table encoding_list[] = {
 
 static struct encoding_map *encoding_current_map = NULL;
 
+/**
+ * The number of entries in the current map.
+ */
+
+static size_t	encoding_current_map_size = 0;
+
 /* Static Function Prototypes. */
 
 static int encoding_find_mapped_character(int utf8);
@@ -342,6 +348,7 @@ bool encoding_select_table(enum encoding_target target)
 	/* Reset the current map selection. */
 
 	encoding_current_map = NULL;
+	encoding_current_map_size = 0;
 
 	/* Check that the requested map actually exists. */
 
@@ -385,6 +392,8 @@ bool encoding_select_table(enum encoding_target target)
 
 		current_code = encoding_current_map[i].utf8;
 	}
+
+	encoding_current_map_size = i;
 
 	for (i = 128; i < 256; i++) {
 		if (map[i] == false)
@@ -468,17 +477,23 @@ int encoding_parse_utf8_string(xmlChar *text)
 
 static int encoding_find_mapped_character(int utf8)
 {
-	int i;
+	int first = 0, last = encoding_current_map_size, middle;
 
 	if (encoding_current_map == NULL) {
 		printf("No mapping is in force.\n");
 		return utf8;
 	}
 
-	for (i = 0; encoding_current_map[i].utf8 != 0; i++) {
-		if (encoding_current_map[i].utf8 == utf8) {
-			printf("Found mapping to %d.\n", encoding_current_map[i].target);
-			return encoding_current_map[i].target;
+	while (first <= last) {
+		middle = (first + last) / 2;
+
+		if (encoding_current_map[middle].utf8 == utf8) {
+			printf("Found mapping to %d.\n", encoding_current_map[middle].target);
+			return encoding_current_map[middle].target;
+		} else if (encoding_current_map[middle].utf8 < utf8) {
+			first = middle + 1;
+		} else {
+			last = middle - 1;
 		}
 	}
 
