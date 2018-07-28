@@ -403,7 +403,6 @@ bool encoding_select_table(enum encoding_target target)
 	return true;
 }
 
-
 /**
  * Parse a UTF8 string, returning the individual characters in the current
  * target encoding. State is held across calls, so that a string is returned
