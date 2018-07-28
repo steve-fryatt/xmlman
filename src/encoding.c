@@ -36,16 +36,14 @@
 
 #include "encoding.h"
 
+/**
+ * An entry in a character encoding table.
+ */
 
 struct encoding_map {
 	int		utf8;
 	unsigned char	target;
 	char		*entity;
-};
-
-struct encoding_table {
-	enum encoding_target	encoding;
-	struct encoding_map	*table;
 };
 
 /**
@@ -177,12 +175,146 @@ static struct encoding_map encoding_acorn_latin1[] = {
 };
 
 /**
+ * UTF8 to RISC OS Latin 2
+ */
+
+static struct encoding_map encoding_acorn_latin2[] = {
+	{160,	'\xa0', "&nbsp;"},	/* NO-BREAK SPACE				*/
+	{164,	'\xa4',	"&curren;"},	/* CURRENCY SIGN				*/
+	{167,	'\xa7',	"&sect;"},	/* SECTION SIGN					*/
+	{168,	'\xa8',	"&uml;"},	/* DIAERESIS					*/
+	{173,	'\xad',	"&shy;"},	/* SOFT HYPHEN					*/
+	{176,	'\xb0',	"&deg;"},	/* DEGREE SIGN					*/
+	{180,	'\xb4',	"&acute;"},	/* ACUTE ACCENT					*/
+	{184,	'\xb8',	"&cedil;"},	/* CEDILLA					*/
+	{193,	'\xc1',	"&Aacute;"},	/* LATIN CAPITAL LETTER A WITH ACUTE		*/
+	{194,	'\xc2',	"&Acirc;"},	/* LATIN CAPITAL LETTER A WITH CIRCUMFLEX	*/
+	{196,	'\xc4',	"&Auml;"},	/* LATIN CAPITAL LETTER A WITH DIAERESIS	*/
+	{199,	'\xc7',	"&Ccedil;"},	/* LATIN CAPITAL LETTER C WITH CEDILLA		*/
+	{201,	'\xc9',	"&Eacute;"},	/* LATIN CAPITAL LETTER E WITH ACUTE		*/
+	{203,	'\xcb',	"&Euml;"},	/* LATIN CAPITAL LETTER E WITH DIAERESIS	*/
+	{205,	'\xcd',	"&Iacute;"},	/* LATIN CAPITAL LETTER I WITH ACUTE		*/
+	{206,	'\xce',	"&Icirc;"},	/* LATIN CAPITAL LETTER I WITH CIRCUMFLEX	*/
+	{211,	'\xd3',	"&Oacute;"},	/* LATIN CAPITAL LETTER O WITH ACUTE		*/
+	{212,	'\xd4',	"&Ocirc;"},	/* LATIN CAPITAL LETTER O WITH CIRCUMFLEX	*/
+	{214,	'\xd6',	"&Ouml;"},	/* LATIN CAPITAL LETTER O WITH DIAERESIS	*/
+	{215,	'\xd7',	"&times;"},	/* MULTIPLICATION SIGN				*/
+	{218,	'\xda',	"&Uacute;"},	/* LATIN CAPITAL LETTER U WITH ACUTE		*/
+	{220,	'\xdc',	"&Uuml;"},	/* LATIN CAPITAL LETTER U WITH DIAERESIS	*/
+	{221,	'\xdd',	"&Yacute;"},	/* LATIN CAPITAL LETTER Y WITH ACUTE		*/
+	{223,	'\xdf',	"&szlig;"},	/* LATIN SMALL LETTER SHARP S			*/
+	{225,	'\xe1',	"&aacute;"},	/* LATIN SMALL LETTER A WITH ACUTE		*/
+	{226,	'\xe2',	"&acirc;"},	/* LATIN SMALL LETTER A WITH CIRCUMFLEX		*/
+	{228,	'\xe4',	"&auml;"},	/* LATIN SMALL LETTER A WITH DIAERESIS		*/
+	{231,	'\xe7',	"&ccedil;"},	/* LATIN SMALL LETTER C WITH CEDILLA		*/
+	{233,	'\xe9',	"&eacute;"},	/* LATIN SMALL LETTER E WITH ACUTE		*/
+	{235,	'\xeb',	"&euml;"},	/* LATIN SMALL LETTER E WITH DIAERESIS		*/
+	{237,	'\xed',	"&iacute;"},	/* LATIN SMALL LETTER I WITH ACUTE		*/
+	{238,	'\xee',	"&icirc;"},	/* LATIN SMALL LETTER I WITH CIRCUMFLEX		*/
+	{243,	'\xf3',	"&oacute;"},	/* LATIN SMALL LETTER O WITH ACUTE		*/
+	{244,	'\xf4',	"&ocirc;"},	/* LATIN SMALL LETTER O WITH CIRCUMFLEX		*/
+	{246,	'\xf6',	"&ouml;"},	/* LATIN SMALL LETTER O WITH DIAERESIS		*/
+	{247,	'\xf7',	"&divide;"},	/* DIVISION SIGN				*/
+	{250,	'\xfa',	"&uacute;"},	/* LATIN SMALL LETTER U WITH ACUTE		*/
+	{252,	'\xfc',	"&uuml;"},	/* LATIN SMALL LETTER U WITH DIAERESIS		*/
+	{253,	'\xfd',	"&yacute;"},	/* LATIN SMALL LETTER Y WITH ACUTE		*/
+	{258,	'\xc3',	"&Abreve;"},	/* LATIN CAPITAL LETTER A WITH BREVE		*/
+	{259,	'\xe3',	"&abreve;"},	/* LATIN SMALL LETTER A WITH BREVE		*/
+	{260,	'\xa1',	"&Aogon;"},	/* LATIN CAPITAL LETTER A WITH OGONEK		*/
+	{261,	'\xb1',	"&aogon;"},	/* LATIN SMALL LETTER A WITH OGONEK		*/
+	{262,	'\xc6',	"&Cacute;"},	/* LATIN CAPITAL LETTER C WITH ACUTE		*/
+	{263,	'\xe6',	"&cacute;"},	/* LATIN SMALL LETTER C WITH ACUTE		*/
+	{268,	'\xc8',	"&Ccaron;"},	/* LATIN CAPITAL LETTER C WITH CARON		*/
+	{269,	'\xe8',	"&ccaron;"},	/* LATIN SMALL LETTER C WITH CARON		*/
+	{270,	'\xcf',	"&Dcaron;"},	/* LATIN CAPITAL LETTER D WITH CARON		*/
+	{271,	'\xef',	"&dcaron;"},	/* LATIN SMALL LETTER D WITH CARON		*/
+	{272,	'\xd0',	"&Dstrok;"},	/* LATIN CAPITAL LETTER D WITH STROKE		*/
+	{273,	'\xf0',	"&dstrok;"},	/* LATIN SMALL LETTER D WITH STROKE		*/
+	{280,	'\xca',	"&Eogon;"},	/* LATIN CAPITAL LETTER E WITH OGONEK		*/
+	{281,	'\xea',	"&eogon;"},	/* LATIN SMALL LETTER E WITH OGONEK		*/
+	{282,	'\xcc',	"&Ecaron;"},	/* LATIN CAPITAL LETTER E WITH CARON		*/
+	{283,	'\xec',	"&ecaron;"},	/* LATIN SMALL LETTER E WITH CARON		*/
+	{313,	'\xc5',	"&Lacute;"},	/* LATIN CAPITAL LETTER L WITH ACUTE		*/
+	{314,	'\xe5',	"&lacute;"},	/* LATIN SMALL LETTER L WITH ACUTE		*/
+	{317,	'\xa5',	"&Lcaron;"},	/* LATIN CAPITAL LETTER L WITH CARON		*/
+	{318,	'\xb5',	"&lcaron;"},	/* LATIN SMALL LETTER L WITH CARON		*/
+	{321,	'\xa3',	"&Lstrok;"},	/* LATIN CAPITAL LETTER L WITH STROKE		*/
+	{322,	'\xb3',	"&lstrok;"},	/* LATIN SMALL LETTER L WITH STROKE		*/
+	{323,	'\xd1',	"&Nacute;"},	/* LATIN CAPITAL LETTER N WITH ACUTE		*/
+	{324,	'\xf1',	"&nacute;"},	/* LATIN SMALL LETTER N WITH ACUTE		*/
+	{327,	'\xd2',	"&Ncaron;"},	/* LATIN CAPITAL LETTER N WITH CARON		*/
+	{328,	'\xf2',	"&ncaron;"},	/* LATIN SMALL LETTER N WITH CARON		*/
+	{336,	'\xd5',	"&Odblac;"},	/* LATIN CAPITAL LETTER O WITH DOUBLE ACUTE	*/
+	{337,	'\xf5',	"&odblac;"},	/* LATIN SMALL LETTER O WITH DOUBLE ACUTE	*/
+	{338,	'\x9a',	"&OElig;"},	/* LATIN CAPITAL LIGATURE OE			*/
+	{339,	'\x9b',	"&oelig;"},	/* LATIN SMALL LIGATURE OE			*/
+	{340,	'\xc0',	"&Racute;"},	/* LATIN CAPITAL LETTER R WITH ACUTE		*/
+	{341,	'\xe0',	"&racute;"},	/* LATIN SMALL LETTER R WITH ACUTE		*/
+	{344,	'\xd8',	"&Rcaron;"},	/* LATIN CAPITAL LETTER R WITH CARON		*/
+	{345,	'\xf8',	"&rcaron;"},	/* LATIN SMALL LETTER R WITH CARON		*/
+	{346,	'\xa6',	"&Sacute;"},	/* LATIN CAPITAL LETTER S WITH ACUTE		*/
+	{347,	'\xb6',	"&sacute;"},	/* LATIN SMALL LETTER S WITH ACUTE		*/
+	{350,	'\xaa',	"&Scedil;"},	/* LATIN CAPITAL LETTER S WITH CEDILLA		*/
+	{351,	'\xba',	"&scedil;"},	/* LATIN SMALL LETTER S WITH CEDILLA		*/
+	{352,	'\xa9',	"&Scaron;"},	/* LATIN CAPITAL LETTER S WITH CARON		*/
+	{353,	'\xb9',	"&scaron;"},	/* LATIN SMALL LETTER S WITH CARON		*/
+	{354,	'\xde',	"&Tcedil;"},	/* LATIN CAPITAL LETTER T WITH CEDILLA		*/
+	{355,	'\xfe',	"&tcedil;"},	/* LATIN SMALL LETTER T WITH CEDILLA		*/
+	{356,	'\xab',	"&Tcaron;"},	/* LATIN CAPITAL LETTER T WITH CARON		*/
+	{357,	'\xbb',	"&tcaron;"},	/* LATIN SMALL LETTER T WITH CARON		*/
+	{366,	'\xd9',	"&Uring;"},	/* LATIN CAPITAL LETTER U WITH RING ABOVE	*/
+	{367,	'\xf9',	"&uring;"},	/* LATIN SMALL LETTER U WITH RING ABOVE		*/
+	{368,	'\xdb',	"&Udblac;"},	/* LATIN CAPITAL LETTER U WITH DOUBLE ACUTE	*/
+	{369,	'\xfb',	"&udblac;"},	/* LATIN SMALL LETTER U WITH DOUBLE ACUTE	*/
+	{377,	'\xac',	"&Zacute;"},	/* LATIN CAPITAL LETTER Z WITH ACUTE		*/
+	{378,	'\xbc',	"&zacute;"},	/* LATIN SMALL LETTER Z WITH ACUTE		*/
+	{379,	'\xaf',	"&Zdot;"},	/* LATIN CAPITAL LETTER Z WITH DOT ABOVE	*/
+	{380,	'\xbf',	"&zdot;"},	/* LATIN SMALL LETTER Z WITH DOT ABOVE		*/
+	{381,	'\xae',	"&Zcaron;"},	/* LATIN CAPITAL LETTER Z WITH CARON		*/
+	{382,	'\xbe',	"&zcaron;"},	/* LATIN SMALL LETTER Z WITH CARON		*/
+	{774,	'\xa2',	NULL},		/* BREVE					*/
+	{775,	'\xff',	NULL},	 	/* DOT ABOVE					*/
+	{779,	'\xbd', NULL},		/* DOUBLE ACUTE ACCENT				*/
+	{780,	'\xb7',	NULL},		/* CARON					*/
+	{808,	'\xb2',	NULL},		/* OGONEK					*/
+	{8211,	'\x97',	"&ndash;"},	/* EN DASH					*/
+	{8212,	'\x98',	"&mdash;"},	/* EM DASH					*/
+	{8216,	'\x90',	"&lsquo;"},	/* LEFT SINGLE QUOTATION MARK			*/
+	{8217,	'\x91',	"&rsquo;"},	/* RIGHT SINGLE QUOTATION MARK			*/
+	{8220,	'\x94',	"&ldquo;"},	/* LEFT DOUBLE QUOTATION MARK			*/
+	{8221,	'\x95',	"&rdquo;"},	/* RIGHT DOUBLE QUOTATION MARK			*/
+	{8222,	'\x96',	"&bdquo;"},	/* DOUBLE LOW-9 QUOTATION MARK			*/
+	{8224,	'\x9c',	"&dagger;"},	/* DAGGER					*/
+	{8225,	'\x9d',	"&Dagger;"},	/* DOUBLE DAGGER				*/
+	{8226,	'\x8f',	"&bull;"},	/* BULLET					*/
+	{8230,	'\x8c',	"&hellip;"},	/* HORIZONTAL ELLIPSIS				*/
+	{8240,	'\x8e',	"&permil;"},	/* PER MILLE SIGN				*/
+	{8249,	'\x92',	"&lsaquo;"},	/* SINGLE LEFT-POINTING ANGLE QUOTATION MARK	*/
+	{8250,	'\x93',	"&rsaquo;"},	/* SINGLE RIGHT-POINTING ANGLE QUOTATION MARK	*/
+	{8482,	'\x8d',	"&trade;"},	/* TRADE MARK SIGN				*/
+	{8722,	'\x99',	"&minus;"},	/* MINUS SIGN					*/
+	{64257,	'\x9e',	"&filig;"},	/* Latin Small Ligature Fi			*/
+	{64258,	'\x9f',	"&fllig;"},	/* Latin Small Ligature Fl			*/
+	{0,	'\0',	NULL}		/* End of Table					*/
+};
+
+/**
+ * An entry in the table of encoding tables.
+ */
+
+struct encoding_table {
+	enum encoding_target	encoding;
+	struct encoding_map	*table;
+};
+
+/**
  * The available encoding tables.
  */
 
 static struct encoding_table encoding_list[] = {
 	{ENCODING_TARGET_UTF8,		NULL},
-	{ENCODING_TARGET_ACORN_LATIN1,	encoding_acorn_latin1}
+	{ENCODING_TARGET_ACORN_LATIN1,	encoding_acorn_latin1},
+	{ENCODING_TARGET_ACORN_LATIN2,	encoding_acorn_latin2}
 };
 
 /**
