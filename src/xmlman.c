@@ -41,6 +41,7 @@
 #include "parse.h"
 #include "manual_data.h"
 #include "output_debug.h"
+#include "output_text.h"
 #include "encoding.h"
 
 /* OSLib source headers. */
