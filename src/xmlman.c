@@ -21,11 +21,11 @@
  * permissions and limitations under the Licence.
  */
 
-/* Tokenize
+/* XmlMan
  *
- * Generate tokenized BBC BASIC files from ASCII text.
+ * Generate documentation from XML files.
  *
- * Syntax: Tokenize [<options>]
+ * Syntax: XmlMan [<options>]
  *
  * Options -v  - Produce verbose output
  */
