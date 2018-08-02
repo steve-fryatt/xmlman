@@ -22,9 +22,9 @@
  */
 
 /**
- * \file parse_element.h
+ * \file output_debug.h
  *
- * XML Parser Element Decoding Interface.
+ * Debug Output Engine Interface.
  */
 
 #ifndef XMLMAN_OUTPUT_DEBUG_H

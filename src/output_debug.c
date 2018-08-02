@@ -22,9 +22,9 @@
  */
 
 /**
- * \file parse_element.c
+ * \file output_debug.c
  *
- * XML Parser Element Decoding, implementation.
+ * Debug Output Engine, implementation.
  */
 
 #include <ctype.h>
