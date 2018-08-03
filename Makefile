@@ -39,6 +39,7 @@ OBJS := args.o			\
 	msg.o			\
 	output_debug.o		\
 	output_text.o		\
+	output_text_line.o	\
 	parse.o			\
 	parse_element.o		\
 	parse_stack.o		\

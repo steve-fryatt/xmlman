@@ -22,9 +22,9 @@
  */
 
 /**
- * \file output_text.c
+ * \file output_text_line.c
  *
- * Text Output Engine, implementation.
+ * Text Line Output Engine, implementation.
  */
 
 #include <ctype.h>
@@ -37,31 +37,42 @@
 
 #include "output_text.h"
 
-#include "encoding.h"
-#include "manual_data.h"
-#include "output_text_line.h"
-
-
 /**
- * Output a manual in text form.
- *
- * \param *manual	The manual to be output.
- * \return		TRUE if successful, otherwise FALSE.
+ * A text line output instance structure.
  */
 
-bool output_text(struct manual_data *manual)
+struct output_text_line {
+	size_t		columns;
+};
+
+/**
+ * Create a new text line output instance.
+ *
+ * \return		Pointer to the new line block, or NULL on failure.
+ */
+
+struct output_text_line *output_text_line_create(void)
 {
-	struct output_text_line	*line;
+	struct output_text_line		*line = NULL;
 
-	line = output_text_line_create();
-	printf("Output text line instance: %x\n");
-	output_text_line_destroy(line);
+	line = malloc(sizeof(struct output_text_line));
+	if (line == NULL)
+		return NULL;
 
-//	encoding_select_table(ENCODING_TARGET_ACORN_LATIN1);
+	return line;
+}
 
-//	encoding_parse_utf8_string("Hello World! £100. and ﬂuid.");
-//	while (encoding_parse_utf8_string(NULL) != 0);
+/**
+ * Destroy a text line output instance.
+ *
+ * \param *line		The line output instance to destroy.
+ */
 
-	return true;
+void output_text_line_destroy(struct output_text_line *line)
+{
+	if (line == NULL)
+		return;
+
+	free(line);
 }
 

@@ -22,46 +22,35 @@
  */
 
 /**
- * \file output_text.c
+ * \file output_text_line.h
  *
- * Text Output Engine, implementation.
+ * Text Line Output Engine Interface.
  */
 
-#include <ctype.h>
+#ifndef XMLMAN_OUTPUT_TEXT_LINE_H
+#define XMLMAN_OUTPUT_TEXT_LINE_H
+
 #include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
 #include <libxml/xmlstring.h>
 
-#include "output_text.h"
-
-#include "encoding.h"
-#include "manual_data.h"
-#include "output_text_line.h"
-
+struct output_text_line;
 
 /**
- * Output a manual in text form.
+ * Create a new text line output instance.
  *
- * \param *manual	The manual to be output.
- * \return		TRUE if successful, otherwise FALSE.
+ * \return		Pointer to the new line block, or NULL on failure.
  */
 
-bool output_text(struct manual_data *manual)
-{
-	struct output_text_line	*line;
+struct output_text_line *output_text_line_create(void);
 
-	line = output_text_line_create();
-	printf("Output text line instance: %x\n");
-	output_text_line_destroy(line);
+/**
+ * Destroy a text line output instance.
+ *
+ * \param *line		The line output instance to destroy.
+ */
 
-//	encoding_select_table(ENCODING_TARGET_ACORN_LATIN1);
+void output_text_line_destroy(struct output_text_line *line);
 
-//	encoding_parse_utf8_string("Hello World! £100. and ﬂuid.");
-//	while (encoding_parse_utf8_string(NULL) != 0);
-
-	return true;
-}
+#endif
 

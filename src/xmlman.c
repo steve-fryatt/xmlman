@@ -104,10 +104,8 @@ int main(int argc, char *argv[])
 		return (output_help) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
-	encoding_select_table(ENCODING_TARGET_ACORN_LATIN1);
-
-	encoding_parse_utf8_string("Hello World! £100. and ﬂuid.");
-	while (encoding_parse_utf8_string(NULL) != 0);
+	if (!output_text(NULL))
+		return EXIT_FAILURE;
 
 	return EXIT_SUCCESS;
 
