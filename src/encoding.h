@@ -55,15 +55,24 @@ bool encoding_select_table(enum encoding_target target);
 
 /**
  * Parse a UTF8 string, returning the individual characters in the current
- * target encoding. State is held across calls, so that a string is returned
- * character by character.
+ * target encoding. The supplied string pointer is updated on return, to
+ * point to the next character to be processed (but stops on the zero
+ * terminator).
  *
- * \param *text			The UTF8 string to parse, or NULL to continue
- *				with the current string.
+ * \param *text			Pointer to the the UTF8 string to parse.
  * \return			The next character in the text.
  */
 
-int encoding_parse_utf8_string(xmlChar *text);
+int encoding_parse_utf8_string(xmlChar **text);
+
+/**
+ * Return the number of bytes occupied by a given character in UTF8.
+ *
+ * \param utf8			The UTF8 character to test.
+ * \return			The number of bytes, or 0 on error.
+ */
+
+int encoding_get_utf8_char_size(int utf8);
 
 /**
  * Flatten down the white space in a text string, so that multiple spaces

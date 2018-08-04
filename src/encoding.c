@@ -405,43 +405,37 @@ bool encoding_select_table(enum encoding_target target)
 
 /**
  * Parse a UTF8 string, returning the individual characters in the current
- * target encoding. State is held across calls, so that a string is returned
- * character by character.
+ * target encoding. The supplied string pointer is updated on return, to
+ * point to the next character to be processed (but stops on the zero
+ * terminator).
  *
- * \param *text			The UTF8 string to parse, or NULL to continue
- *				with the current string.
+ * \param *text			Pointer to the the UTF8 string to parse.
  * \return			The next character in the text.
  */
 
-int encoding_parse_utf8_string(xmlChar *text)
+int encoding_parse_utf8_string(xmlChar **text)
 {
-	static xmlChar	*current_text = NULL;
-	int		current_char = 0, bytes_remaining = 0;
+	int	current_char = 0, bytes_remaining = 0;
 
-	if (text != NULL) {
-		printf("Setting text to %s\n", text);
-		current_text = text;
-	}
-
-	if (current_text == NULL || *current_text == '\0') {
-		printf("No string, or end of string.\n");
+	if (text == NULL || *text == NULL || **text == '\0') {
+//		printf("No string, or end of string.\n");
 		return 0;
 	}
 
-	if ((bytes_remaining == 0) && ((*current_text & 0x80) == 0)) {
-		printf("Standard ASCII: %d\n", *current_text);
-		return *current_text++;
-	} else if ((bytes_remaining == 0) && ((*current_text & 0xe0) == 0xc0)) {
-		printf("Opening of two-byte Unicode\n");
-		current_char = (*current_text++ & 0x1f) << 6;
+	if ((bytes_remaining == 0) && ((**text & 0x80) == 0)) {
+//		printf("Standard ASCII: %d\n", *current_text);
+		return *(*text)++;
+	} else if ((bytes_remaining == 0) && ((**text & 0xe0) == 0xc0)) {
+//		printf("Opening of two-byte Unicode\n");
+		current_char = (*(*text)++ & 0x1f) << 6;
 		bytes_remaining = 1;
-	} else if ((bytes_remaining == 0) && ((*current_text & 0xf0) == 0xe0)) {
-		printf("Opening of three-byte Unicode\n");
-		current_char = (*current_text++ & 0x0f) << 12;
+	} else if ((bytes_remaining == 0) && ((**text & 0xf0) == 0xe0)) {
+//		printf("Opening of three-byte Unicode\n");
+		current_char = (*(*text)++ & 0x0f) << 12;
 		bytes_remaining = 2;
-	} else if ((bytes_remaining == 0) && ((*current_text & 0xf8) == 0xf0)) {
-		printf("Opening of four-byte Unicode\n");
-		current_char = (*current_text++ & 0x07) << 18;
+	} else if ((bytes_remaining == 0) && ((**text & 0xf8) == 0xf0)) {
+//		printf("Opening of four-byte Unicode\n");
+		current_char = (*(*text)++ & 0x07) << 18;
 		bytes_remaining = 3;
 	} else {
 		fprintf(stderr, "Unexpected UTF8 sequence.\n");
@@ -449,22 +443,44 @@ int encoding_parse_utf8_string(xmlChar *text)
 	}
 
 	while (bytes_remaining > 0) {
-		if ((*current_text == 0) || ((*current_text & 0xc0) != 0x80)) {
+		if ((**text == 0) || ((**text & 0xc0) != 0x80)) {
 			fprintf(stderr, "Unexpected UTF8 sequence.\n");
 			return 0;
 		}
 
-		printf("Additional UTF8 byte code.\n");
-		current_char += (*current_text++ & 0x3f) << (6 * --bytes_remaining);
+//		printf("Additional UTF8 byte code.\n");
+		current_char += (*(*text)++ & 0x3f) << (6 * --bytes_remaining);
 	}
 
-	printf("UTF8: %d\n", current_char);
+//	printf("UTF8: %d\n", current_char);
 
 	if (current_char >= 0 && current_char < 128)
 		return current_char;
 
 	return encoding_find_mapped_character(current_char);
 }
+
+/**
+ * Return the number of bytes occupied by a given character in UTF8.
+ *
+ * \param utf8			The UTF8 character to test.
+ * \return			The number of bytes, or 0 on error.
+ */
+
+int encoding_get_utf8_char_size(int utf8)
+{
+	if (utf8 >= 0x00 && utf8 <= 0x7f)
+		return 1;
+	else if (utf8 >= 0x80 && utf8 <= 0x7ff)
+		return 2;
+	else if (utf8 >= 0x800 && utf8 <= 0xffff)
+		return 3;
+	else if (utf8 >= 0x10000 && utf8 <= 0x10ffff)
+		return 4;
+	else
+		return 0;
+}
+
 
 /**
  * Convert a UTF8 character into the appropriate code in the current encoding.

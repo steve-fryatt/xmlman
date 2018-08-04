@@ -52,5 +52,20 @@ struct output_text_line *output_text_line_create(void);
 
 void output_text_line_destroy(struct output_text_line *line);
 
+/**
+ * Add a column to a text line output instance.
+ *
+ * \paran *line		The line output instance to add to.
+ * \param margin	The margin before the column, in characters.
+ * \param width		The width of the column, in characters.
+ * \return		TRUE on success; FALSE on failure.
+ */
+
+bool output_text_line_add_column(struct output_text_line *line, int margin, int width);
+
+bool output_text_line_reset(struct output_text_line *line);
+
+bool output_text_line_write(struct output_text_line *line);
+
 #endif
 

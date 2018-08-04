@@ -53,14 +53,18 @@ bool output_text(struct manual_data *manual)
 {
 	struct output_text_line	*line;
 
+	encoding_select_table(ENCODING_TARGET_ACORN_LATIN1);
+
 	line = output_text_line_create();
-	printf("Output text line instance: %x\n");
+
+	output_text_line_add_column(line, 3, 5);
+	output_text_line_add_column(line, 3, 65);
+
+	output_text_line_reset(line);
+
+	output_text_line_write(line);
+
 	output_text_line_destroy(line);
-
-//	encoding_select_table(ENCODING_TARGET_ACORN_LATIN1);
-
-//	encoding_parse_utf8_string("Hello World! £100. and ﬂuid.");
-//	while (encoding_parse_utf8_string(NULL) != 0);
 
 	return true;
 }
