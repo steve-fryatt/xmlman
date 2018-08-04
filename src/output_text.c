@@ -53,7 +53,7 @@ bool output_text(struct manual_data *manual)
 {
 	struct output_text_line	*line;
 
-	encoding_select_table(ENCODING_TARGET_ACORN_LATIN1);
+	encoding_select_table(ENCODING_TARGET_UTF8);
 
 	line = output_text_line_create();
 

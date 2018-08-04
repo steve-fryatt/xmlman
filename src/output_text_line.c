@@ -154,7 +154,7 @@ bool output_text_line_add_column(struct output_text_line *line, int margin, int 
 }
 
 
-static xmlChar *Line = "The Quick Brown Fox Jumped Over The Lazy Dog. The Quick Brown Fox Jumped Over The Lazy Dog.";
+static xmlChar *Line = "The Quick Brown Fox Jumped Over The Lazy Dog. Just £10. The Quick Brown Fox Jumped Over The Lazy Dog.";
 
 
 bool output_text_line_reset(struct output_text_line *line)
@@ -311,8 +311,15 @@ static bool output_text_line_write_column(struct output_text_line *line, struct 
 
 static bool output_text_line_write_char(struct output_text_line *line, int c)
 {
-	if (fputc(c, stdout) == EOF)
-		return false;
+	int	i;
+	char	buffer[5];
+
+	encoding_write_utf8_char(buffer, c);
+
+	for (i = 0; buffer[i] != '\0'; i++) {
+		if (fputc(buffer[i], stdout) == EOF)
+			return false;
+	}
 
 	line->position++;
 

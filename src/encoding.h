@@ -74,6 +74,8 @@ int encoding_parse_utf8_string(xmlChar **text);
 
 int encoding_get_utf8_char_size(int utf8);
 
+int encoding_write_utf8_char(char *buffer, int utf8);
+
 /**
  * Flatten down the white space in a text string, so that multiple spaces
  * and newlines become a single ASCII space. The supplied buffer is
