@@ -495,21 +495,21 @@ int encoding_write_utf8_char(char *buffer, int utf8)
 		buffer[1] = '\0';
 		return 1;
 	} else if (utf8 >= 0x80 && utf8 <= 0x7ff) {
-		buffer[0] = 0xc0 & ((utf8 >> 6) & 0x1f);
-		buffer[1] = 0xf0 & (utf8 & 0x3f);
+		buffer[0] = 0xc0 | ((utf8 >> 6) & 0x1f);
+		buffer[1] = 0x80 | (utf8 & 0x3f);
 		buffer[2] = '\0';
 		return 2;
 	} else if (utf8 >= 0x800 && utf8 <= 0xffff) {
-		buffer[0] = 0xe0 & ((utf8 >> 12) & 0x0f);
-		buffer[1] = 0xf0 & ((utf8 >> 6) & 0x3f);
-		buffer[2] = 0xf0 & (utf8 & 0x3f);
+		buffer[0] = 0xe0 | ((utf8 >> 12) & 0x0f);
+		buffer[1] = 0x80 | ((utf8 >> 6) & 0x3f);
+		buffer[2] = 0x80 | (utf8 & 0x3f);
 		buffer[3] = '\0';
 		return 3;
 	} else if (utf8 >= 0x10000 && utf8 <= 0x10ffff) {
-		buffer[0] = 0xf0 & ((utf8 >> 16) & 0x07);
-		buffer[1] = 0xf0 & ((utf8 >> 12) & 0x3f);
-		buffer[2] = 0xf0 & ((utf8 >> 6) & 0x3f);
-		buffer[3] = 0xf0 & (utf8 & 0x3f);
+		buffer[0] = 0xf0 | ((utf8 >> 16) & 0x07);
+		buffer[1] = 0x80 | ((utf8 >> 12) & 0x3f);
+		buffer[2] = 0x80 | ((utf8 >> 6) & 0x3f);
+		buffer[3] = 0x80 | (utf8 & 0x3f);
 		buffer[4] = '\0';
 		return 4;
 	} else {

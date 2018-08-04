@@ -316,10 +316,8 @@ static bool output_text_line_write_char(struct output_text_line *line, int c)
 
 	encoding_write_utf8_char(buffer, c);
 
-	for (i = 0; buffer[i] != '\0'; i++) {
-		if (fputc(buffer[i], stdout) == EOF)
-			return false;
-	}
+	if (fputs(buffer, stdout) == EOF)
+		return false;
 
 	line->position++;
 
