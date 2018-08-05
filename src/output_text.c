@@ -42,13 +42,23 @@
 #include "msg.h"
 #include "output_text_line.h"
 
+/* Static constants. */
+
+/**
+ * The number of characters to indent each new block by.
+ */
+#define OUTPUT_TEXT_BLOCK_INDENT 2
+
 /* Global Variables. */
 
+/**
+ * The width of a page, in characters.
+ */
 static int output_text_page_width = 77;
 
 /* Static Function Prototypes. */
 
-static bool output_text_write_chapter(struct manual_data *chapter);
+static bool output_text_write_chapter(struct manual_data *chapter, int indent);
 static bool output_text_write_section(struct manual_data *section, int indent);
 static bool output_text_write_heading(struct manual_data *title, int indent);
 static bool output_text_write_text(struct output_text_line *line, int column, enum manual_data_object_type type, struct manual_data *text);
@@ -65,6 +75,7 @@ bool output_text(struct manual_data *manual)
 {
 	struct manual_data *chapter;
 	struct output_text_line	*line;
+	int base_indent = 0;
 
 	if (manual == NULL)
 		return false;
@@ -72,14 +83,14 @@ bool output_text(struct manual_data *manual)
 	encoding_select_table(ENCODING_TARGET_UTF8);
 	encoding_select_line_end(ENCODING_LINE_END_LF);
 
-	output_text_write_heading(manual->title, 0);
+	output_text_write_heading(manual->title, base_indent);
 
 	/* Output the chapter details. */
 
 	chapter = manual->first_child;
 
 	while (chapter != NULL) {
-		if (!output_text_write_chapter(chapter))
+		if (!output_text_write_chapter(chapter, base_indent))
 			return false;
 
 		chapter = chapter->next;
@@ -88,7 +99,15 @@ bool output_text(struct manual_data *manual)
 	return true;
 }
 
-static bool output_text_write_chapter(struct manual_data *chapter)
+/**
+ * Process the contents of a chapter block and write it out.
+ *
+ * \param *chapter		The chapter to process.
+ * \param indent		The indent to write the chapter at.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_text_write_chapter(struct manual_data *chapter, int indent)
 {
 	struct manual_data *section;
 
@@ -99,14 +118,14 @@ static bool output_text_write_chapter(struct manual_data *chapter)
 		return false;
 
 	if (chapter->title != NULL) {
-		if (!output_text_write_heading(chapter->title, 0))
+		if (!output_text_write_heading(chapter->title, indent))
 			return false;
 	}
 
 	section = chapter->first_child;
 
 	while (section != NULL) {
-		if (!output_text_write_section(section, 2))
+		if (!output_text_write_section(section, indent + OUTPUT_TEXT_BLOCK_INDENT))
 			return false;
 
 		section = section->next;
@@ -114,6 +133,14 @@ static bool output_text_write_chapter(struct manual_data *chapter)
 
 	return true;
 }
+
+/**
+ * Process the contents of a section block and write it out.
+ *
+ * \param *section		The section to process.
+ * \param indent		The indent to write the section at.
+ * \return			True if successful; False on error.
+ */
 
 static bool output_text_write_section(struct manual_data *section, int indent)
 {
@@ -169,6 +196,14 @@ static bool output_text_write_section(struct manual_data *section, int indent)
 	return true;
 }
 
+/**
+ * Write a block of text as a section title.
+ *
+ * \param *title		The block of text to be written.
+ * \param indent		The indent to write the title at.
+ * \return			True if successful; False on error.
+ */
+
 static bool output_text_write_heading(struct manual_data *title, int indent)
 {
 	struct output_text_line *line;
@@ -205,6 +240,15 @@ static bool output_text_write_heading(struct manual_data *title, int indent)
 	return true;
 }
 
+/**
+ * Write a block of text to a column in an output line.
+ *
+ * \param *line			The line to write to.
+ * \param column		The column in the line to write to.
+ * \param type			The type of block which is expected.
+ * \param *text			The block of text to be written.
+ * \return			True if successful; False on error.
+ */
 
 static bool output_text_write_text(struct output_text_line *line, int column, enum manual_data_object_type type, struct manual_data *text)
 {
