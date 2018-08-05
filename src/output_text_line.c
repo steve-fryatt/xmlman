@@ -219,6 +219,7 @@ bool output_text_line_add_column(struct output_text_line *line, int margin, int 
 	column->text = NULL;
 	column->size = 0;
 	column->write_ptr = NULL;
+	column->next = NULL;
 
 	return output_text_line_update_column_memory(column);
 }
