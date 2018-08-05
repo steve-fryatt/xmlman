@@ -81,51 +81,6 @@ bool output_text(struct manual_data *manual)
 		if (!output_text_write_chapter(chapter))
 			return false;
 
-
-#if 0
-
-
-		printf("* Found Chapter *\n");
-
-		output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, chapter->title);
-
-		printf("Processed: %d\n", chapter->chapter.processed);
-
-		if (chapter->id != NULL)
-			printf("Chapter ID '%s'\n", chapter->id);
-
-		if (chapter->chapter.filename != NULL)
-			printf("Associated with file '%s'\n", chapter->chapter.filename);
-
-		/* Output the section details. */
-
-		section = chapter->first_child;
-	
-		while (section != NULL) {
-			printf("** Found Section **\n");
-
-			output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, section->title);
-
-			if (section->id != NULL)
-				printf("Section ID '%s'\n", section->id);
-
-			/* Output the block details. */
-
-			block = section->first_child;
-
-			while (block != NULL) {
-				printf("*** Found Block **\n");
-
-				output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block);
-
-				block = block->next;
-			}
-
-			section = section->next;
-		}
-
-#endif
-
 		chapter = chapter->next;
 	}
 
@@ -144,9 +99,6 @@ static bool output_text_write_chapter(struct manual_data *chapter)
 
 	if (chapter->title != NULL) {
 		if (!output_text_write_heading(chapter->title, 0))
-			return false;
-
-		if (!output_text_line_write_newline())
 			return false;
 	}
 
@@ -170,14 +122,11 @@ static bool output_text_write_section(struct manual_data *section, int indent)
 	if (section == NULL || section->first_child == NULL)
 		return true;
 
-	if (!output_text_line_write_newline())
-		return false;
-
 	if (section->title != NULL) {
-		if (!output_text_write_heading(section->title, 2))
+		if (!output_text_line_write_newline())
 			return false;
 
-		if (!output_text_line_write_newline())
+		if (!output_text_write_heading(section->title, 2))
 			return false;
 	}
 
