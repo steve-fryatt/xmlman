@@ -247,7 +247,7 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 {
 	xmlReaderTypes			type;
 	enum parse_element_type		element;
-	struct parse_stack_entry	*old_stack, *new_stack;
+	struct parse_stack_entry	*old_stack;
 
 	old_stack = parse_stack_peek(PARSE_STACK_TOP);
 
@@ -338,10 +338,13 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 	case XML_READER_TYPE_CDATA:
 	case XML_READER_TYPE_ENTITY:
 	case XML_READER_TYPE_ENTITY_REFERENCE:
+	case XML_READER_TYPE_WHITESPACE:
+	case XML_READER_TYPE_SIGNIFICANT_WHITESPACE:
 		parse_process_add_content(reader, old_stack);
 		break;
 
 	case XML_READER_TYPE_END_ELEMENT:
+	case XML_READER_TYPE_END_ENTITY:
 		element = parse_element_find_type(reader);
 
 		if (element != old_stack->closing_element) {
@@ -537,6 +540,8 @@ static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stac
 	switch (node_type) {
 	case XML_READER_TYPE_TEXT:
 	case XML_READER_TYPE_CDATA:
+	case XML_READER_TYPE_WHITESPACE:
+	case XML_READER_TYPE_SIGNIFICANT_WHITESPACE:
 		object_type = MANUAL_DATA_OBJECT_TYPE_TEXT;
 		break;
 
@@ -561,6 +566,8 @@ static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stac
 	switch (node_type) {
 	case XML_READER_TYPE_TEXT:
 	case XML_READER_TYPE_CDATA:
+	case XML_READER_TYPE_WHITESPACE:
+	case XML_READER_TYPE_SIGNIFICANT_WHITESPACE:
 		value = xmlTextReaderConstValue(reader);
 		if (value != NULL) {
 			new_object->chunk.text = xmlStrdup(value);
