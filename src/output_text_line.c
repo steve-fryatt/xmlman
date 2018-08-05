@@ -46,6 +46,11 @@
 
 struct output_text_line_column {
 	/**
+	 * The parent output line.
+	 */
+	struct output_text_line		*parent;
+
+	/**
 	 * The left-hand starting position of the line, in characters.
 	 */
 	int				start;
@@ -114,8 +119,9 @@ static bool output_text_line_add_column_text(struct output_text_line_column *col
 static bool output_text_line_update_column_memory(struct output_text_line_column *column);
 static struct output_text_line_column* output_text_line_find_column(struct output_text_line *line, int column);
 static bool output_text_line_write_line(struct output_text_line *line, bool underline);
-static bool output_text_line_write_column(struct output_text_line *line, struct output_text_line_column *column);
-static bool output_text_line_write_column_underline(struct output_text_line *line, struct output_text_line_column *column);
+static bool output_text_line_write_column(struct output_text_line_column *column);
+static bool output_text_line_write_column_underline(struct output_text_line_column *column);
+static bool output_text_line_pad_to_column(struct output_text_line_column *column);
 static bool output_text_line_write_char(struct output_text_line *line, int c);
 
 
@@ -220,6 +226,7 @@ bool output_text_line_add_column(struct output_text_line *line, int margin, int 
 	else
 		column->start = previous->start + previous->width + margin;
 
+	column->parent = line;
 	column->width = width;
 
 	column->text = NULL;
@@ -474,10 +481,10 @@ static bool output_text_line_write_line(struct output_text_line *line, bool unde
 
 	while (column != NULL) {
 		if (underline == true) {
-			if (!output_text_line_write_column_underline(line, column))
+			if (!output_text_line_write_column_underline(column))
 				return false;
 		} else {
-			if (!output_text_line_write_column(line, column))
+			if (!output_text_line_write_column(column))
 				return false;
 		}
 
@@ -492,18 +499,17 @@ static bool output_text_line_write_line(struct output_text_line *line, bool unde
 /**
  * Write one column from a line to the output.
  *
- * \param *line		The current line instance.
  * \param *column	The current column instance.
  * \return		True on success; False on error.
  */
 
-static bool output_text_line_write_column(struct output_text_line *line, struct output_text_line_column *column)
+static bool output_text_line_write_column(struct output_text_line_column *column)
 {
 	int		width, breakpoint, c;
 	xmlChar		*scan_ptr;
 	bool		hyphenate = false, complete = false;
 
-	if (line == NULL || column == NULL) {
+	if (column == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_COL_REF);
 		return false;
 	}
@@ -535,7 +541,7 @@ static bool output_text_line_write_column(struct output_text_line *line, struct 
 
 			/* Remember the breakpoint. */
 
-			breakpoint = width;
+			breakpoint = width - 1;
 		}
 
 		c = encoding_parse_utf8_string(&scan_ptr);
@@ -551,7 +557,7 @@ static bool output_text_line_write_column(struct output_text_line *line, struct 
 	/* We've reached the end of the string. */
 
 	if (c == '\0') {
-		breakpoint = width + 1;
+		breakpoint = width;
 		complete = true;
 	}
 
@@ -565,29 +571,25 @@ static bool output_text_line_write_column(struct output_text_line *line, struct 
 	if (breakpoint > column->written_width)
 		column->written_width = (hyphenate) ? breakpoint + 1 : breakpoint;
 
-	/* Pad out to the start of the column. */
-
-	while (line->position < column->start) {
-		if (!output_text_line_write_char(line, '~'))
-			return false;
-	}
-
 	/* Write the line of text. */
 
-	do {
-		c = (--breakpoint > 0) ? encoding_parse_utf8_string(&(column->write_ptr)) : '\0';
+	if (!output_text_line_pad_to_column(column))
+		return false;
 
-		if (c != '\0' && !output_text_line_write_char(line, c))
+	do {
+		c = (breakpoint-- > 0) ? encoding_parse_utf8_string(&(column->write_ptr)) : '\0';
+
+		if (c != '\0' && !output_text_line_write_char(column->parent, c))
 			return false;
 	} while (c != '\0');
 
-	if (hyphenate && !output_text_line_write_char(line, '-'))
+	if (hyphenate && !output_text_line_write_char(column->parent, '-'))
 		return false;
 
 	if (complete == true)
 		column->write_ptr = NULL;
 	else
-		line->complete = false;
+		column->parent->complete = false;
 
 	return true;
 }
@@ -595,16 +597,15 @@ static bool output_text_line_write_column(struct output_text_line *line, struct 
 /**
  * Write an underline for one column from a line to the output.
  *
- * \param *line		The current line instance.
  * \param *column	The current column instance.
  * \return		True on success; False on error.
  */
 
-static bool output_text_line_write_column_underline(struct output_text_line *line, struct output_text_line_column *column)
+static bool output_text_line_write_column_underline(struct output_text_line_column *column)
 {
 	int		i;
 
-	if (line == NULL || column == NULL) {
+	if (column == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_COL_REF);
 		return false;
 	}
@@ -614,17 +615,35 @@ static bool output_text_line_write_column_underline(struct output_text_line *lin
 	if (column->written_width == 0)
 		return true;
 
-	/* Pad out to the start of the column. */
+	/* Write the underline. */
 
-	while (line->position < column->start) {
-		if (!output_text_line_write_char(line, '~'))
+	if (!output_text_line_pad_to_column(column))
+		return false;
+
+	for (i = 0; i < column->written_width; i++) {
+		if (!output_text_line_write_char(column->parent, '-'))
 			return false;
 	}
 
-	/* Write the underline. */
+	return true;
+}
 
-	for (i = 0; i < column->written_width; i++) {
-		if (!output_text_line_write_char(line, '-'))
+/**
+ * Pad a line out to the start of the given column, using spaces.
+ *
+ * \param *column	The column instance to pad.
+ * \return		True if successful; False on error.
+ */
+
+static bool output_text_line_pad_to_column(struct output_text_line_column *column)
+{
+	if (column == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_COL_REF);
+		return false;
+	}
+
+	while (column->parent->position < column->start) {
+		if (!output_text_line_write_char(column->parent, '~'))
 			return false;
 	}
 
