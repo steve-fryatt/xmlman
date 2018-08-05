@@ -561,6 +561,10 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 		complete = true;
 	}
 
+	/* No breakpoint was found, and the line isn't done. Drop the
+	 * last character to make space for a hyphen.
+	 */
+
 	if (breakpoint == 0) {
 		breakpoint = width - 1;
 		hyphenate = true;
@@ -579,6 +583,8 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 	do {
 		c = (breakpoint-- > 0) ? encoding_parse_utf8_string(&(column->write_ptr)) : '\0';
 
+		/* Change the special characters passed in by the formatter. */
+
 		switch (c) {
 		case ENCODING_UC_NBSP:
 			c = ' ';
@@ -592,8 +598,12 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 			return false;
 	} while (c != '\0');
 
+	/* If the line is to be hyphenated, write the hyphen. */
+
 	if (hyphenate && !output_text_line_write_char(column->parent, '-'))
 		return false;
+
+	/* If complete, flag the column as done; else, flag the line as not done. */
 
 	if (complete == true)
 		column->write_ptr = NULL;
