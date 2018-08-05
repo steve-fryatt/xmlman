@@ -40,6 +40,7 @@
 #include "args.h"
 #include "parse.h"
 #include "manual_data.h"
+#include "msg.h"
 #include "output_debug.h"
 #include "output_text.h"
 #include "encoding.h"
@@ -104,20 +105,15 @@ int main(int argc, char *argv[])
 		return (output_help) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
-	if (!output_text(NULL))
-		return EXIT_FAILURE;
-
-	return EXIT_SUCCESS;
-
 	/* Parse the source XML documents. */
 
 	manual = parse_document(input_file);
 	if (manual == NULL) {
-		fprintf(stderr, "Failed to parse manual.\n");
+		msg_report(MSG_PARSE_FAIL);
 		return EXIT_FAILURE;
 	}
 
-	if (!output_debug(manual))
+	if (!output_text(manual))
 		return EXIT_FAILURE;
 
 	return EXIT_SUCCESS;

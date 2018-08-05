@@ -33,6 +33,8 @@
 
 #include "parse_stack.h"
 
+#include "msg.h"
+
 /**
  * The maximum size of the parse stack. This must be enough to handle the
  * maximum valid nesting of XML tags, which is controlled by the DTD.
@@ -76,7 +78,7 @@ void parse_stack_reset(void)
 struct parse_stack_entry *parse_stack_push(enum parse_stack_content content, enum parse_element_type closing_element)
 {
 	if (parse_stack_size >= PARSE_STACK_SIZE) {
-		printf("Stack full!\n");
+		msg_report(MSG_STACK_FULL);
 		return NULL;
 	}
 
