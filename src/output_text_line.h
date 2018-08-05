@@ -63,7 +63,21 @@ void output_text_line_destroy(struct output_text_line *line);
 
 bool output_text_line_add_column(struct output_text_line *line, int margin, int width);
 
+/**
+ * Reset a line instance ready for a new block to be built.
+ *
+ * \param line		The current line instance.
+ * \return		True on success; False on error.
+ */
+
 bool output_text_line_reset(struct output_text_line *line);
+
+/**
+ * Write a block to the output.
+ *
+ * \param line		The current line instance.
+ * \return		True on success; False on error.
+ */
 
 bool output_text_line_write(struct output_text_line *line);
 

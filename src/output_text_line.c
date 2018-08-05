@@ -40,11 +40,18 @@
 #include "encoding.h"
 
 struct output_text_line_column {
+	/**
+	 * The left-hand starting position of the line, in characters.
+	 */
 	int				start;
+
+	/**
+	 * The width of the column, in characters.
+	 */
 	int				width;
 
+
 	xmlChar				*text;
-	bool				complete;
 
 	struct output_text_line_column	*next;
 };
@@ -59,6 +66,21 @@ struct output_text_line {
 	int				position;
 	bool				complete;
 };
+
+
+/**
+ * The size of the character output buffer. This needs to hold a full
+ * UTF8 character, and shouldn't require adjustment.
+ */
+
+#define OUTPUT_TEXT_LINE_CHAR_BUF_LEN 5
+
+/* Static Function Prototypes. */
+
+static bool output_text_line_write_line(struct output_text_line *line);
+static bool output_text_line_write_column(struct output_text_line *line, struct output_text_line_column *column);
+static bool output_text_line_write_char(struct output_text_line *line, int c);
+
 
 /**
  * Create a new text line output instance.
@@ -156,6 +178,12 @@ bool output_text_line_add_column(struct output_text_line *line, int margin, int 
 
 static xmlChar *Line = "The Quick Brown Fox Jumped Over The Lazy Dog. Just £10. The Quick Brown Fox Jumped Over The Lazy Dog.";
 
+/**
+ * Reset a line instance ready for a new block to be built.
+ *
+ * \param line		The current line instance.
+ * \return		True on success; False on error.
+ */
 
 bool output_text_line_reset(struct output_text_line *line)
 {
@@ -168,7 +196,6 @@ bool output_text_line_reset(struct output_text_line *line)
 
 	while (column != NULL) {
 		column->text = Line;
-		column->complete = false;
 
 		column = column->next;
 	}
@@ -176,11 +203,12 @@ bool output_text_line_reset(struct output_text_line *line)
 	return true;
 }
 
-
-static bool output_text_line_write_line(struct output_text_line *line);
-static bool output_text_line_write_column(struct output_text_line *line, struct output_text_line_column *column);
-static bool output_text_line_write_char(struct output_text_line *line, int c);
-
+/**
+ * Write a block to the output.
+ *
+ * \param line		The current line instance.
+ * \return		True on success; False on error.
+ */
 
 bool output_text_line_write(struct output_text_line *line)
 {
@@ -197,6 +225,12 @@ bool output_text_line_write(struct output_text_line *line)
 	return true;
 }
 
+/**
+ * Write one line from the current block to the output.
+ *
+ * \param line		The current line instance.
+ * \return		True on success; False on error.
+ */
 
 static bool output_text_line_write_line(struct output_text_line *line)
 {
@@ -220,6 +254,14 @@ static bool output_text_line_write_line(struct output_text_line *line)
 
 	return true;
 }
+
+/**
+ * Write one column from a line to the output.
+ *
+ * \param line		The current line instance.
+ * \param column	The current column instance.
+ * \return		True on success; False on error.
+ */
 
 static bool output_text_line_write_column(struct output_text_line *line, struct output_text_line_column *column)
 {
@@ -307,14 +349,20 @@ static bool output_text_line_write_column(struct output_text_line *line, struct 
 	return true;
 }
 
+/**
+ * Write a single unicode character to the output in the currently
+ * selected encoding.
+ *
+ * \param *line		The line instance to work with.
+ * \param unicode	The unicode character to be written.
+ * \return		True if successful; False on error.
+ */
 
-
-static bool output_text_line_write_char(struct output_text_line *line, int c)
+static bool output_text_line_write_char(struct output_text_line *line, int unicode)
 {
-	int	i;
-	char	buffer[5];
+	char	buffer[OUTPUT_TEXT_LINE_CHAR_BUF_LEN];
 
-	encoding_write_unicode_char(buffer, 5, c);
+	encoding_write_unicode_char(buffer, OUTPUT_TEXT_LINE_CHAR_BUF_LEN, unicode);
 
 	if (fputs(buffer, stdout) == EOF)
 		return false;
