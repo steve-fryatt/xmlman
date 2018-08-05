@@ -57,10 +57,19 @@ bool output_text(struct manual_data *manual)
 
 	line = output_text_line_create();
 
-	output_text_line_add_column(line, 3, 5);
-	output_text_line_add_column(line, 3, 65);
+	output_text_line_add_column(line, 3, 2);
+	output_text_line_add_column(line, 1, 65);
 
 	output_text_line_reset(line);
+
+	output_text_line_add_text(line, 0, "1)");
+	output_text_line_add_text(line, 1, "The quick brown fox ");
+	output_text_line_add_text(line, 1, "jumped over the lazy dog.");
+	output_text_line_add_text(line, 1, " This is £10.");
+	output_text_line_add_text(line, 1, " This is some meaningless text to try and test the write routine.");
+	output_text_line_add_text(line, 1, " This is some meaningless text to try and test the write routine.");
+	output_text_line_add_text(line, 1, " This is some meaningless text to try and test the write routine.");
+	output_text_line_add_text(line, 1, " This is some meaningless text to try and test the write routine.");
 
 	output_text_line_write(line);
 

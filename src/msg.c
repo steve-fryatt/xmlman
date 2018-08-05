@@ -84,7 +84,14 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Failed to open source document '%s'",		false	},
 	{MSG_ERROR,	"Source document '%s' does not validate",	false	},
 	{MSG_ERROR,	"Unexpected object type found",			false	},
-	{MSG_ERROR,	"Stack error in node",				false	}
+	{MSG_ERROR,	"Stack error in node",				false	},
+	{MSG_ERROR,	"Out of memory creating text output line",	false	},
+	{MSG_ERROR,	"Out of memory creating text output column",	false	},
+	{MSG_ERROR,	"Out of memory allocating text storage",	false	},
+	{MSG_ERROR,	"Missing line instance reference",		false	},
+	{MSG_ERROR,	"Missing column instance reference",		false	},
+	{MSG_ERROR,	"Failure to write to output file",		false	},
+	{MSG_ERROR,	"Unknown memory error",				false	}
 };
 
 /**

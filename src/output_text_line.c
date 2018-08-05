@@ -38,6 +38,7 @@
 #include "output_text.h"
 
 #include "encoding.h"
+#include "msg.h"
 
 /**
  * A column within a text line instance.
@@ -95,8 +96,18 @@ struct output_text_line {
 
 #define OUTPUT_TEXT_LINE_CHAR_BUF_LEN 5
 
+/**
+ * The number of characters that we allocate at a time when adding text
+ * to column buffers.
+ */
+
+#define OUTPUT_TEXT_LINE_COLUMN_BLOCK_SIZE 2048
+
 /* Static Function Prototypes. */
 
+static bool output_text_line_add_column_text(struct output_text_line_column *column, xmlChar *text);
+static bool output_text_line_update_column_memory(struct output_text_line_column *column);
+static struct output_text_line_column* output_text_line_find_column(struct output_text_line *line, int column);
 static bool output_text_line_write_line(struct output_text_line *line);
 static bool output_text_line_write_column(struct output_text_line *line, struct output_text_line_column *column);
 static bool output_text_line_write_char(struct output_text_line *line, int c);
@@ -113,8 +124,10 @@ struct output_text_line *output_text_line_create(void)
 	struct output_text_line		*line = NULL;
 
 	line = malloc(sizeof(struct output_text_line));
-	if (line == NULL)
+	if (line == NULL) {
+		msg_report(MSG_TEXT_LINE_MEM);
 		return NULL;
+	}
 
 	line->columns = NULL;
 
@@ -131,6 +144,8 @@ void output_text_line_destroy(struct output_text_line *line)
 {
 	struct output_text_line_column	*column = NULL, *next = NULL;
 
+	/* We can't destroy no line, but fail silently. */
+
 	if (line == NULL)
 		return;
 
@@ -140,7 +155,12 @@ void output_text_line_destroy(struct output_text_line *line)
 
 	while (column != NULL) {
 		next = column->next;
+
+		if (column->text != NULL)
+			free(column->text);
+
 		free(column);
+
 		column = next;
 	}
 
@@ -162,12 +182,16 @@ bool output_text_line_add_column(struct output_text_line *line, int margin, int 
 {
 	struct output_text_line_column	*column = NULL, *previous = NULL;
 
-	if (line == NULL)
+	if (line == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_REF);
 		return false;
+	}
 
 	column = malloc(sizeof(struct output_text_line_column));
-	if (column == NULL)
+	if (column == NULL) {
 		return false;
+		msg_report(MSG_TEXT_LINE_COL_MEM);
+	}
 
 	/* Find the previous column data. */
 
@@ -196,16 +220,13 @@ bool output_text_line_add_column(struct output_text_line *line, int margin, int 
 	column->size = 0;
 	column->write_ptr = NULL;
 
-	return true;
+	return output_text_line_update_column_memory(column);
 }
-
-
-static xmlChar *Line = "The Quick Brown Fox Jumped Over The Lazy Dog. Just £10. The Quick Brown Fox Jumped Over The Lazy Dog.";
 
 /**
  * Reset a line instance ready for a new block to be built.
  *
- * \param line		The current line instance.
+ * \param *line		The current line instance.
  * \return		True on success; False on error.
  */
 
@@ -213,13 +234,18 @@ bool output_text_line_reset(struct output_text_line *line)
 {
 	struct output_text_line_column	*column = NULL;
 
-	if (line == NULL)
+	if (line == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_REF);
 		return false;
+	}
 
 	column = line->columns;
 
 	while (column != NULL) {
-		column->write_ptr = Line;
+		column->write_ptr = column->text;
+
+		if (column->text != NULL && column->size > 0)
+			column->text[0] = '\0';
 
 		column = column->next;
 	}
@@ -228,16 +254,176 @@ bool output_text_line_reset(struct output_text_line *line)
 }
 
 /**
+ * Add text to a column, to be proessed when the line is complete.
+ *
+ * \param *line		The current line instance.
+ * \param column	The index of the column to add to.
+ * \param *text		Pointer to the text to be added.
+ * \return		True on success; False on error.
+ */
+
+bool output_text_line_add_text(struct output_text_line *line, int column, xmlChar *text)
+{
+	struct output_text_line_column	*col = NULL;
+
+	if (line == NULL) {
+		return false;
+		msg_report(MSG_TEXT_LINE_BAD_REF);
+	}
+
+	col = output_text_line_find_column(line, column);
+	if (col == NULL)
+		return false;
+
+	return output_text_line_add_column_text(col, text);
+}
+
+/**
+ * Add text to a column's text buffer, expanding the memory as required.
+ *
+ * \param *column	The column index to add the text to.
+ * \param *text		Pointer to the text to add.
+ * \return		True on success; False on error.
+ */
+
+static bool output_text_line_add_column_text(struct output_text_line_column *column, xmlChar *text)
+{
+	int	write_ptr;
+
+	if (column == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_COL_REF);
+		return false;
+	}
+
+	/* A NULL pointer in will always succeed. */
+
+	if (text == NULL)
+		return true;
+
+	/* Find the end of the text currently in the buffer. The buffer
+	 * should always be zero terminated, so if we get to the end
+	 * without a zero, there's a problem that we can't fix.
+	 */
+
+	if (column->text == NULL) {
+		msg_report(MSG_UNKNOWN_MEM_ERROR);
+		return false;
+	}
+
+	write_ptr = 0;
+
+	while ((column->text[write_ptr] != '\0') && (write_ptr < column->size))
+		write_ptr++;
+
+	if (column->text[write_ptr] != '\0') {
+		msg_report(MSG_UNKNOWN_MEM_ERROR);
+		return false;
+	}
+
+	/* The write_ptr is now pointing to the zero terminator, so
+	 * there is space to write the first character, at least.
+	 */
+
+	while (*text != '\0') {
+		column->text[write_ptr++] = *text++;
+
+		/* If we're now out of memory, try to claim some more. */
+
+		if ((write_ptr >= column->size) && !output_text_line_update_column_memory(column)) {
+			column->text[write_ptr - 1] = '\0';
+			msg_report(MSG_TEST_LINE_NO_MEM);
+			return false;
+		}
+	}
+
+	column->text[write_ptr] = '\0';
+
+	return true;
+}
+
+/**
+ * Update the text buffer memory for a column.
+ *
+ * \param *column	The column instance to update.
+ * \return		True on success; False on error.
+ */
+
+static bool output_text_line_update_column_memory(struct output_text_line_column *column)
+{
+	xmlChar *new;
+
+	if (column == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_COL_REF);
+		return false;
+	}
+
+	if (column->text == NULL) {
+		column->text = malloc(OUTPUT_TEXT_LINE_COLUMN_BLOCK_SIZE);
+		column->size = 0;
+
+		if (column->text == NULL)
+			return false;
+
+		column->size = OUTPUT_TEXT_LINE_COLUMN_BLOCK_SIZE;
+
+		if (column->size > 0)
+			column->text[0] = '\0';
+	} else {
+		new = realloc(column->text, column->size + OUTPUT_TEXT_LINE_COLUMN_BLOCK_SIZE);
+		if (new == NULL)
+			return false;
+
+		column->size += OUTPUT_TEXT_LINE_COLUMN_BLOCK_SIZE;
+	}
+
+	return true;
+}
+
+/**
+ * Find a column instance block based on the column index in a line.
+ *
+ * \param *line		The current line instance.
+ * \param column	The required column index.
+ * \return		Pointer to the column instance, or NULL.
+ */
+
+static struct output_text_line_column* output_text_line_find_column(struct output_text_line *line, int column)
+{
+	struct output_text_line_column	*col = NULL;
+
+	if (line == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_REF);
+		return NULL;
+	}
+
+	/* Don't try searching for negative indexes. */
+
+	if (column < 0)
+		return NULL;
+
+	/* Scan for the column index. */
+
+	col = line->columns;
+
+	while (col != NULL && column-- > 0)
+		col = col->next;
+
+	return col;
+}
+
+/**
  * Write a block to the output.
  *
- * \param line		The current line instance.
+ * \param *line		The current line instance.
  * \return		True on success; False on error.
  */
 
 bool output_text_line_write(struct output_text_line *line)
 {
-	if (line == NULL)
+	if (line == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_REF);
 		return false;
+	}
 
 	do {
 		line->complete = true;
@@ -252,7 +438,7 @@ bool output_text_line_write(struct output_text_line *line)
 /**
  * Write one line from the current block to the output.
  *
- * \param line		The current line instance.
+ * \param *line		The current line instance.
  * \return		True on success; False on error.
  */
 
@@ -260,8 +446,10 @@ static bool output_text_line_write_line(struct output_text_line *line)
 {
 	struct output_text_line_column	*column = NULL;
 
-	if (line == NULL)
+	if (line == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_REF);
 		return false;
+	}
 
 	line->position = 0;
 
@@ -282,8 +470,8 @@ static bool output_text_line_write_line(struct output_text_line *line)
 /**
  * Write one column from a line to the output.
  *
- * \param line		The current line instance.
- * \param column	The current column instance.
+ * \param *line		The current line instance.
+ * \param *column	The current column instance.
  * \return		True on success; False on error.
  */
 
@@ -293,8 +481,10 @@ static bool output_text_line_write_column(struct output_text_line *line, struct 
 	xmlChar		*scan_ptr;
 	bool		hyphenate = false, complete = false;
 
-	if (line == NULL || column == NULL)
+	if (line == NULL || column == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_COL_REF);
 		return false;
+	}
 
 	if (column->write_ptr == NULL)
 		return true;
@@ -386,10 +576,17 @@ static bool output_text_line_write_char(struct output_text_line *line, int unico
 {
 	char	buffer[OUTPUT_TEXT_LINE_CHAR_BUF_LEN];
 
+	if (line == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_REF);
+		return 0;
+	}
+
 	encoding_write_unicode_char(buffer, OUTPUT_TEXT_LINE_CHAR_BUF_LEN, unicode);
 
-	if (fputs(buffer, stdout) == EOF)
+	if (fputs(buffer, stdout) == EOF) {
+		msg_report(MSG_WRITE_FAILED);
 		return false;
+	}
 
 	line->position++;
 

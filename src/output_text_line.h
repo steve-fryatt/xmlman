@@ -66,16 +66,27 @@ bool output_text_line_add_column(struct output_text_line *line, int margin, int 
 /**
  * Reset a line instance ready for a new block to be built.
  *
- * \param line		The current line instance.
+ * \param *line		The current line instance.
  * \return		True on success; False on error.
  */
 
 bool output_text_line_reset(struct output_text_line *line);
 
 /**
+ * Add text to a column, to be proessed when the line is complete.
+ *
+ * \param *line		The current line instance.
+ * \param column	The index of the column to add to.
+ * \param *text		Pointer to the text to be added.
+ * \return		True on success; False on error.
+ */
+
+bool output_text_line_add_text(struct output_text_line *line, int column, xmlChar *text);
+
+/**
  * Write a block to the output.
  *
- * \param line		The current line instance.
+ * \param *line		The current line instance.
  * \return		True on success; False on error.
  */
 
