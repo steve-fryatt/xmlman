@@ -643,7 +643,7 @@ static bool output_text_line_pad_to_column(struct output_text_line_column *colum
 	}
 
 	while (column->parent->position < column->start) {
-		if (!output_text_line_write_char(column->parent, '~'))
+		if (!output_text_line_write_char(column->parent, ' '))
 			return false;
 	}
 
