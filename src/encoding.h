@@ -39,10 +39,24 @@
  */
 
 enum encoding_target {
-	ENCODING_TARGET_UTF8,		/**< UTF8 encoding.			*/
-	ENCODING_TARGET_ACORN_LATIN1,	/**< RISC OS Latin 1 encoding.		*/
-	ENCODING_TARGET_ACORN_LATIN2,	/**< RISC OS Latin 2 encoding.		*/
-	ENCODING_TARGET_MAX		/**< The maximum nubmber of encodings.	*/
+	ENCODING_TARGET_UTF8,		/**< UTF8 encoding.				*/
+	ENCODING_TARGET_ACORN_LATIN1,	/**< RISC OS Latin 1 encoding.			*/
+	ENCODING_TARGET_ACORN_LATIN2,	/**< RISC OS Latin 2 encoding.			*/
+	ENCODING_TARGET_MAX		/**< The maximum nubmber of encodings.		*/
+};
+
+/**
+ * A list of possible line endings.
+ *
+ * The order of this list must match the encoding_line_end_list table in encoding.c
+ */
+
+enum encoding_line_end {
+	ENCODING_LINE_END_CR,		/**< A single Carriage Return.			*/
+	ENCODING_LINE_END_LF,		/**< A single Line Feed (RISC OS or Unix).	*/
+	ENCODING_LINE_END_CRLF,		/**< Carriage Return then Line Feed (DOS).	*/
+	ENCODING_LINE_END_LFCR,		/**< Line Feed then Carriage Return.		*/
+	ENCODING_LINE_END_MAX		/**< The maximum nubmber of line endings.	*/
 };
 
 /**
@@ -52,6 +66,14 @@ enum encoding_target {
  */
 
 bool encoding_select_table(enum encoding_target target);
+
+/**
+ * Select a type of line ending.
+ *
+ * \param type		The line ending type to use.
+ */
+
+bool encoding_select_line_end(enum encoding_line_end type);
 
 /**
  * Parse a UTF8 string, returning the individual characters in the current
@@ -75,6 +97,14 @@ int encoding_parse_utf8_string(xmlChar **text);
  */
 
 int encoding_write_unicode_char(char *buffer, size_t length, int unicode);
+
+/**
+ * Return a pointer to the currently selected line end sequence.
+ *
+ * \return			A pointer to the sequence, or NULL.
+ */
+
+const char *encoding_get_newline(void);
 
 /**
  * Flatten down the white space in a text string, so that multiple spaces

@@ -35,7 +35,7 @@
 
 #include <libxml/xmlstring.h>
 
-#include "output_text.h"
+#include "output_text_line.h"
 
 #include "encoding.h"
 #include "msg.h"
@@ -491,7 +491,7 @@ static bool output_text_line_write_line(struct output_text_line *line, bool unde
 		column = column->next;
 	}
 
-	output_text_line_write_char(line, '\n');
+	output_text_line_write_newline();
 
 	return true;
 }
@@ -645,6 +645,30 @@ static bool output_text_line_pad_to_column(struct output_text_line_column *colum
 	while (column->parent->position < column->start) {
 		if (!output_text_line_write_char(column->parent, '~'))
 			return false;
+	}
+
+	return true;
+}
+
+/**
+ * Write a line ending sequence to the output.
+ *
+ * \return		True if successful; False on error.
+ */
+
+bool output_text_line_write_newline(void)
+{
+	const char *line_end = NULL;
+
+	line_end = encoding_get_newline();
+	if (line_end == NULL) {
+		msg_report(MSG_TEXT_NO_LINE_END);
+		return false;
+	}
+
+	if (fputs(line_end, stdout) == EOF) {
+		msg_report(MSG_WRITE_FAILED);
+		return false;
 	}
 
 	return true;

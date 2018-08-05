@@ -68,8 +68,11 @@ bool output_text(struct manual_data *manual)
 		return false;
 
 	encoding_select_table(ENCODING_TARGET_UTF8);
+	encoding_select_line_end(ENCODING_LINE_END_LF);
 
 	output_text_write_heading(manual->title, 0);
+	output_text_line_write_newline();
+	output_text_line_write_newline();
 
 	/* Output the chapter details. */
 
@@ -134,6 +137,9 @@ static bool output_text_write_chapter(struct manual_data *chapter)
 		return true;
 
 	if (!output_text_write_heading(chapter->title, 0))
+		return false;
+
+	if (!output_text_line_write_newline())
 		return false;
 
 	return true;

@@ -320,6 +320,26 @@ static struct encoding_table encoding_list[] = {
 };
 
 /**
+ * An entry in the line endings table.
+ */
+
+struct encoding_line_end_table {
+	enum encoding_line_end	line_end;
+	const char		*sequence;
+};
+
+/**
+ * The available line endings.
+ */
+
+static struct encoding_line_end_table encoding_line_end_list[] = {
+	{ENCODING_LINE_END_CR,		"\r"},
+	{ENCODING_LINE_END_LF,		"\n"},
+	{ENCODING_LINE_END_CRLF,	"\r\n"},
+	{ENCODING_LINE_END_LFCR,	"\n\r"}
+};
+
+/**
  * The active encoding map, or NULL to pass out UTF8.
  */
 
@@ -329,7 +349,13 @@ static struct encoding_map *encoding_current_map = NULL;
  * The number of entries in the current map.
  */
 
-static size_t	encoding_current_map_size = 0;
+static size_t encoding_current_map_size = 0;
+
+/**
+ * The current line end selection.
+ */
+
+static int encoding_current_line_end = -1;
 
 /* Static Function Prototypes. */
 
@@ -401,6 +427,38 @@ bool encoding_select_table(enum encoding_target target)
 		if (map[i] == false)
 			msg_report(MSG_ENC_NO_MAP, i, i);
 	}
+
+	return true;
+}
+
+/**
+ * Select a type of line ending.
+ *
+ * \param type		The line ending type to use.
+ */
+
+bool encoding_select_line_end(enum encoding_line_end type)
+{
+	int	i = 0, current_code = 0;
+	bool	map[256];
+
+	/* Reset the current line end selection */
+
+	encoding_current_line_end = -1;
+
+	/* Check that the requested line end actually exists. */
+
+	if (type < 0 || type >= ENCODING_LINE_END_MAX)
+		return false;
+
+	/* Does the line end's table entry make sense? */
+
+	if (encoding_line_end_list[type].line_end != type)
+		return false;
+
+	/* Set the current map table. */
+
+	encoding_current_line_end = type;
 
 	return true;
 }
@@ -560,6 +618,20 @@ static int encoding_find_mapped_character(int unicode)
 	msg_report(MSG_ENC_NO_OUTPUT, unicode, unicode);
 
 	return '?';
+}
+
+/**
+ * Return a pointer to the currently selected line end sequence.
+ *
+ * \return			A pointer to the sequence, or NULL.
+ */
+
+const char *encoding_get_newline(void)
+{
+	if (encoding_current_line_end < 0 || encoding_current_line_end >= ENCODING_LINE_END_MAX)
+		return NULL;
+
+	return encoding_line_end_list[encoding_current_line_end].sequence;
 }
 
 /**

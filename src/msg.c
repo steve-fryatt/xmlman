@@ -101,6 +101,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Out of memory allocating text storage",			false},
 	{MSG_ERROR,	"Missing line instance reference",				false},
 	{MSG_ERROR,	"Missing column instance reference",				false},
+	{MSG_ERROR,	"No line ending selected",					false},
 	{MSG_ERROR,	"Failure to write to output file",				false},
 	{MSG_ERROR,	"Unknown memory error",						false}
 };

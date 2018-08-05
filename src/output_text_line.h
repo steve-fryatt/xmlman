@@ -93,5 +93,13 @@ bool output_text_line_add_text(struct output_text_line *line, int column, xmlCha
 
 bool output_text_line_write(struct output_text_line *line, bool title);
 
+/**
+ * Write a line ending sequence to the output.
+ *
+ * \return		True if successful; False on error.
+ */
+
+bool output_text_line_write_newline(void);
+
 #endif
 
