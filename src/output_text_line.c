@@ -314,7 +314,7 @@ static bool output_text_line_write_char(struct output_text_line *line, int c)
 	int	i;
 	char	buffer[5];
 
-	encoding_write_utf8_char(buffer, 5, c);
+	encoding_write_unicode_char(buffer, 5, c);
 
 	if (fputs(buffer, stdout) == EOF)
 		return false;

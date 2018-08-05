@@ -331,7 +331,7 @@ static size_t	encoding_current_map_size = 0;
 
 /* Static Function Prototypes. */
 
-static int encoding_find_mapped_character(int utf8);
+static int encoding_find_mapped_character(int unicode);
 
 
 /**
@@ -458,28 +458,15 @@ int encoding_parse_utf8_string(xmlChar **text)
 }
 
 /**
- * Return the number of bytes occupied by a given character in UTF8.
+ * Write a unicode character to a buffer in the current encoding.
  *
- * \param utf8			The UTF8 character to test.
- * \return			The number of bytes, or 0 on error.
+ * \param *buffer		Pointer to the buffer to write to.
+ * \param length		The length of the supplied buffer.
+ * \param unicode		The unicode character to write.
+ * \return			The number of bytes written to the buffer.
  */
 
-int encoding_get_utf8_char_size(int utf8)
-{
-	if (utf8 >= 0x00 && utf8 <= 0x7f)
-		return 1;
-	else if (utf8 >= 0x80 && utf8 <= 0x7ff)
-		return 2;
-	else if (utf8 >= 0x800 && utf8 <= 0xffff)
-		return 3;
-	else if (utf8 >= 0x10000 && utf8 <= 0x10ffff)
-		return 4;
-	else
-		return 0;
-}
-
-
-int encoding_write_utf8_char(char *buffer, size_t length, int utf8)
+int encoding_write_unicode_char(char *buffer, size_t length, int unicode)
 {
 	if (buffer == NULL)
 		return 0;
@@ -488,43 +475,43 @@ int encoding_write_utf8_char(char *buffer, size_t length, int utf8)
 		if (length < 2)
 			return 0;
 
-		buffer[0] = encoding_find_mapped_character(utf8);
+		buffer[0] = encoding_find_mapped_character(unicode);
 		buffer[1] = '\0';
 		return 1;
 	}
 
-	if (utf8 >= 0x00 && utf8 <= 0x7f) {
+	if (unicode >= 0x00 && unicode <= 0x7f) {
 		if (length < 2)
 			return 0;
 
-		buffer[0] = utf8;
+		buffer[0] = unicode;
 		buffer[1] = '\0';
 		return 1;
-	} else if (utf8 >= 0x80 && utf8 <= 0x7ff) {
+	} else if (unicode >= 0x80 && unicode <= 0x7ff) {
 		if (length < 3)
 			return 0;
 
-		buffer[0] = 0xc0 | ((utf8 >> 6) & 0x1f);
-		buffer[1] = 0x80 | (utf8 & 0x3f);
+		buffer[0] = 0xc0 | ((unicode >> 6) & 0x1f);
+		buffer[1] = 0x80 | (unicode & 0x3f);
 		buffer[2] = '\0';
 		return 2;
-	} else if (utf8 >= 0x800 && utf8 <= 0xffff) {
+	} else if (unicode >= 0x800 && unicode <= 0xffff) {
 		if (length < 4)
 			return 0;
 
-		buffer[0] = 0xe0 | ((utf8 >> 12) & 0x0f);
-		buffer[1] = 0x80 | ((utf8 >> 6) & 0x3f);
-		buffer[2] = 0x80 | (utf8 & 0x3f);
+		buffer[0] = 0xe0 | ((unicode >> 12) & 0x0f);
+		buffer[1] = 0x80 | ((unicode >> 6) & 0x3f);
+		buffer[2] = 0x80 | (unicode & 0x3f);
 		buffer[3] = '\0';
 		return 3;
-	} else if (utf8 >= 0x10000 && utf8 <= 0x10ffff) {
+	} else if (unicode >= 0x10000 && unicode <= 0x10ffff) {
 		if (length < 5)
 			return 0;
 
-		buffer[0] = 0xf0 | ((utf8 >> 16) & 0x07);
-		buffer[1] = 0x80 | ((utf8 >> 12) & 0x3f);
-		buffer[2] = 0x80 | ((utf8 >> 6) & 0x3f);
-		buffer[3] = 0x80 | (utf8 & 0x3f);
+		buffer[0] = 0xf0 | ((unicode >> 16) & 0x07);
+		buffer[1] = 0x80 | ((unicode >> 12) & 0x3f);
+		buffer[2] = 0x80 | ((unicode >> 6) & 0x3f);
+		buffer[3] = 0x80 | (unicode & 0x3f);
 		buffer[4] = '\0';
 		return 4;
 	} else {
@@ -533,32 +520,32 @@ int encoding_write_utf8_char(char *buffer, size_t length, int utf8)
 }
 
 /**
- * Convert a UTF8 character into the appropriate code in the current encoding.
- * Characters which can't be mapped are returned as '?'.
+ * Convert a unicode character into the appropriate code in the current
+ * encoding. Characters which can't be mapped are returned as '?'.
  *
- * \param utf8			The UTF8 character to convert.
+ * \param unicode		The unicode character to convert.
  * \return			The encoded character, or '?'.
  */
 
-static int encoding_find_mapped_character(int utf8)
+static int encoding_find_mapped_character(int unicode)
 {
 	int first = 0, last = encoding_current_map_size, middle;
 
-	if (utf8 >= 0 && utf8 < 128)
-		return utf8;
+	if (unicode >= 0 && unicode < 128)
+		return unicode;
 
 	if (encoding_current_map == NULL) {
 		printf("No mapping is in force.\n");
-		return utf8;
+		return unicode;
 	}
 
 	while (first <= last) {
 		middle = (first + last) / 2;
 
-		if (encoding_current_map[middle].utf8 == utf8) {
+		if (encoding_current_map[middle].utf8 == unicode) {
 			printf("Found mapping to %d.\n", encoding_current_map[middle].target);
 			return encoding_current_map[middle].target;
-		} else if (encoding_current_map[middle].utf8 < utf8) {
+		} else if (encoding_current_map[middle].utf8 < unicode) {
 			first = middle + 1;
 		} else {
 			last = middle - 1;

@@ -66,15 +66,15 @@ bool encoding_select_table(enum encoding_target target);
 int encoding_parse_utf8_string(xmlChar **text);
 
 /**
- * Return the number of bytes occupied by a given character in UTF8.
+ * Write a unicode character to a buffer in the current encoding.
  *
- * \param utf8			The UTF8 character to test.
- * \return			The number of bytes, or 0 on error.
+ * \param *buffer		Pointer to the buffer to write to.
+ * \param length		The length of the supplied buffer.
+ * \param unicode		The unicode character to write.
+ * \return			The number of bytes written to the buffer.
  */
 
-int encoding_get_utf8_char_size(int utf8);
-
-int encoding_write_utf8_char(char *buffer, size_t length, int utf8);
+int encoding_write_unicode_char(char *buffer, size_t length, int unicode);
 
 /**
  * Flatten down the white space in a text string, so that multiple spaces
