@@ -79,19 +79,25 @@ struct msg_data {
  */
 
 static struct msg_data msg_messages[] = {
-	{MSG_ERROR,	"Unknown error",				true	},
-	{MSG_ERROR,	"Missing source file",				false	},
-	{MSG_ERROR,	"Failed to open source document '%s'",		false	},
-	{MSG_ERROR,	"Source document '%s' does not validate",	false	},
-	{MSG_ERROR,	"Unexpected object type found",			false	},
-	{MSG_ERROR,	"Stack error in node",				false	},
-	{MSG_ERROR,	"Out of memory creating text output line",	false	},
-	{MSG_ERROR,	"Out of memory creating text output column",	false	},
-	{MSG_ERROR,	"Out of memory allocating text storage",	false	},
-	{MSG_ERROR,	"Missing line instance reference",		false	},
-	{MSG_ERROR,	"Missing column instance reference",		false	},
-	{MSG_ERROR,	"Failure to write to output file",		false	},
-	{MSG_ERROR,	"Unknown memory error",				false	}
+	{MSG_ERROR,	"Unknown error",						true},
+	{MSG_ERROR,	"Missing source file",						false},
+	{MSG_ERROR,	"Failed to open source document '%s'",				false},
+	{MSG_ERROR,	"Source document '%s' does not validate",			false},
+	{MSG_ERROR,	"Unexpected object type found",					false},
+	{MSG_ERROR,	"Stack error in node",						false},
+	{MSG_ERROR,	"Encoding %d is out of sequence at line %d of table",		false},
+	{MSG_ERROR,	"Encoding %d has target out of range at line %d of table",	false},
+	{MSG_ERROR,	"Encoding %d has duplicate target %d at line %d of table",	false},
+	{MSG_INFO,	"Character %d (0x%x) is not mapped to UTF8",			false},
+	{MSG_WARNING,	"Unexpected UTF8 sequence",					false},
+	{MSG_WARNING,	"Character %d, (0x%x) is not mapped into selected encoding",	false},
+	{MSG_ERROR,	"Out of memory creating text output line",			false},
+	{MSG_ERROR,	"Out of memory creating text output column",			false},
+	{MSG_ERROR,	"Out of memory allocating text storage",			false},
+	{MSG_ERROR,	"Missing line instance reference",				false},
+	{MSG_ERROR,	"Missing column instance reference",				false},
+	{MSG_ERROR,	"Failure to write to output file",				false},
+	{MSG_ERROR,	"Unknown memory error",						false}
 };
 
 /**

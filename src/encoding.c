@@ -36,6 +36,8 @@
 
 #include "encoding.h"
 
+#include "msg.h"
+
 /**
  * An entry in a character encoding table.
  */
@@ -380,13 +382,13 @@ bool encoding_select_table(enum encoding_target target)
 
 	for (i = 0; encoding_current_map[i].utf8 != 0; i++) {
 		if (encoding_current_map[i].utf8 <= current_code)
-			fprintf(stderr, "Encoding %d is out of sequence at line %d of table.\n", encoding_current_map[i].utf8, i);
+			msg_report(MSG_ENC_OUT_OF_SEQ, encoding_current_map[i].utf8, i);
 
 		if (encoding_current_map[i].target < 0 || encoding_current_map[i].target >= 256)
-			fprintf(stderr, "Encoding %d has target out of range at line %d of table.\n", encoding_current_map[i].utf8, i);
+			msg_report(MSG_ENC_OUT_OF_RANGE, encoding_current_map[i].utf8, i);
 
 		if (map[encoding_current_map[i].target] == true)
-			fprintf(stderr, "Encoding %d has duplicate target %d at line %d of table.\n", encoding_current_map[i].utf8, encoding_current_map[i].target, i);
+			msg_report(MSG_ENC_DUPLICATE, encoding_current_map[i].utf8, encoding_current_map[i].target, i);
 
 		map[encoding_current_map[i].target] = true;
 
@@ -397,7 +399,7 @@ bool encoding_select_table(enum encoding_target target)
 
 	for (i = 128; i < 256; i++) {
 		if (map[i] == false)
-			printf("Character %d (0x%x) is not mapped to UTF8\n", i, i);
+			msg_report(MSG_ENC_NO_MAP, i, i);
 	}
 
 	return true;
@@ -436,7 +438,7 @@ int encoding_parse_utf8_string(xmlChar **text)
 		current_char = (*(*text)++ & 0x07) << 18;
 		bytes_remaining = 3;
 	} else {
-		fprintf(stderr, "Unexpected UTF8 sequence.\n");
+		msg_report(MSG_ENC_BAD_UTF8);
 		return 0;
 	}
 
@@ -444,7 +446,7 @@ int encoding_parse_utf8_string(xmlChar **text)
 
 	while (bytes_remaining > 0) {
 		if ((**text == 0) || ((**text & 0xc0) != 0x80)) {
-			fprintf(stderr, "Unexpected UTF8 sequence.\n");
+			msg_report(MSG_ENC_BAD_UTF8);
 			return 0;
 		}
 
@@ -554,6 +556,8 @@ static int encoding_find_mapped_character(int unicode)
 		else
 			last = middle - 1;
 	}
+
+	msg_report(MSG_ENC_NO_OUTPUT, unicode, unicode);
 
 	return '?';
 }
