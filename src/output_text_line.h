@@ -87,10 +87,11 @@ bool output_text_line_add_text(struct output_text_line *line, int column, xmlCha
  * Write a block to the output.
  *
  * \param *line		The current line instance.
+ * \param title		True to underline the text.
  * \return		True on success; False on error.
  */
 
-bool output_text_line_write(struct output_text_line *line);
+bool output_text_line_write(struct output_text_line *line, bool title);
 
 #endif
 

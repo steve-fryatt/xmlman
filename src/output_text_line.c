@@ -72,6 +72,11 @@ struct output_text_line_column {
 	xmlChar				*write_ptr;
 
 	/**
+	 * The current maximum written width, in charaters.
+	 */
+	int				written_width;
+
+	/**
 	 * Pointer to the next column structure, or NULL.
 	 */
 	struct output_text_line_column	*next;
@@ -108,8 +113,9 @@ struct output_text_line {
 static bool output_text_line_add_column_text(struct output_text_line_column *column, xmlChar *text);
 static bool output_text_line_update_column_memory(struct output_text_line_column *column);
 static struct output_text_line_column* output_text_line_find_column(struct output_text_line *line, int column);
-static bool output_text_line_write_line(struct output_text_line *line);
+static bool output_text_line_write_line(struct output_text_line *line, bool underline);
 static bool output_text_line_write_column(struct output_text_line *line, struct output_text_line_column *column);
+static bool output_text_line_write_column_underline(struct output_text_line *line, struct output_text_line_column *column);
 static bool output_text_line_write_char(struct output_text_line *line, int c);
 
 
@@ -219,6 +225,7 @@ bool output_text_line_add_column(struct output_text_line *line, int margin, int 
 	column->text = NULL;
 	column->size = 0;
 	column->write_ptr = NULL;
+	column->written_width = 0;
 	column->next = NULL;
 
 	return output_text_line_update_column_memory(column);
@@ -247,6 +254,8 @@ bool output_text_line_reset(struct output_text_line *line)
 
 		if (column->text != NULL && column->size > 0)
 			column->text[0] = '\0';
+
+		column->written_width = 0;
 
 		column = column->next;
 	}
@@ -416,10 +425,11 @@ static struct output_text_line_column* output_text_line_find_column(struct outpu
  * Write a block to the output.
  *
  * \param *line		The current line instance.
+ * \param title		True to underline the text.
  * \return		True on success; False on error.
  */
 
-bool output_text_line_write(struct output_text_line *line)
+bool output_text_line_write(struct output_text_line *line, bool title)
 {
 	if (line == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_REF);
@@ -429,9 +439,14 @@ bool output_text_line_write(struct output_text_line *line)
 	do {
 		line->complete = true;
 
-		if (!output_text_line_write_line(line))
+		if (!output_text_line_write_line(line, false))
 			return false;
 	} while (line->complete == false);
+
+	if (title == true) {
+		if (!output_text_line_write_line(line, true))
+			return false;
+	}
 
 	return true;
 }
@@ -440,10 +455,11 @@ bool output_text_line_write(struct output_text_line *line)
  * Write one line from the current block to the output.
  *
  * \param *line		The current line instance.
+ * \param underline	True to output an underline; False to output content.
  * \return		True on success; False on error.
  */
 
-static bool output_text_line_write_line(struct output_text_line *line)
+static bool output_text_line_write_line(struct output_text_line *line, bool underline)
 {
 	struct output_text_line_column	*column = NULL;
 
@@ -457,9 +473,14 @@ static bool output_text_line_write_line(struct output_text_line *line)
 	column = line->columns;
 
 	while (column != NULL) {
-		if (!output_text_line_write_column(line, column))
-			return false;
-	
+		if (underline == true) {
+			if (!output_text_line_write_column_underline(line, column))
+				return false;
+		} else {
+			if (!output_text_line_write_column(line, column))
+				return false;
+		}
+
 		column = column->next;
 	}
 
@@ -529,7 +550,7 @@ static bool output_text_line_write_column(struct output_text_line *line, struct 
 
 	/* We've reached the end of the string. */
 
-	if (c == 0) {
+	if (c == '\0') {
 		breakpoint = width + 1;
 		complete = true;
 	}
@@ -539,27 +560,73 @@ static bool output_text_line_write_column(struct output_text_line *line, struct 
 		hyphenate = true;
 	}
 
+	/* Track the maximum line length seen. */
+
+	if (breakpoint > column->written_width)
+		column->written_width = (hyphenate) ? breakpoint + 1 : breakpoint;
+
 	/* Pad out to the start of the column. */
 
-	while (line->position < column->start)
-		output_text_line_write_char(line, '~');
+	while (line->position < column->start) {
+		if (!output_text_line_write_char(line, '~'))
+			return false;
+	}
 
 	/* Write the line of text. */
 
 	do {
 		c = (--breakpoint > 0) ? encoding_parse_utf8_string(&(column->write_ptr)) : '\0';
 
-		if (c != '\0')
-			output_text_line_write_char(line, c);
+		if (c != '\0' && !output_text_line_write_char(line, c))
+			return false;
 	} while (c != '\0');
 
-	if (hyphenate)
-		output_text_line_write_char(line, '-');
+	if (hyphenate && !output_text_line_write_char(line, '-'))
+		return false;
 
 	if (complete == true)
 		column->write_ptr = NULL;
 	else
 		line->complete = false;
+
+	return true;
+}
+
+/**
+ * Write an underline for one column from a line to the output.
+ *
+ * \param *line		The current line instance.
+ * \param *column	The current column instance.
+ * \return		True on success; False on error.
+ */
+
+static bool output_text_line_write_column_underline(struct output_text_line *line, struct output_text_line_column *column)
+{
+	int		i;
+
+	if (line == NULL || column == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_COL_REF);
+		return false;
+	}
+
+	/* If there's no content in the column, don't underline it. */
+
+	if (column->written_width == 0)
+		return true;
+
+	/* Pad out to the start of the column. */
+
+	while (line->position < column->start) {
+		if (!output_text_line_write_char(line, '~'))
+			return false;
+	}
+
+	/* Write the underline. */
+
+	for (i = 0; i < column->written_width; i++) {
+		if (!output_text_line_write_char(line, '-'))
+			return false;
+	}
 
 	return true;
 }

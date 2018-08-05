@@ -71,7 +71,7 @@ bool output_text(struct manual_data *manual)
 
 	output_text_line_reset(line);
 	output_text_write_text(line, 0, MANUAL_DATA_OBJECT_TYPE_TITLE, manual->title);
-	output_text_line_write(line);
+	output_text_line_write(line, true);
 
 #if 0
 
