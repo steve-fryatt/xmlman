@@ -52,6 +52,7 @@ static bool output_text_write_chapter(struct manual_data *chapter);
 static bool output_text_write_section(struct manual_data *section, int indent);
 static bool output_text_write_heading(struct manual_data *title, int indent);
 static bool output_text_write_text(struct output_text_line *line, int column, enum manual_data_object_type type, struct manual_data *text);
+static const char *output_text_convert_entity(enum manual_entity_type entity);
 
 /**
  * Output a manual in text form.
@@ -237,7 +238,7 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 			output_text_line_add_text(line, column, chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			output_text_line_add_text(line, column, manual_entity_find_name(chunk->chunk.entity));
+			output_text_line_add_text(line, column, output_text_convert_entity(chunk->chunk.entity));
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(chunk->type));
@@ -245,6 +246,41 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 		}
 
 		chunk = chunk->next;
+	}
+}
+
+/**
+ * Convert an entity into a textual representation.
+ *
+ * \param entity		The entity to convert.
+ * \return			Pointer to the textual representation.
+ */
+
+static const char *output_text_convert_entity(enum manual_entity_type entity)
+{
+	switch (entity) {
+	case MANUAL_ENTITY_NBSP:
+		return " "; // \TODO: this must return a non-breaking space.
+	case MANUAL_ENTITY_AMP:
+		return "&";
+	case MANUAL_ENTITY_LSQUO:
+	case MANUAL_ENTITY_RSQUO:
+		return "'";
+	case MANUAL_ENTITY_QUOT:
+	case MANUAL_ENTITY_LDQUO:
+	case MANUAL_ENTITY_RDQUO:
+		return "\"";
+	case MANUAL_ENTITY_MINUS:
+		return "-";
+	case MANUAL_ENTITY_NDASH:
+		return "--";
+	case MANUAL_ENTITY_MDASH:
+		return "---";
+	case MANUAL_ENTITY_TIMES:
+		return "x";
+	default:
+		msg_report(MSG_ENTITY_NO_MAP, manual_entity_find_name(entity));
+		return "?";
 	}
 }
 

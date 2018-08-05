@@ -95,7 +95,9 @@ static struct msg_data msg_messages[] = {
 	{MSG_WARNING,	"Character %d, (0x%x) is not mapped into selected encoding",	false},
 	{MSG_ERROR,	"Content block not of expected type (expected %s, found %s)",	false},
 	{MSG_ERROR,	"Content chunk not of expected type (found %s)",		false},
-	
+	{MSG_WARNING,	"Entity %s is not mapped in the selected target output",	false},
+
+
 	{MSG_ERROR,	"Out of memory creating text output line",			false},
 	{MSG_ERROR,	"Out of memory creating text output column",			false},
 	{MSG_ERROR,	"Out of memory allocating text storage",			false},
