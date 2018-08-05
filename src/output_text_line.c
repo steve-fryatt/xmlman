@@ -39,6 +39,10 @@
 
 #include "encoding.h"
 
+/**
+ * A column within a text line instance.
+ */
+
 struct output_text_line_column {
 	/**
 	 * The left-hand starting position of the line, in characters.
@@ -50,9 +54,25 @@ struct output_text_line_column {
 	 */
 	int				width;
 
-
+	/**
+	 * The column's text buffer.
+	 */
 	xmlChar				*text;
 
+	/**
+	 * The size of the column's text buffer.
+	 */
+	size_t				size;
+
+	/**
+	 * Pointer to the current position in the text during the
+	 * write-out operation, or NULL on completion.
+	 */
+	xmlChar				*write_ptr;
+
+	/**
+	 * Pointer to the next column structure, or NULL.
+	 */
 	struct output_text_line_column	*next;
 };
 
@@ -172,6 +192,10 @@ bool output_text_line_add_column(struct output_text_line *line, int margin, int 
 
 	column->width = width;
 
+	column->text = NULL;
+	column->size = 0;
+	column->write_ptr = NULL;
+
 	return true;
 }
 
@@ -195,7 +219,7 @@ bool output_text_line_reset(struct output_text_line *line)
 	column = line->columns;
 
 	while (column != NULL) {
-		column->text = Line;
+		column->write_ptr = Line;
 
 		column = column->next;
 	}
@@ -266,13 +290,13 @@ static bool output_text_line_write_line(struct output_text_line *line)
 static bool output_text_line_write_column(struct output_text_line *line, struct output_text_line_column *column)
 {
 	int		width, breakpoint, c;
-	xmlChar		*text;
+	xmlChar		*scan_ptr;
 	bool		hyphenate = false, complete = false;
 
 	if (line == NULL || column == NULL)
 		return false;
 
-	if (column->text == NULL)
+	if (column->write_ptr == NULL)
 		return true;
 
 	/* Find the next chunk of string to be written out. */
@@ -280,9 +304,9 @@ static bool output_text_line_write_column(struct output_text_line *line, struct 
 	width = 0;
 	breakpoint = 0;
 
-	text = column->text;
+	scan_ptr = column->write_ptr;
 
-	c = encoding_parse_utf8_string(&text);
+	c = encoding_parse_utf8_string(&scan_ptr);
 
 	while (c != '\0' && width <= column->width) {
 		width++;
@@ -294,7 +318,7 @@ static bool output_text_line_write_column(struct output_text_line *line, struct 
 
 			if (c == ' ' && width == 1) {
 				width = 0;
-				column->text = text;
+				column->write_ptr = scan_ptr;
 			}
 
 			/* Remember the breakpoint. */
@@ -302,13 +326,13 @@ static bool output_text_line_write_column(struct output_text_line *line, struct 
 			breakpoint = width;
 		}
 
-		c = encoding_parse_utf8_string(&text);
+		c = encoding_parse_utf8_string(&scan_ptr);
 	}
 
 	/* If there's nothing to output, flag the column as complete and exit. */
 
 	if (width == 0) {
-		column->text = NULL;
+		column->write_ptr = NULL;
 		return true;
 	}
 
@@ -332,7 +356,7 @@ static bool output_text_line_write_column(struct output_text_line *line, struct 
 	/* Write the line of text. */
 
 	do {
-		c = (--breakpoint > 0) ? encoding_parse_utf8_string(&(column->text)) : '\0';
+		c = (--breakpoint > 0) ? encoding_parse_utf8_string(&(column->write_ptr)) : '\0';
 
 		if (c != '\0')
 			output_text_line_write_char(line, c);
@@ -342,7 +366,7 @@ static bool output_text_line_write_column(struct output_text_line *line, struct 
 		output_text_line_write_char(line, '-');
 
 	if (complete == true)
-		column->text = NULL;
+		column->write_ptr = NULL;
 	else
 		line->complete = false;
 
