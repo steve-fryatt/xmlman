@@ -49,6 +49,7 @@ static int output_text_page_width = 77;
 /* Static Function Prototypes. */
 
 static bool output_text_write_chapter(struct manual_data *chapter);
+static bool output_text_write_section(struct manual_data *section, int indent);
 static bool output_text_write_heading(struct manual_data *title, int indent);
 static bool output_text_write_text(struct output_text_line *line, int column, enum manual_data_object_type type, struct manual_data *text);
 
@@ -61,7 +62,7 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 
 bool output_text(struct manual_data *manual)
 {
-	struct manual_data *chapter, *section, *block;
+	struct manual_data *chapter;
 	struct output_text_line	*line;
 
 	if (manual == NULL)
@@ -71,15 +72,15 @@ bool output_text(struct manual_data *manual)
 	encoding_select_line_end(ENCODING_LINE_END_LF);
 
 	output_text_write_heading(manual->title, 0);
-	output_text_line_write_newline();
-	output_text_line_write_newline();
 
 	/* Output the chapter details. */
 
 	chapter = manual->first_child;
 
 	while (chapter != NULL) {
-		output_text_write_chapter(chapter);
+		if (!output_text_write_chapter(chapter))
+			return false;
+
 
 #if 0
 
@@ -133,14 +134,87 @@ bool output_text(struct manual_data *manual)
 
 static bool output_text_write_chapter(struct manual_data *chapter)
 {
+	struct manual_data *section;
+
 	if (chapter == NULL || chapter->first_child == NULL)
 		return true;
 
-	if (!output_text_write_heading(chapter->title, 0))
+	if (!output_text_line_write_newline() || !output_text_line_write_newline())
 		return false;
+
+	if (chapter->title != NULL) {
+		if (!output_text_write_heading(chapter->title, 0))
+			return false;
+
+		if (!output_text_line_write_newline())
+			return false;
+	}
+
+	section = chapter->first_child;
+
+	while (section != NULL) {
+		if (!output_text_write_section(section, 2))
+			return false;
+
+		section = section->next;
+	}
+
+	return true;
+}
+
+static bool output_text_write_section(struct manual_data *section, int indent)
+{
+	struct manual_data	*block;
+	struct output_text_line *paragraph_line;
+
+	if (section == NULL || section->first_child == NULL)
+		return true;
 
 	if (!output_text_line_write_newline())
 		return false;
+
+	if (section->title != NULL) {
+		if (!output_text_write_heading(section->title, 2))
+			return false;
+
+		if (!output_text_line_write_newline())
+			return false;
+	}
+
+	paragraph_line = output_text_line_create();
+	if (paragraph_line == NULL)
+		return false;
+
+	if (!output_text_line_add_column(paragraph_line, indent, output_text_page_width - indent)) {
+		output_text_line_destroy(paragraph_line);
+		return false;
+	}
+
+	block = section->first_child;
+
+	while (block != NULL) {
+		if (!output_text_line_reset(paragraph_line)) {
+			output_text_line_destroy(paragraph_line);
+			return false;
+		}
+
+		if (!output_text_line_write_newline()) {
+			output_text_line_destroy(paragraph_line);
+			return false;
+		}
+
+		if (!output_text_write_text(paragraph_line, 0, MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block)) {
+			output_text_line_destroy(paragraph_line);
+			return false;
+		}
+
+		if (!output_text_line_write(paragraph_line, false)) {
+			output_text_line_destroy(paragraph_line);
+			return false;
+		}
+
+		block = block->next;
+	}
 
 	return true;
 }
@@ -148,6 +222,9 @@ static bool output_text_write_chapter(struct manual_data *chapter)
 static bool output_text_write_heading(struct manual_data *title, int indent)
 {
 	struct output_text_line *line;
+
+	if (title == NULL)
+		return true;
 
 	line = output_text_line_create();
 	if (line == NULL)
