@@ -529,7 +529,7 @@ static bool output_text_line_write_column(struct output_text_line *line, struct 
 	/* We've reached the end of the string. */
 
 	if (c == 0) {
-		breakpoint = width;
+		breakpoint = width + 1;
 		complete = true;
 	}
 
