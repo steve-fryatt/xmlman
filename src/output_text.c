@@ -260,7 +260,7 @@ static const char *output_text_convert_entity(enum manual_entity_type entity)
 {
 	switch (entity) {
 	case MANUAL_ENTITY_NBSP:
-		return " "; // \TODO: this must return a non-breaking space.
+		return ENCODING_UTF8_NBSP;
 	case MANUAL_ENTITY_AMP:
 		return "&";
 	case MANUAL_ENTITY_LSQUO:

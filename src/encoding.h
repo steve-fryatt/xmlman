@@ -32,6 +32,18 @@
 
 #include <libxml/xmlreader.h>
 
+/* Useful Unicode Characters */
+
+/**
+ * Unicode Non-Breaking Space
+ */
+#define ENCODING_UC_NBSP (0xa0)
+
+/**
+ * UTF8 Non-Breaking Space Sequence
+ */
+#define ENCODING_UTF8_NBSP "\xc2\xa0"
+
 /**
  * A list of possible target encodings.
  *
