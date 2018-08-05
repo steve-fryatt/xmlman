@@ -417,24 +417,22 @@ int encoding_parse_utf8_string(xmlChar **text)
 {
 	int	current_char = 0, bytes_remaining = 0;
 
-	if (text == NULL || *text == NULL || **text == '\0') {
-//		printf("No string, or end of string.\n");
+	/* There's no buffer, or we're at the end of the string. */
+
+	if (text == NULL || *text == NULL || **text == '\0')
 		return 0;
-	}
+
+	/* We're not currently in a UTF8 byte sequence. */
 
 	if ((bytes_remaining == 0) && ((**text & 0x80) == 0)) {
-//		printf("Standard ASCII: %d\n", *current_text);
 		return *(*text)++;
 	} else if ((bytes_remaining == 0) && ((**text & 0xe0) == 0xc0)) {
-//		printf("Opening of two-byte Unicode\n");
 		current_char = (*(*text)++ & 0x1f) << 6;
 		bytes_remaining = 1;
 	} else if ((bytes_remaining == 0) && ((**text & 0xf0) == 0xe0)) {
-//		printf("Opening of three-byte Unicode\n");
 		current_char = (*(*text)++ & 0x0f) << 12;
 		bytes_remaining = 2;
 	} else if ((bytes_remaining == 0) && ((**text & 0xf8) == 0xf0)) {
-//		printf("Opening of four-byte Unicode\n");
 		current_char = (*(*text)++ & 0x07) << 18;
 		bytes_remaining = 3;
 	} else {
@@ -442,17 +440,16 @@ int encoding_parse_utf8_string(xmlChar **text)
 		return 0;
 	}
 
+	/* Process any additional UTF8 bytes. */
+
 	while (bytes_remaining > 0) {
 		if ((**text == 0) || ((**text & 0xc0) != 0x80)) {
 			fprintf(stderr, "Unexpected UTF8 sequence.\n");
 			return 0;
 		}
 
-//		printf("Additional UTF8 byte code.\n");
 		current_char += (*(*text)++ & 0x3f) << (6 * --bytes_remaining);
 	}
-
-//	printf("UTF8: %d\n", current_char);
 
 	return current_char;
 }
@@ -471,6 +468,8 @@ int encoding_write_unicode_char(char *buffer, size_t length, int unicode)
 	if (buffer == NULL)
 		return 0;
 
+	/* There's an encoding selected, so convert the character. */
+
 	if (encoding_current_map != NULL) {
 		if (length < 2)
 			return 0;
@@ -479,6 +478,8 @@ int encoding_write_unicode_char(char *buffer, size_t length, int unicode)
 		buffer[1] = '\0';
 		return 1;
 	}
+
+	/* There's no encoding, so convert to UTF8. */
 
 	if (unicode >= 0x00 && unicode <= 0x7f) {
 		if (length < 2)
@@ -531,28 +532,28 @@ static int encoding_find_mapped_character(int unicode)
 {
 	int first = 0, last = encoding_current_map_size, middle;
 
+	/* The byte is the same in unicode or ASCII. */
+
 	if (unicode >= 0 && unicode < 128)
 		return unicode;
 
-	if (encoding_current_map == NULL) {
-		printf("No mapping is in force.\n");
+	/* There's no encoding selected, so output straight unicode. */
+
+	if (encoding_current_map == NULL)
 		return unicode;
-	}
+
+	/* Find the character in the current encoding. */
 
 	while (first <= last) {
 		middle = (first + last) / 2;
 
-		if (encoding_current_map[middle].utf8 == unicode) {
-			printf("Found mapping to %d.\n", encoding_current_map[middle].target);
+		if (encoding_current_map[middle].utf8 == unicode)
 			return encoding_current_map[middle].target;
-		} else if (encoding_current_map[middle].utf8 < unicode) {
+		else if (encoding_current_map[middle].utf8 < unicode)
 			first = middle + 1;
-		} else {
+		else
 			last = middle - 1;
-		}
 	}
-
-	printf("No mapping found in current encoding.\n");
 
 	return '?';
 }
