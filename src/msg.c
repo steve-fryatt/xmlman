@@ -93,8 +93,8 @@ static struct msg_data msg_messages[] = {
 	{MSG_INFO,	"Character %d (0x%x) is not mapped to UTF8",			false},
 	{MSG_WARNING,	"Unexpected UTF8 sequence",					false},
 	{MSG_WARNING,	"Character %d, (0x%x) is not mapped into selected encoding",	false},
-	{MSG_ERROR,	"Content block not of expected type (expected %d, found %d)",	false},
-	{MSG_ERROR,	"Content chunk not of expected type (found %d)",		false},
+	{MSG_ERROR,	"Content block not of expected type (expected %s, found %s)",	false},
+	{MSG_ERROR,	"Content chunk not of expected type (found %s)",		false},
 	
 	{MSG_ERROR,	"Out of memory creating text output line",			false},
 	{MSG_ERROR,	"Out of memory creating text output column",			false},

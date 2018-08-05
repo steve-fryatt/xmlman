@@ -34,6 +34,43 @@
 #include "manual_data.h"
 
 /**
+ * An chunk type definition structure.
+ */
+
+struct manual_data_object_type_definition {
+	enum manual_data_object_type	type;		/**< The type of object.		*/
+	const char			*name;		/**< The name of the object.		*/
+};
+
+/**
+ * The list of known object type definitions.
+ */
+
+static struct manual_data_object_type_definition manual_data_object_type_names[] = {
+	{MANUAL_DATA_OBJECT_TYPE_MANUAL,		"Manual"},
+	{MANUAL_DATA_OBJECT_TYPE_INDEX,			"Index"},
+	{MANUAL_DATA_OBJECT_TYPE_CHAPTER,		"Chapter"},
+	{MANUAL_DATA_OBJECT_TYPE_SECTION,		"Section"},
+	{MANUAL_DATA_OBJECT_TYPE_TITLE,			"Title"},
+	{MANUAL_DATA_OBJECT_TYPE_PARAGRAPH,		"Paragraph"},
+	{MANUAL_DATA_OBJECT_TYPE_CITATION,		"Citation"},
+	{MANUAL_DATA_OBJECT_TYPE_CODE,			"Code"},
+	{MANUAL_DATA_OBJECT_TYPE_USER_ENTRY,		"User Entry"},
+	{MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS,	"Light Emphasis"},
+	{MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS,	"Strong Emphasis"},
+	{MANUAL_DATA_OBJECT_TYPE_FILENAME,		"Filename"},
+	{MANUAL_DATA_OBJECT_TYPE_ICON,			"Icon"},
+	{MANUAL_DATA_OBJECT_TYPE_KEY,			"Key"},
+	{MANUAL_DATA_OBJECT_TYPE_MOUSE,			"Mouse"},
+	{MANUAL_DATA_OBJECT_TYPE_WINDOW,		"Window"},
+
+
+	{MANUAL_DATA_OBJECT_TYPE_TEXT,			"Text"},
+	{MANUAL_DATA_OBJECT_TYPE_ENTITY,		"Entity"},
+	{MANUAL_DATA_OBJECT_TYPE_NONE,			""}
+};
+
+/**
  * Create a new manual_data structure.
  *
  * \param type		The type of object to create.
@@ -72,5 +109,22 @@ struct manual_data *manual_data_create(enum manual_data_object_type type)
 	}
 
 	return data;
+}
+
+/**
+ * Given an object type, return the textual object type name.
+ *
+ * \param type		The object type to look up.
+ * \return		Pointer to the object's textual name, or to "" if
+ *			the type was not recognised.
+ */
+
+const char *manual_data_find_object_name(enum manual_data_object_type type)
+{
+	int		i;
+
+	for (i = 0; manual_data_object_type_names[i].type != MANUAL_DATA_OBJECT_TYPE_NONE && manual_data_object_type_names[i].type != type; i++);
+
+	return manual_data_object_type_names[i].name;
 }
 

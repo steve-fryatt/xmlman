@@ -153,5 +153,15 @@ struct manual_data {
 
 struct manual_data *manual_data_create(enum manual_data_object_type type);
 
+/**
+ * Given an object type, return the textual object type name.
+ *
+ * \param type		The object type to look up.
+ * \return		Pointer to the object's textual name, or to "" if
+ *			the type was not recognised.
+ */
+
+const char *manual_data_find_object_name(enum manual_data_object_type type);
+
 #endif
 

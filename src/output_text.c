@@ -215,7 +215,7 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 		return true;
 
 	if (text->type != type) {
-		msg_report(MSG_UNEXPECTED_BLOCK, type, text->type);
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(type), manual_data_find_object_name(text->type));
 		return;
 	}
 
@@ -240,7 +240,7 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 			output_text_line_add_text(line, column, manual_entity_find_name(chunk->chunk.entity));
 			break;
 		default:
-			msg_report(MSG_UNEXPECTED_CHUNK, chunk->type);
+			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(chunk->type));
 			break;
 		}
 
