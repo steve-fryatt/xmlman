@@ -86,6 +86,5 @@ int encoding_write_unicode_char(char *buffer, size_t length, int unicode);
 
 void encoding_flatten_whitespace(xmlChar *text);
 
-
 #endif
 
