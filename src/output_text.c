@@ -42,8 +42,14 @@
 #include "msg.h"
 #include "output_text_line.h"
 
+/* Global Variables. */
+
+static int output_text_page_width = 77;
+
 /* Static Function Prototypes. */
 
+static bool output_text_write_chapter(struct manual_data *chapter);
+static bool output_text_write_heading(struct manual_data *title, int indent);
 static bool output_text_write_text(struct output_text_line *line, int column, enum manual_data_object_type type, struct manual_data *text);
 
 /**
@@ -63,23 +69,18 @@ bool output_text(struct manual_data *manual)
 
 	encoding_select_table(ENCODING_TARGET_UTF8);
 
-	line = output_text_line_create();
-
-	output_text_line_add_column(line, 2, 75);
-
-	/* Output the manual heading and title. */
-
-	output_text_line_reset(line);
-	output_text_write_text(line, 0, MANUAL_DATA_OBJECT_TYPE_TITLE, manual->title);
-	output_text_line_write(line, true);
-
-#if 0
+	output_text_write_heading(manual->title, 0);
 
 	/* Output the chapter details. */
 
 	chapter = manual->first_child;
 
 	while (chapter != NULL) {
+		output_text_write_chapter(chapter);
+
+#if 0
+
+
 		printf("* Found Chapter *\n");
 
 		output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, chapter->title);
@@ -119,16 +120,57 @@ bool output_text(struct manual_data *manual)
 			section = section->next;
 		}
 
+#endif
+
 		chapter = chapter->next;
 	}
 
-#endif
+	return true;
+}
+
+static bool output_text_write_chapter(struct manual_data *chapter)
+{
+	if (chapter == NULL || chapter->first_child == NULL)
+		return true;
+
+	if (!output_text_write_heading(chapter->title, 0))
+		return false;
+
+	return true;
+}
+
+static bool output_text_write_heading(struct manual_data *title, int indent)
+{
+	struct output_text_line *line;
+
+	line = output_text_line_create();
+	if (line == NULL)
+		return false;
+
+	if (!output_text_line_add_column(line, indent, output_text_page_width - indent)) {
+		output_text_line_destroy(line);
+		return false;
+	}
+
+	if (!output_text_line_reset(line)) {
+		output_text_line_destroy(line);
+		return false;
+	}
+
+	if (!output_text_write_text(line, 0, MANUAL_DATA_OBJECT_TYPE_TITLE, title)) {
+		output_text_line_destroy(line);
+		return false;
+	}
+
+	if (!output_text_line_write(line, true)) {
+		output_text_line_destroy(line);
+		return false;
+	}
 
 	output_text_line_destroy(line);
 
 	return true;
 }
-
 
 
 static bool output_text_write_text(struct output_text_line *line, int column, enum manual_data_object_type type, struct manual_data *text)
