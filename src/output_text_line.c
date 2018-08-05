@@ -579,8 +579,14 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 	do {
 		c = (breakpoint-- > 0) ? encoding_parse_utf8_string(&(column->write_ptr)) : '\0';
 
-		if (c == ENCODING_UC_NBSP)
+		switch (c) {
+		case ENCODING_UC_NBSP:
 			c = ' ';
+			break;
+		case ENCODING_UC_NBHY:
+			c = '-';
+			break;
+		}
 
 		if (c != '\0' && !output_text_line_write_char(column->parent, c))
 			return false;

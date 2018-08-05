@@ -273,9 +273,9 @@ static const char *output_text_convert_entity(enum manual_entity_type entity)
 	case MANUAL_ENTITY_MINUS:
 		return "-";
 	case MANUAL_ENTITY_NDASH:
-		return "--";
+		return ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY;
 	case MANUAL_ENTITY_MDASH:
-		return "---";
+		return ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY;
 	case MANUAL_ENTITY_TIMES:
 		return "x";
 	default:

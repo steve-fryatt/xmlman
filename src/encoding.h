@@ -45,6 +45,16 @@
 #define ENCODING_UTF8_NBSP "\xc2\xa0"
 
 /**
+ * Unicode Non-Breaking Hyphen
+ */
+#define ENCODING_UC_NBHY (0x2011)
+
+/**
+ * UTF8 Non-Breaking Space Sequence
+ */
+#define ENCODING_UTF8_NBHY "\xe2\x80\x91"
+
+/**
  * A list of possible target encodings.
  *
  * The order of this list must match the encoding_list table in encoding.c
