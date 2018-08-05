@@ -22,7 +22,7 @@
  */
 
 /**
- * \file manual_entity.h
+ * \file encoding.h
  *
  * Text Encloding Support Interface.
  */
