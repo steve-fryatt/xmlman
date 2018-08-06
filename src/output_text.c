@@ -74,7 +74,6 @@ static const char *output_text_convert_entity(enum manual_entity_type entity);
 bool output_text(struct manual_data *manual)
 {
 	struct manual_data *chapter;
-	struct output_text_line	*line;
 	int base_indent = 0;
 
 	if (manual == NULL)
@@ -261,7 +260,7 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 
 	if (text->type != type) {
 		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(type), manual_data_find_object_name(text->type));
-		return;
+		return false;
 	}
 
 	chunk = text->first_child;
@@ -269,20 +268,20 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 	while (chunk != NULL) {
 		switch (chunk->type) {
 		case MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS:
-			output_text_line_add_text(line, column, "/");
+			output_text_line_add_text(line, column, (xmlChar *) "/");
 			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, chunk);
-			output_text_line_add_text(line, column, "/");
+			output_text_line_add_text(line, column, (xmlChar *) "/");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
-			output_text_line_add_text(line, column, "*");
+			output_text_line_add_text(line, column, (xmlChar *) "*");
 			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, chunk);
-			output_text_line_add_text(line, column, "*");
+			output_text_line_add_text(line, column, (xmlChar *) "*");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
 			output_text_line_add_text(line, column, chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			output_text_line_add_text(line, column, output_text_convert_entity(chunk->chunk.entity));
+			output_text_line_add_text(line, column, (xmlChar *) output_text_convert_entity(chunk->chunk.entity));
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(chunk->type));
@@ -291,6 +290,8 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 
 		chunk = chunk->next;
 	}
+
+	return true;
 }
 
 /**
