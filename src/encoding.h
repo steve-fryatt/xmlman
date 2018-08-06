@@ -32,6 +32,13 @@
 
 #include <libxml/xmlreader.h>
 
+/**
+ * The size of a character output buffer. This needs to hold a full
+ * UTF8 character, and shouldn't require adjustment.
+ */
+
+#define ENCODING_CHAR_BUF_LEN 5
+
 /* Useful Unicode Characters */
 
 /**

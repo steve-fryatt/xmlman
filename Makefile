@@ -38,6 +38,8 @@ OBJS := args.o			\
 	manual_entity.o		\
 	msg.o			\
 	output_debug.o		\
+	output_html.o		\
+	output_html_file.o	\
 	output_text.o		\
 	output_text_line.o	\
 	parse.o			\

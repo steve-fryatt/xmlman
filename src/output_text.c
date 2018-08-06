@@ -153,7 +153,7 @@ static bool output_text_write_section(struct manual_data *section, int indent)
 		if (!output_text_line_write_newline())
 			return false;
 
-		if (!output_text_write_heading(section->title, 2))
+		if (!output_text_write_heading(section->title, indent))
 			return false;
 	}
 

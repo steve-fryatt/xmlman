@@ -98,14 +98,6 @@ struct output_text_line {
 	bool				complete;
 };
 
-
-/**
- * The size of the character output buffer. This needs to hold a full
- * UTF8 character, and shouldn't require adjustment.
- */
-
-#define OUTPUT_TEXT_LINE_CHAR_BUF_LEN 5
-
 /**
  * The number of characters that we allocate at a time when adding text
  * to column buffers.
@@ -704,14 +696,14 @@ bool output_text_line_write_newline(void)
 
 static bool output_text_line_write_char(struct output_text_line *line, int unicode)
 {
-	char	buffer[OUTPUT_TEXT_LINE_CHAR_BUF_LEN];
+	char	buffer[ENCODING_CHAR_BUF_LEN];
 
 	if (line == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_REF);
 		return 0;
 	}
 
-	encoding_write_unicode_char(buffer, OUTPUT_TEXT_LINE_CHAR_BUF_LEN, unicode);
+	encoding_write_unicode_char(buffer, ENCODING_CHAR_BUF_LEN, unicode);
 
 	if (fputs(buffer, stdout) == EOF) {
 		msg_report(MSG_WRITE_FAILED);
