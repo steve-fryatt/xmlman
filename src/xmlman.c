@@ -113,6 +113,8 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
+	/* Generate the selected outputs. */
+
 	if (!output_html(manual))
 		return EXIT_FAILURE;
 
