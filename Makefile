@@ -40,6 +40,8 @@ OBJS := args.o			\
 	output_debug.o		\
 	output_html.o		\
 	output_html_file.o	\
+	output_strong.o		\
+	output_strong_file.o	\
 	output_text.o		\
 	output_text_line.o	\
 	parse.o			\

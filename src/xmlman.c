@@ -118,6 +118,9 @@ int main(int argc, char *argv[])
 	if (!output_html(manual))
 		return EXIT_FAILURE;
 
+	if (!output_strong(manual))
+		return EXIT_FAILURE;
+
 	if (!output_text(manual))
 		return EXIT_FAILURE;
 
