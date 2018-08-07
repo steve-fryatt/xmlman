@@ -58,7 +58,7 @@ static bool output_strong_write_chapter(struct manual_data *chapter, int level);
 static bool output_strong_write_section(struct manual_data *section, int level);
 static bool output_strong_write_heading(struct manual_data *title, int level);
 static bool output_strong_write_text(enum manual_data_object_type type, struct manual_data *text);
-static const char *output_html_convert_entity(enum manual_entity_type entity);
+static const char *output_strong_convert_entity(enum manual_entity_type entity);
 
 /**
  * Output a manual in StrongHelp form.
@@ -339,13 +339,13 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 }
 
 /**
- * Convert an entity into an HTML representation.
+ * Convert an entity into an StrongHelp representation.
  *
  * \param entity		The entity to convert.
  * \return			Pointer to the HTML representation.
  */
 
-static const char *output_html_convert_entity(enum manual_entity_type entity)
+static const char *output_strong_convert_entity(enum manual_entity_type entity)
 {
 	switch (entity) {
 	case MANUAL_ENTITY_NBSP:
