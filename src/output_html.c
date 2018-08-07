@@ -61,7 +61,7 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 static const char *output_html_convert_entity(enum manual_entity_type entity);
 
 /**
- * Output a manual in text form.
+ * Output a manual in HTML form.
  *
  * \param *manual	The manual to be output.
  * \return		TRUE if successful, otherwise FALSE.
