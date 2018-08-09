@@ -75,35 +75,35 @@ bool output_strong(struct manual_data *manual)
 	encoding_select_table(ENCODING_TARGET_ACORN_LATIN1);
 	encoding_select_line_end(ENCODING_LINE_END_LF);
 
-	if (!output_html_file_open("strong"))
+	if (!output_strong_file_open("strong"))
 		return false;
 
-	if (!output_html_file_write_plain("<!DOCTYPE html>") || !output_html_file_write_newline()) {
-		output_html_file_close();
+	if (!output_strong_file_write_plain("<!DOCTYPE html>") || !output_strong_file_write_newline()) {
+		output_strong_file_close();
 		return false;
 	}
 
-	if (!output_html_file_write_plain("<html>") || !output_html_file_write_newline()) {
-		output_html_file_close();
+	if (!output_strong_file_write_plain("<html>") || !output_strong_file_write_newline()) {
+		output_strong_file_close();
 		return false;
 	}
 
 	if (!output_strong_write_head(manual)) {
-		output_html_file_close();
+		output_strong_file_close();
 		return false;
 	}
 
 	if (!output_strong_write_body(manual)) {
-		output_html_file_close();
+		output_strong_file_close();
 		return false;
 	}
 
-	if (!output_html_file_write_plain("</html>") || !output_html_file_write_newline()) {
-		output_html_file_close();
+	if (!output_strong_file_write_plain("</html>") || !output_strong_file_write_newline()) {
+		output_strong_file_close();
 		return false;
 	}
 
-	output_html_file_close();
+	output_strong_file_close();
 
 	return true;
 }
@@ -120,12 +120,12 @@ static bool output_strong_write_head(struct manual_data *manual)
 	if (manual == NULL)
 		return false;
 
-	if (!output_html_file_write_plain("<head>") || !output_html_file_write_newline())
+	if (!output_strong_file_write_plain("<head>") || !output_strong_file_write_newline())
 		return false;
 
 	output_strong_write_heading(manual->title, 0);
 
-	if (!output_html_file_write_plain("</head>") || !output_html_file_write_newline())
+	if (!output_strong_file_write_plain("</head>") || !output_strong_file_write_newline())
 		return false;
 
 	return true;
@@ -146,7 +146,7 @@ static bool output_strong_write_body(struct manual_data *manual)
 	if (manual == NULL)
 		return false;
 
-	if (!output_html_file_write_plain("<body>") || !output_html_file_write_newline())
+	if (!output_strong_file_write_plain("<body>") || !output_strong_file_write_newline())
 		return false;
 
 	/* Output the chapter details. */
@@ -160,7 +160,7 @@ static bool output_strong_write_body(struct manual_data *manual)
 		chapter = chapter->next;
 	}
 
-	if (!output_html_file_write_plain("</body>") || !output_html_file_write_newline())
+	if (!output_strong_file_write_plain("</body>") || !output_strong_file_write_newline())
 		return false;
 
 	return true;
@@ -181,7 +181,7 @@ static bool output_strong_write_chapter(struct manual_data *chapter, int level)
 	if (chapter == NULL || chapter->first_child == NULL)
 		return true;
 
-	if (!output_html_file_write_newline())
+	if (!output_strong_file_write_newline())
 		return false;
 
 	if (chapter->title != NULL) {
@@ -217,7 +217,7 @@ static bool output_strong_write_section(struct manual_data *section, int level)
 		return true;
 
 	if (section->title != NULL) {
-		if (!output_html_file_write_newline())
+		if (!output_strong_file_write_newline())
 			return false;
 
 		if (!output_strong_write_heading(section->title, level))
@@ -227,16 +227,16 @@ static bool output_strong_write_section(struct manual_data *section, int level)
 	block = section->first_child;
 
 	while (block != NULL) {
-		if (!output_html_file_write_newline())
+		if (!output_strong_file_write_newline())
 			return false;
 
-		if (!output_html_file_write_plain("<p>"))
+		if (!output_strong_file_write_plain("<p>"))
 			return false;
 
 		if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block)) 
 			return false;
 
-		if (!output_html_file_write_plain("</p>"))
+		if (!output_strong_file_write_plain("</p>"))
 			return false;
 
 		block = block->next;
@@ -255,7 +255,7 @@ static bool output_strong_write_section(struct manual_data *section, int level)
 
 static bool output_strong_write_heading(struct manual_data *title, int level)
 {
-	char buffer[OUTPUT_HTML_TITLE_TAG_BLOCK_LEN];
+	char buffer[OUTPUT_STRONG_TITLE_TAG_BLOCK_LEN];
 
 	if (title == NULL)
 		return true;
@@ -264,22 +264,22 @@ static bool output_strong_write_heading(struct manual_data *title, int level)
 		return false;
 
 	if (level == 0)
-		snprintf(buffer, OUTPUT_HTML_TITLE_TAG_BLOCK_LEN, "title");
+		snprintf(buffer, OUTPUT_STRONG_TITLE_TAG_BLOCK_LEN, "title");
 	else
-		snprintf(buffer, OUTPUT_HTML_TITLE_TAG_BLOCK_LEN, "h%d", level);
+		snprintf(buffer, OUTPUT_STRONG_TITLE_TAG_BLOCK_LEN, "h%d", level);
 
-	buffer[OUTPUT_HTML_TITLE_TAG_BLOCK_LEN - 1] = '\0';
+	buffer[OUTPUT_STRONG_TITLE_TAG_BLOCK_LEN - 1] = '\0';
 
-	if (!output_html_file_write_plain("<%s>", buffer))
+	if (!output_strong_file_write_plain("<%s>", buffer))
 		return false;
 
 	if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, title))
 		return false;
 
-	if (!output_html_file_write_plain("</%s>", buffer))
+	if (!output_strong_file_write_plain("</%s>", buffer))
 		return false;
 
-	if (!output_html_file_write_newline())
+	if (!output_strong_file_write_newline())
 		return false;
 
 	return true;
@@ -312,20 +312,20 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 	while (chunk != NULL) {
 		switch (chunk->type) {
 		case MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS:
-			output_html_file_write_plain("{f/:");
+			output_strong_file_write_plain("{f/:");
 			output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, chunk);
-			output_html_file_write_plain("}");
+			output_strong_file_write_plain("}");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
-			output_html_file_write_plain("<strong>");
+			output_strong_file_write_plain("<strong>");
 			output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, chunk);
-			output_html_file_write_plain("</strong>");
+			output_strong_file_write_plain("</strong>");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
-			output_html_file_write_text(chunk->chunk.text);
+			output_strong_file_write_text(chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			output_html_file_write_text((xmlChar *) output_html_convert_entity(chunk->chunk.entity));
+			output_strong_file_write_text((xmlChar *) output_strong_convert_entity(chunk->chunk.entity));
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(chunk->type));

@@ -41,6 +41,16 @@
 #include "encoding.h"
 #include "msg.h"
 
+struct output_strong_file {
+	struct manual_data	*object;
+
+	char			*filename;
+
+	// Filename??
+	
+	
+};
+
 /* Global Variables. */
 
 /**

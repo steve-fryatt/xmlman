@@ -42,6 +42,8 @@
 #include "manual_data.h"
 #include "msg.h"
 #include "output_debug.h"
+#include "output_html.h"
+#include "output_strong.h"
 #include "output_text.h"
 #include "encoding.h"
 
