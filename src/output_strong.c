@@ -44,11 +44,6 @@
 
 /* Static constants. */
 
-/**
- * The length of buffer required to build fh? tags.
- */
-
-#define OUTPUT_STRONG_TITLE_TAG_BLOCK_LEN 6
 
 /* Static Function Prototypes. */
 
@@ -230,13 +225,13 @@ static bool output_strong_write_section(struct manual_data *section, int level)
 		if (!output_strong_file_write_newline())
 			return false;
 
-		if (!output_strong_file_write_plain("<p>"))
-			return false;
-
 		if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block)) 
 			return false;
 
-		if (!output_strong_file_write_plain("</p>"))
+//		if (!output_strong_file_write_newline())
+//			return false;
+
+		if ((block->next != NULL) && !output_strong_file_write_newline())
 			return false;
 
 		block = block->next;
@@ -255,28 +250,19 @@ static bool output_strong_write_section(struct manual_data *section, int level)
 
 static bool output_strong_write_heading(struct manual_data *title, int level)
 {
-	char buffer[OUTPUT_STRONG_TITLE_TAG_BLOCK_LEN];
-
 	if (title == NULL)
 		return true;
 
 	if (level < 0 || level > 6)
 		return false;
 
-	if (level == 0)
-		snprintf(buffer, OUTPUT_STRONG_TITLE_TAG_BLOCK_LEN, "title");
-	else
-		snprintf(buffer, OUTPUT_STRONG_TITLE_TAG_BLOCK_LEN, "h%d", level);
-
-	buffer[OUTPUT_STRONG_TITLE_TAG_BLOCK_LEN - 1] = '\0';
-
-	if (!output_strong_file_write_plain("<%s>", buffer))
+	if ((level > 0) && !output_strong_file_write_plain("{fh%d:", level))
 		return false;
 
 	if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, title))
 		return false;
 
-	if (!output_strong_file_write_plain("</%s>", buffer))
+	if ((level > 0) && !output_strong_file_write_plain("}"))
 		return false;
 
 	if (!output_strong_file_write_newline())
