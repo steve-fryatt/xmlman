@@ -128,6 +128,18 @@ struct manual_data {
 	struct manual_data			*first_child;
 
 	/**
+	 * Pointer to the object's parent, or NULL if none.
+	 */
+
+	struct manual_data			*parent;
+
+	/**
+	 * Pointer to the previous object, or NULL if none.
+	 */
+
+	struct manual_data			*previous;
+
+	/**
 	 * Pointer to the next object, or NULL if none.
 	 */
 

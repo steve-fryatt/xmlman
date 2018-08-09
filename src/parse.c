@@ -37,6 +37,7 @@
 #include "manual_data.h"
 #include "msg.h"
 #include "parse_element.h"
+#include "parse_link.h"
 #include "parse_stack.h"
 
 
@@ -101,6 +102,10 @@ struct manual_data *parse_document(char *filename)
 
 		chapter = chapter->next;
 	}
+
+	/* Link the document. */
+
+	parse_link(manual);
 
 	return manual;
 } 

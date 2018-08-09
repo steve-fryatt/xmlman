@@ -1,0 +1,79 @@
+/* Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+ *
+ * This file is part of XmlMan:
+ *
+ *   http://www.stevefryatt.org.uk/software/
+ *
+ * Licensed under the EUPL, Version 1.1 only (the "Licence");
+ * You may not use this work except in compliance with the
+ * Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ *   http://joinup.ec.europa.eu/software/page/eupl
+ *
+ * Unless required by applicable law or agreed to in
+ * writing, software distributed under the Licence is
+ * distributed on an "AS IS" basis, WITHOUT WARRANTIES
+ * OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ * See the Licence for the specific language governing
+ * permissions and limitations under the Licence.
+ */
+
+/**
+ * \file parse_link.c
+ *
+ * XML Parser Document Linking, implementation.
+ */
+
+#include <ctype.h>
+#include <stdbool.h>
+#include <stdlib.h>
+
+#include "parse_link.h"
+
+#include "manual_data.h"
+#include "msg.h"
+
+/* Static Function Prototypes. */
+
+static void parse_link_node(struct manual_data *node, struct manual_data *parent);
+
+/**
+ * Link a node and its children, connecting the previous and parent node
+ * references.
+ *
+ * \param *root		The root node to link from.
+ * \return		True if successful; False on error.
+ */
+
+bool parse_link(struct manual_data *root)
+{
+
+	parse_link_node(root, NULL);
+
+	return true;
+}
+
+/**
+ * Recursively link a node with its siblings and its children.
+ *
+ * \param *node		Pointer to the node to link.
+ * \param *parent	Pointer to the node's parent.
+ */
+
+static void parse_link_node(struct manual_data *node, struct manual_data *parent)
+{
+	struct manual_data *previous = NULL;
+
+	while (node != NULL) {
+		node->previous = previous;
+
+		if (node->first_child != NULL)
+			parse_link_node(node->first_child, node);
+
+		previous = node;
+		node = node->next;
+	}
+}

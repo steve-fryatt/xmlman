@@ -90,6 +90,8 @@ struct manual_data *manual_data_create(enum manual_data_object_type type)
 	data->id = NULL;
 	data->title = NULL;
 	data->first_child = NULL;
+	data->parent = NULL;
+	data->previous = NULL;
 	data->next = NULL;
 
 	switch (type) {

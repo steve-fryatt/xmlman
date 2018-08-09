@@ -46,6 +46,7 @@ OBJS := args.o			\
 	output_text_line.o	\
 	parse.o			\
 	parse_element.o		\
+	parse_link.o		\
 	parse_stack.o		\
 	string.o		\
 	xmlman.o
