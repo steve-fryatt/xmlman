@@ -33,6 +33,20 @@
 
 #include "manual_data.h"
 
+/* Constant Declarations. */
+
+/**
+ * The maximum number of levels that can be numbered.
+ */
+
+#define MANUAL_DATA_MAX_NUMBER_DEPTH 8
+
+/**
+ * The size of the number buffer.
+ */
+
+#define MANUAL_DATA_MAX_NUMBER_BUFFER_LEN 256
+
 /**
  * An chunk type definition structure.
  */
@@ -88,6 +102,7 @@ struct manual_data *manual_data_create(enum manual_data_object_type type)
 	data->type = type;
 
 	data->id = NULL;
+	data->index = 0;
 	data->title = NULL;
 	data->first_child = NULL;
 	data->parent = NULL;
@@ -128,5 +143,76 @@ const char *manual_data_find_object_name(enum manual_data_object_type type)
 	for (i = 0; manual_data_object_type_names[i].type != MANUAL_DATA_OBJECT_TYPE_NONE && manual_data_object_type_names[i].type != type; i++);
 
 	return manual_data_object_type_names[i].name;
+}
+
+/**
+ * Given a node, return a pointer to its display number in string format,
+ * or NULL if no number is defined.
+ *
+ * \param *node		The node to return a number for.
+ * \return		Pointer to the display number, or NULL.
+ */
+
+xmlChar *manual_data_get_node_number(struct manual_data *node)
+{
+	struct manual_data	*nodes[MANUAL_DATA_MAX_NUMBER_DEPTH], *last = NULL;
+	char			*text;
+	int			depth = 0, written = 0, position = 0;
+
+	if (node == NULL)
+		return NULL;
+
+	/* Identify the nodes which will make up the number. */
+
+	switch (node->type) {
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		do {
+			nodes[depth++] = node;
+			last = node;
+			node = node->parent;
+		} while ((node != NULL) && (last != NULL) &&
+				(last->type != MANUAL_DATA_OBJECT_TYPE_CHAPTER) &&
+				(depth < MANUAL_DATA_MAX_NUMBER_DEPTH));
+
+		if (node == NULL)
+			return NULL;
+
+		break;
+	/* Images, code blocks and so on would just take the chapter
+	 * and the node, and not step through.
+	 */
+	default:
+		return NULL;
+	}
+
+	/* If there are no nodes, something went wrong! */
+
+	if (depth == 0)
+		return NULL;
+
+	/* Claim a memory buffer. */
+
+	text = malloc(MANUAL_DATA_MAX_NUMBER_BUFFER_LEN);
+	if (text == NULL)
+		return NULL;
+
+	/* Write the number to the buffer. */
+
+	position = 0;
+
+	do {
+		written = snprintf(text + position, MANUAL_DATA_MAX_NUMBER_BUFFER_LEN - position, "%d.", nodes[--depth]->index);
+		if (written < 0) {
+			free(text);
+			return NULL;
+		}
+
+		position += written;
+	} while ((depth > 0) && (position < MANUAL_DATA_MAX_NUMBER_BUFFER_LEN));
+
+	text[MANUAL_DATA_MAX_NUMBER_BUFFER_LEN - 1] = '\0';
+
+	return (xmlChar *) text;
 }
 

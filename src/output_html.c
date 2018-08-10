@@ -56,7 +56,7 @@ static bool output_html_write_head(struct manual_data *manual);
 static bool output_html_write_body(struct manual_data *manual);
 static bool output_html_write_chapter(struct manual_data *chapter, int level);
 static bool output_html_write_section(struct manual_data *section, int level);
-static bool output_html_write_heading(struct manual_data *title, int level);
+static bool output_html_write_heading(struct manual_data *node, int level);
 static bool output_html_write_text(enum manual_data_object_type type, struct manual_data *text);
 static const char *output_html_convert_entity(enum manual_entity_type entity);
 
@@ -123,7 +123,7 @@ static bool output_html_write_head(struct manual_data *manual)
 	if (!output_html_file_write_plain("<head>") || !output_html_file_write_newline())
 		return false;
 
-	output_html_write_heading(manual->title, 0);
+	output_html_write_heading(manual, 0);
 
 	if (!output_html_file_write_plain("</head>") || !output_html_file_write_newline())
 		return false;
@@ -185,7 +185,7 @@ static bool output_html_write_chapter(struct manual_data *chapter, int level)
 		return false;
 
 	if (chapter->title != NULL) {
-		if (!output_html_write_heading(chapter->title, level))
+		if (!output_html_write_heading(chapter, level))
 			return false;
 	}
 
@@ -220,7 +220,7 @@ static bool output_html_write_section(struct manual_data *section, int level)
 		if (!output_html_file_write_newline())
 			return false;
 
-		if (!output_html_write_heading(section->title, level))
+		if (!output_html_write_heading(section, level))
 			return false;
 	}
 
@@ -246,22 +246,25 @@ static bool output_html_write_section(struct manual_data *section, int level)
 }
 
 /**
- * Write a block of text as a section title.
+ * Write a node title.
  *
- * \param *title		The block of text to be written.
+ * \param *node			The node for which to write the title.
  * \param level			The level to write the title at.
  * \return			True if successful; False on error.
  */
 
-static bool output_html_write_heading(struct manual_data *title, int level)
+static bool output_html_write_heading(struct manual_data *node, int level)
 {
-	char buffer[OUTPUT_HTML_TITLE_TAG_BLOCK_LEN];
+	char	buffer[OUTPUT_HTML_TITLE_TAG_BLOCK_LEN];
+	xmlChar	*number;
 
-	if (title == NULL)
+	if (node == NULL || node->title == NULL)
 		return true;
 
 	if (level < 0 || level > 6)
 		return false;
+
+	number = manual_data_get_node_number(node);
 
 	if (level == 0)
 		snprintf(buffer, OUTPUT_HTML_TITLE_TAG_BLOCK_LEN, "title");
@@ -270,10 +273,26 @@ static bool output_html_write_heading(struct manual_data *title, int level)
 
 	buffer[OUTPUT_HTML_TITLE_TAG_BLOCK_LEN - 1] = '\0';
 
-	if (!output_html_file_write_plain("<%s>", buffer))
+	if (!output_html_file_write_plain("<%s>", buffer)) {
+		free(number);
 		return false;
+	}
 
-	if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, title))
+	if (number != NULL) {
+		if (!output_html_file_write_text(number)) {
+			free(number);
+			return false;
+		}
+
+		if (!output_html_file_write_text((xmlChar *) " ")) {
+			free(number);
+			return false;
+		}
+
+		free(number);
+	}
+
+	if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, node->title))
 		return false;
 
 	if (!output_html_file_write_plain("</%s>", buffer))

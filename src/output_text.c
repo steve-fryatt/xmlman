@@ -60,7 +60,7 @@ static int output_text_page_width = 77;
 
 static bool output_text_write_chapter(struct manual_data *chapter, int indent);
 static bool output_text_write_section(struct manual_data *section, int indent);
-static bool output_text_write_heading(struct manual_data *title, int indent);
+static bool output_text_write_heading(struct manual_data *node, int indent);
 static bool output_text_write_text(struct output_text_line *line, int column, enum manual_data_object_type type, struct manual_data *text);
 static const char *output_text_convert_entity(enum manual_entity_type entity);
 
@@ -82,7 +82,7 @@ bool output_text(struct manual_data *manual)
 	encoding_select_table(ENCODING_TARGET_UTF8);
 	encoding_select_line_end(ENCODING_LINE_END_LF);
 
-	output_text_write_heading(manual->title, base_indent);
+	output_text_write_heading(manual, base_indent);
 
 	/* Output the chapter details. */
 
@@ -117,7 +117,7 @@ static bool output_text_write_chapter(struct manual_data *chapter, int indent)
 		return false;
 
 	if (chapter->title != NULL) {
-		if (!output_text_write_heading(chapter->title, indent))
+		if (!output_text_write_heading(chapter, indent))
 			return false;
 	}
 
@@ -153,7 +153,7 @@ static bool output_text_write_section(struct manual_data *section, int indent)
 		if (!output_text_line_write_newline())
 			return false;
 
-		if (!output_text_write_heading(section->title, indent))
+		if (!output_text_write_heading(section, indent))
 			return false;
 	}
 
@@ -196,19 +196,22 @@ static bool output_text_write_section(struct manual_data *section, int indent)
 }
 
 /**
- * Write a block of text as a section title.
+ * Write a node title.
  *
- * \param *title		The block of text to be written.
+ * \param *node			The node for which to write the title.
  * \param indent		The indent to write the title at.
  * \return			True if successful; False on error.
  */
 
-static bool output_text_write_heading(struct manual_data *title, int indent)
+static bool output_text_write_heading(struct manual_data *node, int indent)
 {
-	struct output_text_line *line;
+	struct output_text_line	*line;
+	xmlChar			*number;
 
-	if (title == NULL)
+	if (node == NULL || node->title == NULL)
 		return true;
+
+	number = manual_data_get_node_number(node);
 
 	line = output_text_line_create();
 	if (line == NULL)
@@ -224,7 +227,21 @@ static bool output_text_write_heading(struct manual_data *title, int indent)
 		return false;
 	}
 
-	if (!output_text_write_text(line, 0, MANUAL_DATA_OBJECT_TYPE_TITLE, title)) {
+	if (number != NULL) {
+		if (!output_text_line_add_text(line, 0, number)) {
+			output_text_line_destroy(line);
+			return false;
+		}
+
+		if (!output_text_line_add_text(line, 0, (xmlChar *) " ")) {
+			output_text_line_destroy(line);
+			return false;
+		}
+
+		free(number);
+	}
+
+	if (!output_text_write_text(line, 0, MANUAL_DATA_OBJECT_TYPE_TITLE, node->title)) {
 		output_text_line_destroy(line);
 		return false;
 	}

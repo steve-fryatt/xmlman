@@ -65,10 +65,26 @@ bool parse_link(struct manual_data *root)
 
 static void parse_link_node(struct manual_data *node, struct manual_data *parent)
 {
-	struct manual_data *previous = NULL;
+	struct manual_data	*previous = NULL;
+	int			index = 1;
 
 	while (node != NULL) {
 		node->previous = previous;
+		node->parent = parent;
+
+		switch (node->type) {
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			if (node->title != NULL)
+				node->index = index++;
+			break;
+		/* Images, code blocks and so on might need to rely on
+		 * global variables. Zero these at chapter level, and then
+		 * let them count up as the tree beneath is processed.
+		 */
+		default:
+			break;
+		}
 
 		if (node->first_child != NULL)
 			parse_link_node(node->first_child, node);
@@ -77,3 +93,4 @@ static void parse_link_node(struct manual_data *node, struct manual_data *parent
 		node = node->next;
 	}
 }
+

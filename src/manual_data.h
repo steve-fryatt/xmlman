@@ -116,6 +116,12 @@ struct manual_data {
 	xmlChar					*id;
 
 	/**
+	 * The index number of the node, or zero.
+	 */
+
+	int					index;
+
+	/**
 	 * Pointer to the object's title, or NULL if none has been set.
 	 */
 
@@ -174,6 +180,16 @@ struct manual_data *manual_data_create(enum manual_data_object_type type);
  */
 
 const char *manual_data_find_object_name(enum manual_data_object_type type);
+
+/**
+ * Given a node, return a pointer to its display number in string format,
+ * or NULL if no number is defined.
+ *
+ * \param *node		The node to return a number for.
+ * \return		Pointer to the display number, or NULL.
+ */
+
+xmlChar *manual_data_get_node_number(struct manual_data *node);
 
 #endif
 
