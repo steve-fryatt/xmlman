@@ -22,25 +22,35 @@
  */
 
 /**
- * \file output_strong.h
+ * \file manualc
  *
- * StrongHelp Output Engine Interface.
+ * Manual Structure, implementation.
  */
 
-#ifndef XMLMAN_OUTPUT_STRONG_H
-#define XMLMAN_OUTPUT_STRONG_H
-
+#include <ctype.h>
 #include <stdbool.h>
+#include <stdlib.h>
+
 #include "manual.h"
 
 /**
- * Output a manual in StrongHelp form.
+ * Create a new manual structure.
  *
- * \param *document	The manual to be output.
- * \return		TRUE if successful, otherwise FALSE.
+ * \param *node		Pointer to the top-level node for the structure.
+ * \return		Pointer to the new structure, or NULL on failure.
  */
 
-bool output_strong(struct manual *document);
+struct manual *manual_create(struct manual_data *node)
+{
+	struct manual *document;
 
-#endif
+	document = malloc(sizeof(struct manual));
+	if (document == NULL)
+		return NULL;
+
+	document->manual = node;
+	document->id_index = NULL;
+
+	return document;
+}
 

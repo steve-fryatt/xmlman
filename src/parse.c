@@ -34,8 +34,7 @@
 #include <libxml/xmlreader.h>
 
 #include "encoding.h"
-#include "manual_data.h"
-#include "manual_ids.h"
+#include "manual.h"
 #include "msg.h"
 #include "parse_element.h"
 #include "parse_link.h"

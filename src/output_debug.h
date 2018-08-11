@@ -31,7 +31,7 @@
 #define XMLMAN_OUTPUT_DEBUG_H
 
 #include <stdbool.h>
-#include "manual_data.h"
+#include "manual.h"
 
 /**
  * Output a manual in debug form.

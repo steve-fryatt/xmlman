@@ -34,6 +34,7 @@ endif
 
 OBJS := args.o			\
 	encoding.o		\
+	manual.o		\
 	manual_data.o		\
 	manual_entity.o		\
 	manual_ids.o		\

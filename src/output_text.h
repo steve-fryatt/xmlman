@@ -31,7 +31,7 @@
 #define XMLMAN_OUTPUT_TEXT_H
 
 #include <stdbool.h>
-#include "manual_data.h"
+#include "manual.h"
 
 /**
  * Output a manual in text form.

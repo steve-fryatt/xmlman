@@ -39,7 +39,7 @@
 
 #include "args.h"
 #include "parse.h"
-#include "manual_data.h"
+#include "manual.h"
 #include "msg.h"
 #include "output_debug.h"
 #include "output_html.h"

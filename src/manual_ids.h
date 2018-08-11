@@ -22,25 +22,43 @@
  */
 
 /**
- * \file output_strong.h
+ * \file manual_ids.h
  *
- * StrongHelp Output Engine Interface.
+ * Manual ID Indexing Interface.
  */
 
-#ifndef XMLMAN_OUTPUT_STRONG_H
-#define XMLMAN_OUTPUT_STRONG_H
+#ifndef XMLMAN_MANUAL_IDS_H
+#define XMLMAN_MANUAL_IDS_H
 
 #include <stdbool.h>
-#include "manual.h"
+
+#include "manual_data.h"
 
 /**
- * Output a manual in StrongHelp form.
- *
- * \param *document	The manual to be output.
- * \return		TRUE if successful, otherwise FALSE.
+ * An ID Index instance structure.
  */
 
-bool output_strong(struct manual *document);
+struct manual_ids;
+
+/**
+ * Create a new manual IDs index instance.
+ *
+ * \return		Pointer to the new instance, or NULL on failure.
+ */
+
+struct manual_ids *manual_ids_create(void);
+
+void manual_ids_dump(struct manual_ids *instance);
+
+/**
+ * Add a node to an index of IDs.
+ *
+ * \param *instance	The ID index instance to add the node to.
+ * \param *node		The node to add to the index.
+ * \return		True if successful; False on error.
+ */
+
+bool manual_ids_add_node(struct manual_ids *instance, struct manual_data *node);
 
 #endif
 

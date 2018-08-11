@@ -31,7 +31,7 @@
 #define XMLMAN_OUTPUT_HTML_H
 
 #include <stdbool.h>
-#include "manual_data.h"
+#include "manual.h"
 
 /**
  * Output a manual in HTML form.
