@@ -41,7 +41,7 @@
 
 <!ELEMENT chapterlist (EMPTY)>
 
-<!ELEMENT section (title | p | table | codeblock | image | download)*>
+<!ELEMENT section (section | title | p | table | codeblock | image | download)*>
 <!ATTLIST section id CDATA #IMPLIED>
 
 <!ELEMENT summary (#PCDATA | code | command | const | em | event | file | function | icon | intro | key | link | maths | menu | mouse | name | reference | strong | swi | variable)*> <!-- Needs to match P -->

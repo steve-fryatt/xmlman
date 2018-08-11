@@ -47,7 +47,15 @@
 /**
  * The number of characters to indent each new block by.
  */
+ 
 #define OUTPUT_TEXT_BLOCK_INDENT 2
+
+/**
+ * The maximum indent that can be applied to sections (effectively
+ * limiting the depth to which they can be nested.
+ */
+
+#define OUTPUT_TEXT_MAX_SECTION_INDENT 10
 
 /* Global Variables. */
 
@@ -114,6 +122,14 @@ static bool output_text_write_chapter(struct manual_data *chapter, int indent)
 	if (chapter == NULL || chapter->first_child == NULL)
 		return true;
 
+	/* Confirm that this is a chapter. */
+
+//	if (chapter->type != MANUAL_DATA_OBJECT_TYPE_CHAPTER) {
+//		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_CHAPTER),
+//				manual_data_find_object_name(chapter->type));
+//		return false;
+//	}
+
 	if (!output_text_line_write_newline() || !output_text_line_write_newline())
 		return false;
 
@@ -150,6 +166,23 @@ static bool output_text_write_section(struct manual_data *section, int indent)
 	if (section == NULL || section->first_child == NULL)
 		return true;
 
+	/* Confirm that this is a section. */
+
+	if (section->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_SECTION),
+				manual_data_find_object_name(section->type));
+		return false;
+	}
+
+	/* Check that the nesting depth is OK. */
+
+	if (indent > OUTPUT_TEXT_MAX_SECTION_INDENT) {
+		msg_report(MSG_TOO_DEEP, indent);
+		return false;
+	}
+
+	/* Write out the section heading. */
+
 	if (section->title != NULL) {
 		if (!output_text_line_write_newline())
 			return false;
@@ -170,24 +203,36 @@ static bool output_text_write_section(struct manual_data *section, int indent)
 	block = section->first_child;
 
 	while (block != NULL) {
-		if (!output_text_line_reset(paragraph_line)) {
-			output_text_line_destroy(paragraph_line);
-			return false;
-		}
+		switch (block->type) {
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			output_text_write_section(block, indent + OUTPUT_TEXT_BLOCK_INDENT);
+			break;
 
-		if (!output_text_line_write_newline()) {
-			output_text_line_destroy(paragraph_line);
-			return false;
-		}
+		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+			if (!output_text_line_reset(paragraph_line)) {
+				output_text_line_destroy(paragraph_line);
+				return false;
+			}
 
-		if (!output_text_write_text(paragraph_line, 0, MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block)) {
-			output_text_line_destroy(paragraph_line);
-			return false;
-		}
+			if (!output_text_line_write_newline()) {
+				output_text_line_destroy(paragraph_line);
+				return false;
+			}
 
-		if (!output_text_line_write(paragraph_line, false)) {
-			output_text_line_destroy(paragraph_line);
-			return false;
+			if (!output_text_write_text(paragraph_line, 0, MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block)) {
+				output_text_line_destroy(paragraph_line);
+				return false;
+			}
+
+			if (!output_text_line_write(paragraph_line, false)) {
+				output_text_line_destroy(paragraph_line);
+				return false;
+			}
+				break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+			break;
 		}
 
 		block = block->next;

@@ -35,6 +35,26 @@ handle large, variable amounts of data or   multiple documents.</p>
 <p>The aim of this guide is to give some help to those who are competent in C but have not used it when writing for the RISC&nbsp;OS desktop. It will also introduce the use of SFLib, which may be of interest to those writing Wimp software using OSLib.</p>
 
 <p>Many thanks to all those on the <link href="https://www.riscosopen.org/forum/">ROOL Forums</link> who have answered my questions about the DDE and offered suggestions while I&rsquo;ve worked on this guide.</p>
+
+<section>
+<title>Nested to Level 2</title>
+
+<p>Here we are at a lower level?</p>
+
+<section>
+<title>Down to level 3</title>
+
+<p>This should be yet another level below?</p>
+
+</section>
+</section>
+
+<section>
+<title>At level 2 again!</title>
+
+<p>We're still at a lower level, or should be</p>
+
+</section>
 </section>
 
 <chapterlist/>

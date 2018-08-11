@@ -45,6 +45,12 @@
 /* Static constants. */
 
 /**
+ * The maximum depth that sections can be nested.
+ */
+
+#define OUTPUT_HTML_MAX_NEST_DEPTH 6
+
+/**
  * The length of buffer required to build <title> and <h?> tags.
  */
 
@@ -182,6 +188,14 @@ static bool output_html_write_chapter(struct manual_data *chapter, int level)
 	if (chapter == NULL || chapter->first_child == NULL)
 		return true;
 
+	/* Confirm that this is a chapter. */
+
+//	if (chapter->type != MANUAL_DATA_OBJECT_TYPE_CHAPTER) {
+//		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_CHAPTER),
+//				manual_data_find_object_name(chapter->type));
+//		return false;
+//	}
+
 	if (!output_html_file_write_newline())
 		return false;
 
@@ -217,6 +231,23 @@ static bool output_html_write_section(struct manual_data *section, int level)
 	if (section == NULL || section->first_child == NULL)
 		return true;
 
+	/* Confirm that this is a section. */
+
+	if (section->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_SECTION),
+				manual_data_find_object_name(section->type));
+		return false;
+	}
+
+	/* Check that the nesting depth is OK. */
+
+	if (level > OUTPUT_HTML_MAX_NEST_DEPTH) {
+		msg_report(MSG_TOO_DEEP, level);
+		return false;
+	}
+
+	/* Write out the section heading. */
+
 	if (section->title != NULL) {
 		if (!output_html_file_write_newline())
 			return false;
@@ -228,17 +259,29 @@ static bool output_html_write_section(struct manual_data *section, int level)
 	block = section->first_child;
 
 	while (block != NULL) {
-		if (!output_html_file_write_newline())
-			return false;
+		switch (block->type) {
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			output_html_write_section(block, level + 1);
+			break;
 
-		if (!output_html_file_write_plain("<p>"))
-			return false;
+		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+			if (!output_html_file_write_newline())
+				return false;
 
-		if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block)) 
-			return false;
+			if (!output_html_file_write_plain("<p>"))
+				return false;
 
-		if (!output_html_file_write_plain("</p>"))
-			return false;
+			if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block)) 
+				return false;
+
+			if (!output_html_file_write_plain("</p>"))
+				return false;
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+			break;
+		}
 
 		block = block->next;
 	}

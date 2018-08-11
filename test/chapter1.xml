@@ -127,6 +127,26 @@ END</code>
 <image id="fig-start-basic-tmgr" file="start-basic-tmgr.png" title="Our application in the Task Manager&rsquo;s display"/>
 
 <p>It&rsquo;s not exactly a <em>useful</em> application, but it does show the main structure required to interact with the Wimp.</p>
+
+<section>
+<title>Nested to Level 2</title>
+
+<p>Here we are at a lower level?</p>
+
+<section>
+<title>Down to level 3</title>
+
+<p>This should be yet another level below?</p>
+
+</section>
+</section>
+
+<section>
+<title>At level 2 again!</title>
+
+<p>We're still at a lower level, or should be</p>
+
+</section>
 </section>
 </chapter>
 </manual>
