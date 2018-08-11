@@ -85,6 +85,27 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 };
 
 /**
+ * Create a new manual structure.
+ *
+ * \param *node		Pointer to the top-level node for the structure.
+ * \return		Pointer to the new structure, or NULL on failure.
+ */
+
+struct manual *manual_create(struct manual_data *node)
+{
+	struct manual *document;
+
+	document = malloc(sizeof(struct manual));
+	if (document == NULL)
+		return NULL;
+
+	document->manual = node;
+	document->id_index = NULL;
+
+	return document;
+}
+
+/**
  * Create a new manual_data structure.
  *
  * \param type		The type of object to create.

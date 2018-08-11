@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 	bool			verbose_output = false;
 	struct args_option	*options;
 	char			*input_file = NULL;
-	struct manual_data	*manual;
+	struct manual		*document = NULL;
 
 	/* Decode the command line options. */
 
@@ -109,21 +109,21 @@ int main(int argc, char *argv[])
 
 	/* Parse the source XML documents. */
 
-	manual = parse_document(input_file);
-	if (manual == NULL) {
+	document = parse_document(input_file);
+	if (document == NULL) {
 		msg_report(MSG_PARSE_FAIL);
 		return EXIT_FAILURE;
 	}
 
 	/* Generate the selected outputs. */
 
-	if (!output_html(manual))
+	if (!output_html(document))
 		return EXIT_FAILURE;
 
-	if (!output_strong(manual))
+	if (!output_strong(document))
 		return EXIT_FAILURE;
 
-	if (!output_text(manual))
+	if (!output_text(document))
 		return EXIT_FAILURE;
 
 	return EXIT_SUCCESS;

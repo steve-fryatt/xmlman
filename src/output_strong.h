@@ -36,11 +36,11 @@
 /**
  * Output a manual in StrongHelp form.
  *
- * \param *manual	The manual to be output.
+ * \param *document	The manual to be output.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-bool output_strong(struct manual_data *manual);
+bool output_strong(struct manual *document);
 
 #endif
 

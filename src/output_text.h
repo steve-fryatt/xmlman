@@ -36,11 +36,11 @@
 /**
  * Output a manual in text form.
  *
- * \param *manual	The manual to be output.
+ * \param *document	The manual to be output.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-bool output_text(struct manual_data *manual);
+bool output_text(struct manual *document);
 
 #endif
 

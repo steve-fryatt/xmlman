@@ -36,11 +36,11 @@
 /**
  * Output a manual in debug form.
  *
- * \param *manual	The manual to be output.
+ * \param *document	The manual to be output.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-bool output_debug(struct manual_data *manual);
+bool output_debug(struct manual *document);
 
 #endif
 

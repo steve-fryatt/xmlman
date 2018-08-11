@@ -63,13 +63,13 @@ static const char *output_html_convert_entity(enum manual_entity_type entity);
 /**
  * Output a manual in HTML form.
  *
- * \param *manual	The manual to be output.
+ * \param *document	The manual to be output.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-bool output_html(struct manual_data *manual)
+bool output_html(struct manual *document)
 {
-	if (manual == NULL)
+	if (document == NULL || document->manual == NULL)
 		return false;
 
 	encoding_select_table(ENCODING_TARGET_UTF8);
@@ -88,12 +88,12 @@ bool output_html(struct manual_data *manual)
 		return false;
 	}
 
-	if (!output_html_write_head(manual)) {
+	if (!output_html_write_head(document->manual)) {
 		output_html_file_close();
 		return false;
 	}
 
-	if (!output_html_write_body(manual)) {
+	if (!output_html_write_body(document->manual)) {
 		output_html_file_close();
 		return false;
 	}
@@ -123,7 +123,8 @@ static bool output_html_write_head(struct manual_data *manual)
 	if (!output_html_file_write_plain("<head>") || !output_html_file_write_newline())
 		return false;
 
-	output_html_write_heading(manual, 0);
+	if (!output_html_write_heading(manual, 0))
+		return false;
 
 	if (!output_html_file_write_plain("</head>") || !output_html_file_write_newline())
 		return false;

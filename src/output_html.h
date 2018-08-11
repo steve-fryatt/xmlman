@@ -36,11 +36,11 @@
 /**
  * Output a manual in HTML form.
  *
- * \param *manual	The manual to be output.
+ * \param *document	The manual to be output.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-bool output_html(struct manual_data *manual);
+bool output_html(struct manual *document);
 
 #endif
 

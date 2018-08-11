@@ -70,10 +70,10 @@ static void parse_error_handler(void *arg, const char *msg, xmlParserSeverities 
  * \return		Pointer to the resulting manual structure.
  */
 
-struct manual_data *parse_document(char *filename)
+struct manual *parse_document(char *filename)
 {
-	struct manual_data *manual = NULL, *chapter = NULL;
-	struct manual_ids *ids;
+	struct manual		*document = NULL;
+	struct manual_data	*manual = NULL, *chapter = NULL;
 
 	msg_initialise();
 
@@ -107,10 +107,14 @@ struct manual_data *parse_document(char *filename)
 
 	/* Link the document. */
 
-	ids = parse_link(manual);
-	manual_ids_dump(ids);
+	document = manual_create(manual);
+	if (document == NULL)
+		return NULL;
 
-	return manual;
+	document->id_index = parse_link(manual);
+	manual_ids_dump(document->id_index);
+
+	return document;
 } 
 
 /**

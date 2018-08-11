@@ -47,16 +47,18 @@ static char *output_debug_get_text(xmlChar *text);
 /**
  * Output a manual in debug form.
  *
- * \param *manual	The manual to be output.
+ * \param *document	The manual to be output.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-bool output_debug(struct manual_data *manual)
+bool output_debug(struct manual *document)
 {
-	struct manual_data *chapter, *section, *block;
+	struct manual_data *manual, *chapter, *section, *block;
 
-	if (manual == NULL)
+	if (document == NULL || document->manual == NULL)
 		return false;
+
+	manual = document->manual;
 
 	/* Output the manual heading and title. */
 

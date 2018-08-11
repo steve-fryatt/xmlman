@@ -39,7 +39,7 @@
  * \return		Pointer to the resulting manual structure.
  */
 
-struct manual_data *parse_document(char *filename);
+struct manual *parse_document(char *filename);
 
 #endif
 

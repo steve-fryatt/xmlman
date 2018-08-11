@@ -67,26 +67,27 @@ static const char *output_text_convert_entity(enum manual_entity_type entity);
 /**
  * Output a manual in text form.
  *
- * \param *manual	The manual to be output.
+ * \param *document	The manual to be output.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-bool output_text(struct manual_data *manual)
+bool output_text(struct manual *document)
 {
 	struct manual_data *chapter;
 	int base_indent = 0;
 
-	if (manual == NULL)
+	if (document == NULL || document->manual == NULL)
 		return false;
 
 	encoding_select_table(ENCODING_TARGET_UTF8);
 	encoding_select_line_end(ENCODING_LINE_END_LF);
 
-	output_text_write_heading(manual, base_indent);
+	if (!output_text_write_heading(document->manual, base_indent))
+		return false;
 
 	/* Output the chapter details. */
 
-	chapter = manual->first_child;
+	chapter = document->manual->first_child;
 
 	while (chapter != NULL) {
 		if (!output_text_write_chapter(chapter, base_indent))

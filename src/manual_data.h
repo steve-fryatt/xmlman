@@ -33,7 +33,6 @@
 #include <libxml/xmlstring.h>
 
 #include "manual_entity.h"
-#include "manual_ids.h"
 
 enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_NONE,
@@ -161,6 +160,35 @@ struct manual_data {
 		struct manual_data_chunk	chunk;
 	};
 };
+
+#include "manual_ids.h"
+
+/**
+ * A top-level manual structure.
+ */
+
+struct manual {
+	/**
+	 * Poiinter to the first node in the manual.
+	 */
+
+	struct manual_data	*manual;
+
+	/**
+	 * The ID Index instance for the manual.
+	 */
+
+	struct manual_ids	*id_index;
+};
+
+/**
+ * Create a new manual structure.
+ *
+ * \param *node		Pointer to the top-level node for the structure.
+ * \return		Pointer to the new structure, or NULL on failure.
+ */
+
+struct manual *manual_create(struct manual_data *node);
 
 /**
  * Create a new manual_data structure.
