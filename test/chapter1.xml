@@ -27,7 +27,7 @@
 <p>The way that software interacts with the Wimp hasn&rsquo;t really changed since the days of Arthur &ndash; although there have been some small changes to accommodate the system of cooperative multitasking, they don&rsquo;t alter anything in a fundamental way. All access to the Wimp is via SWI calls: using the <code>SYS</code> command in BASIC or &ndash; in the case of this tutorial &ndash; OSLib when working in C.</p>
 </section>
 
-<section>
+<section id="sect-start-basic-reg">
 <title>Registering with the Wimp</title>
 
 <p>When an application starts, it must initialise itself: loading any data it needs from disc, setting up any data structures and registering itself with the Wimp. This last point, done with the <swi>Wimp_Initialise</swi> SWI, is the first thing that differentiates multitasking applications from single-tasking ones. If we were working in BASIC, the initialisation for a very simple application might look like this.</p>
@@ -47,7 +47,7 @@ SYS &quot;Wimp_Initialise&quot;, 310, &amp;4B534154, &quot;Example App&quot;, 0<
 <p><code>&amp;4B534154</code> is a &ldquo;magic number&rdquo; &ndash; its four bytes actually spell out the word &ldquo;TASK&rdquo; in ASCII. It&rsquo;s sufficiently unlikely to end up in <name>R1</name> by accident that the Wimp uses its presence to turn off legacy support for Arthur: before RISC&nbsp;OS, no parameter was passed in this register. <name>R2</name> contains a pointer to the name that we&rsquo;re giving the task: it will appear in the Task Manager&rsquo;s listing, amongst other places. <name>R3</name> controls the behaviour of User Messages &ndash; for the time being, passing zero in here will be fine.</p>
 </section>
 
-<section>
+<section id="sect-start-basic-instruct">
 <title>Doing what we&rsquo;re told</title>
 
 <p>With the initialisation complete, the application can move on to the business of multitasking. RISC&nbsp;OS uses a system of &lsquo;cooperative multitasking&rsquo;: that is, each application must yield control back to the Wimp as soon as it&rsquo;s finished its current activity. If an application doesn&rsquo;t yield for more than a few fractions of a second at a time, the desktop can very quickly become extremely sluggish.</p>
@@ -94,7 +94,7 @@ END</code>
 <p>In the case of our example application, that&rsquo;s is: there&rsquo;s no resources to release. We can therefore just call <code>END</code> and let the program terminate.</p>
 </section>
 
-<section>
+<section id="sect-start-basic-together">
 <title>Putting it all together</title>
 
 <p>Putting the pieces together, we end up with the program in <reference id="list-start-basic-simple"/>.</p>

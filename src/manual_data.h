@@ -33,6 +33,7 @@
 #include <libxml/xmlstring.h>
 
 #include "manual_entity.h"
+#include "manual_ids.h"
 
 enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_NONE,
@@ -99,7 +100,7 @@ struct manual_data_chapter {
 };
 
 /**
- * Top-Level data for a manual.
+ * Top-Level data for a manual node.
  */
 
 struct manual_data {
@@ -159,7 +160,6 @@ struct manual_data {
 		struct manual_data_chapter	chapter;
 		struct manual_data_chunk	chunk;
 	};
-
 };
 
 /**

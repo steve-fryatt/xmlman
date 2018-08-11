@@ -35,6 +35,7 @@
 
 #include "encoding.h"
 #include "manual_data.h"
+#include "manual_ids.h"
 #include "msg.h"
 #include "parse_element.h"
 #include "parse_link.h"
@@ -72,6 +73,7 @@ static void parse_error_handler(void *arg, const char *msg, xmlParserSeverities 
 struct manual_data *parse_document(char *filename)
 {
 	struct manual_data *manual = NULL, *chapter = NULL;
+	struct manual_ids *ids;
 
 	msg_initialise();
 
@@ -105,7 +107,8 @@ struct manual_data *parse_document(char *filename)
 
 	/* Link the document. */
 
-	parse_link(manual);
+	ids = parse_link(manual);
+	manual_ids_dump(ids);
 
 	return manual;
 } 

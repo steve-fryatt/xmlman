@@ -36,6 +36,7 @@ OBJS := args.o			\
 	encoding.o		\
 	manual_data.o		\
 	manual_entity.o		\
+	manual_ids.o		\
 	msg.o			\
 	output_debug.o		\
 	output_html.o		\

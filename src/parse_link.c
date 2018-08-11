@@ -34,26 +34,32 @@
 #include "parse_link.h"
 
 #include "manual_data.h"
+#include "manual_ids.h"
 #include "msg.h"
 
 /* Static Function Prototypes. */
 
-static void parse_link_node(struct manual_data *node, struct manual_data *parent);
+static void parse_link_node(struct manual_data *node, struct manual_data *parent, struct manual_ids *id_index);
 
 /**
  * Link a node and its children, connecting the previous and parent node
  * references.
  *
  * \param *root		The root node to link from.
- * \return		True if successful; False on error.
+ * \return		An ID Index instance, or NULL on failure..
  */
 
-bool parse_link(struct manual_data *root)
+struct manual_ids *parse_link(struct manual_data *root)
 {
+	struct manual_ids *id_index;
 
-	parse_link_node(root, NULL);
+	id_index = manual_ids_create();
+	if (id_index == NULL)
+		return NULL;
 
-	return true;
+	parse_link_node(root, NULL, id_index);
+
+	return id_index;
 }
 
 /**
@@ -61,9 +67,10 @@ bool parse_link(struct manual_data *root)
  *
  * \param *node		Pointer to the node to link.
  * \param *parent	Pointer to the node's parent.
+ * \param *id_index	ID Index instance to store node IDs in.
  */
 
-static void parse_link_node(struct manual_data *node, struct manual_data *parent)
+static void parse_link_node(struct manual_data *node, struct manual_data *parent, struct manual_ids *id_index)
 {
 	struct manual_data	*previous = NULL;
 	int			index = 1;
@@ -71,6 +78,13 @@ static void parse_link_node(struct manual_data *node, struct manual_data *parent
 	while (node != NULL) {
 		node->previous = previous;
 		node->parent = parent;
+
+		/* Index the node ID. */
+
+		if (node->id != NULL)
+			manual_ids_add_node(id_index, node);
+
+		/* Number the node, if appropriate. */
 
 		switch (node->type) {
 		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
@@ -86,8 +100,12 @@ static void parse_link_node(struct manual_data *node, struct manual_data *parent
 			break;
 		}
 
+		/* Process any child nodes. */
+
 		if (node->first_child != NULL)
-			parse_link_node(node->first_child, node);
+			parse_link_node(node->first_child, node, id_index);
+
+		/* Move on to the next sibling. */
 
 		previous = node;
 		node = node->next;
