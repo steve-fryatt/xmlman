@@ -34,6 +34,7 @@
 #include <libxml/xmlreader.h>
 
 #include "encoding.h"
+#include "filename.h"
 #include "manual.h"
 #include "msg.h"
 #include "parse_element.h"
@@ -44,7 +45,7 @@
 
 /* Static Function Prototypes. */
 
-static bool parse_file(char *filename, struct manual_data **manual, struct manual_data **chapter);
+static bool parse_file(struct filename *filename, struct manual_data **manual, struct manual_data **chapter);
 static void parse_process_node(xmlTextReaderPtr reader, struct manual_data **manual, struct manual_data **chapter);
 static void parse_process_outer_node(xmlTextReaderPtr reader, struct manual_data **manual);
 static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data **chapter);
@@ -73,12 +74,22 @@ struct manual *parse_document(char *filename)
 {
 	struct manual		*document = NULL;
 	struct manual_data	*manual = NULL, *chapter = NULL;
+	struct filename		*document_root = NULL, *document_base = NULL;
 
 	msg_initialise();
 
+	document_base = filename_make((xmlChar *) filename, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
+	if (document_base == NULL)
+		return NULL;
+
+	document_root = filename_up(document_base, 1);
+	if (document_root == NULL)
+		return NULL;
+
 	/* Parse the root file. */
 
-	parse_file(filename, &manual, &chapter);
+	parse_file(document_base, &manual, &chapter);
+	filename_destroy(document_base);
 
 	if (manual == NULL)
 		return NULL;
@@ -98,8 +109,14 @@ struct manual *parse_document(char *filename)
 			return NULL;
 		}
 
-		if (!chapter->chapter.processed)
-			parse_file(chapter->chapter.filename, &manual, &chapter);
+		if (!chapter->chapter.processed) {
+			document_base = filename_up(document_root, 0);
+
+			if (filename_add(document_base, chapter->chapter.filename, 0));
+				parse_file(document_base, &manual, &chapter);
+
+			filename_destroy(document_base);
+		}
 
 		chapter = chapter->next;
 	}
@@ -119,7 +136,7 @@ struct manual *parse_document(char *filename)
 /**
  * Parse an XML file.
  *
- * \param *filename	The name of the file to parse.
+ * \param *filename	The name of the file to be parsed.
  * \param **manual	Pointer to a pointer to the current manual. The
  *			manual pointer can be NULL if this is the root
  *			file.
@@ -128,22 +145,26 @@ struct manual *parse_document(char *filename)
  *			file.
  */
 
-static bool parse_file(char *filename, struct manual_data **manual, struct manual_data **chapter)
+static bool parse_file(struct filename *filename, struct manual_data **manual, struct manual_data **chapter)
 {
 	xmlTextReaderPtr	reader;
+	char			*file = NULL;
 	int			ret;
 
-	if (filename == NULL) {
+	file = (char *) filename_convert(filename, FILENAME_PLATFORM_LOCAL);
+
+	if (file == NULL) {
 		msg_report(MSG_FILE_MISSING);
 		return false;
 	}
 
 	parse_stack_reset();
 
-	reader = xmlReaderForFile(filename, NULL, XML_PARSE_DTDATTR | XML_PARSE_DTDVALID);
+	reader = xmlReaderForFile(file, NULL, XML_PARSE_DTDATTR | XML_PARSE_DTDVALID);
 
 	if (reader == NULL) {
-		msg_report(MSG_OPEN_FAIL, filename);
+		msg_report(MSG_OPEN_FAIL, file);
+		free(file);
 		return false;
 	}
 
@@ -156,9 +177,10 @@ static bool parse_file(char *filename, struct manual_data **manual, struct manua
 	}
 
 	if (xmlTextReaderIsValid(reader) != 1)
-		msg_report(MSG_INVALID, filename);
+		msg_report(MSG_INVALID, file);
 
 	xmlFreeTextReader(reader);
+	free(file);
 
 	if (ret != 0)
 		fprintf(stderr, "%s : failed to parse\n", filename);
@@ -426,6 +448,7 @@ static bool parse_process_add_chapter(xmlTextReaderPtr reader, struct parse_stac
 static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack, enum manual_data_object_type type)
 {
 	struct manual_data	*new_chapter;
+	xmlChar*		filename = NULL;
 
 	/* Create a new chapter structure. */
 
@@ -437,7 +460,11 @@ static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struc
 
 	/* Process any entities which are found. */
 
-	new_chapter->chapter.filename = xmlTextReaderGetAttribute(reader, (const xmlChar *) "file");
+	filename = xmlTextReaderGetAttribute(reader, (const xmlChar *) "file");
+
+	new_chapter->chapter.filename = filename_make(filename, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
+
+	free(filename);
 
 	/* Link the new item in to the document structure. */
 

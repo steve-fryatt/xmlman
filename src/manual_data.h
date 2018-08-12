@@ -33,6 +33,7 @@
 #include <libxml/xmlstring.h>
 
 #include "manual_entity.h"
+#include "filename.h"
 
 enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_NONE,
@@ -95,7 +96,7 @@ struct manual_data_chapter {
 	 * chapter.
 	 */
 
-	xmlChar					*filename;
+	struct filename				*filename;
 };
 
 /**
