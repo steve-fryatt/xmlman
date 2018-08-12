@@ -218,6 +218,132 @@ void filename_dump(struct filename *name)
 }
 
 /**
+ * Duplicate a filename, optionally removing one or more leaves to remove the
+ * leave filename or move up to a parent directory.
+ *
+ * \param *name			The name to be duplicated.
+ * \param up			The number of levels to move up, or zero for a
+ *				straight duplication.
+ * \return			A new filename instance, or NULL on error.
+ */
+
+struct filename *filename_up(struct filename *name, int up)
+{
+	struct filename		*new_name = NULL;
+	struct filename_node	*node = NULL;
+	int			levels = 0;
+
+	if (name == NULL)
+		return NULL;
+
+	/* Count the number of levels in the filename. */
+
+	node = name->name;
+
+	while (node != NULL) {
+		levels++;
+		node = node->next;
+	}
+
+	/* Adjust the levels if a parent directory is required. */
+
+	if (up < 0)
+		up = 0;
+
+	levels -= up;
+	if (levels < 0)
+		levels = 0;
+
+	/* Claim memory for the new filename root. */
+
+	new_name = malloc(sizeof(struct filename));
+	if (new_name == NULL)
+		return NULL;
+
+	new_name->type = name->type;
+	new_name->name = NULL;
+
+	/* Copy across the required number of name nodes. */
+
+	if (levels > 0 && !filename_add(new_name, name, levels)) {
+		filename_destroy(new_name);
+		return NULL;
+	}
+
+	return new_name;
+}
+
+/**
+ * Add two filenames together. The nodes in the second name are duplicated and
+ * added to the end of the first, so the second name can be deleted afterwards
+ * if required. In the event of a failure, the number of nodes in the first
+ * name is undefined.
+ *
+ * \param *name			Pointer to the first name, to which the nodes of
+ *				the second will be appended.
+ * \param *add			Pointer to the name whose nodes will be appended
+ *				to the first.
+ * \param levels		The number of levels to copy, or zero for all.
+ * \return			True if successful; False on failure.
+ */
+
+bool filename_add(struct filename *name, struct filename *add, int levels)
+{
+	struct filename_node	*node = NULL, *new_node = NULL, *previous_node = NULL;
+	xmlChar			*new_part = NULL;
+	int			count = 0;
+
+	if (name == NULL || add == NULL)
+		return false;
+
+	/* Find the end of the first name. */
+
+	node = name->name;
+
+	while (node != NULL) {
+		previous_node = node;
+		node = node->next;
+	}
+
+	/* Copy the required number of nodes on to the end of the name. */
+
+	node = add->name;
+
+	while (node != NULL && ((levels == 0) || (count++ < levels))) {
+		new_node = malloc(sizeof(struct filename_node));
+		new_part = xmlStrdup(node->name);
+
+		/* Tidy up the loose nodes in the event of a memory error. */
+
+		if (new_node == NULL || new_part == NULL) {
+			if (new_node != NULL)
+				free(new_node);
+
+			if (new_part != NULL)
+				free(new_part);
+
+			return false;
+		}
+
+		new_node->name = new_part;
+		new_node->next = NULL;
+
+		/* Link the new node in to the instance. */
+
+		if (previous_node == NULL)
+			name->name = new_node;
+		else
+			previous_node->next = new_node;
+
+		previous_node = new_node;
+
+		node = node->next;
+	}
+
+	return true;
+}
+
+/**
  * Convert a filename instance into a string suitable for a given target
  * platform. Conversion between platforms of root filenames is unlikely
  * to have the intended results.

@@ -109,6 +109,34 @@ void filename_destroy(struct filename *name);
 void filename_dump(struct filename *name);
 
 /**
+ * Duplicate a filename, optionally removing one or more leaves to remove the
+ * leave filename or move up to a parent directory.
+ *
+ * \param *name			The name to be duplicated.
+ * \param up			The number of levels to move up, or zero for a
+ *				straight duplication.
+ * \return			A new filename instance, or NULL on error.
+ */
+
+struct filename *filename_up(struct filename *name, int up);
+
+/**
+ * Add two filenames together. The nodes in the second name are duplicated and
+ * added to the end of the first, so the second name can be deleted afterwards
+ * if required. In the event of a failure, the number of nodes in the first
+ * name is undefined.
+ *
+ * \param *name			Pointer to the first name, to which the nodes of
+ *				the second will be appended.
+ * \param *add			Pointer to the name whose nodes will be appended
+ *				to the first.
+ * \param levels		The number of levels to copy, or zero for all.
+ * \return			True if successful; False on failure.
+ */
+
+bool filename_add(struct filename *name, struct filename *add, int levels);
+
+/**
  * Convert a filename instance into a string suitable for a given target
  * platform. Conversion between platforms of root filenames is unlikely
  * to have the intended results.
