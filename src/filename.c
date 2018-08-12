@@ -94,6 +94,9 @@ struct filename *filename_make(xmlChar *name, enum filename_type type, enum file
 	int			position = 0, length = 0;
 	char			separator;
 
+	if (name == NULL)
+		return NULL;
+
 	/* Claim memory for the root of the name. */
 
 	root = malloc(sizeof(struct filename));
@@ -138,6 +141,8 @@ struct filename *filename_make(xmlChar *name, enum filename_type type, enum file
 
 		while (name[position] != '\0' && name[position] != separator)
 			*part++ = name[position++];
+
+		*part = '\0';
 
 		/* Step past any directory separator. */
 
@@ -200,6 +205,8 @@ void filename_dump(struct filename *name)
 {
 	struct filename_node *node;
 
+	printf(">=======================\n");
+
 	if (name == NULL) {
 		printf("No name!\n");
 		return;
@@ -215,6 +222,8 @@ void filename_dump(struct filename *name)
 
 		node = node->next;
 	}
+
+	printf("<-----------------------\n");
 }
 
 /**
