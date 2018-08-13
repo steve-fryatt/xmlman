@@ -480,9 +480,6 @@ enum encoding_line_end encoding_find_line_end(char *name)
 
 bool encoding_select_line_end(enum encoding_line_end type)
 {
-	int	i = 0, current_code = 0;
-	bool	map[256];
-
 	/* Reset the current line end selection */
 
 	encoding_current_line_end = -1;
