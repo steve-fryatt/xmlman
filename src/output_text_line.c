@@ -105,6 +105,14 @@ struct output_text_line {
 
 #define OUTPUT_TEXT_LINE_COLUMN_BLOCK_SIZE 2048
 
+/* Global Variables. */
+
+/**
+ * The output file handle.
+ */
+
+static FILE *output_text_line_handle = NULL;
+
 /* Static Function Prototypes. */
 
 static bool output_text_line_add_column_text(struct output_text_line_column *column, xmlChar *text);
@@ -116,6 +124,38 @@ static bool output_text_line_write_column_underline(struct output_text_line_colu
 static bool output_text_line_pad_to_column(struct output_text_line_column *column);
 static bool output_text_line_write_char(struct output_text_line *line, int c);
 
+
+/**
+ * Open a file to write the text output to.
+ *
+ * \param *filename	Pointer to the name of the file to write.
+ * \return		True on success; False on failure.
+ */
+
+bool output_text_line_open(char *filename)
+{
+	output_text_line_handle = fopen(filename, "w");
+
+	if (output_text_line_handle == NULL) {
+		fprintf(stderr, "Failed to open text file for output.\n");
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Close the current text output file.
+ */
+
+void output_text_line_close(void)
+{
+	if (output_text_line_handle == NULL)
+		return;
+
+	fclose(output_text_line_handle);
+	output_text_line_handle = NULL;
+}
 
 /**
  * Create a new text line output instance.
@@ -671,13 +711,18 @@ bool output_text_line_write_newline(void)
 {
 	const char *line_end = NULL;
 
+	if (output_text_line_handle == NULL) {
+		msg_report(MSG_WRITE_NO_FILE);
+		return false;
+	}
+
 	line_end = encoding_get_newline();
 	if (line_end == NULL) {
 		msg_report(MSG_TEXT_NO_LINE_END);
 		return false;
 	}
 
-	if (fputs(line_end, stdout) == EOF) {
+	if (fputs(line_end, output_text_line_handle) == EOF) {
 		msg_report(MSG_WRITE_FAILED);
 		return false;
 	}
@@ -700,12 +745,17 @@ static bool output_text_line_write_char(struct output_text_line *line, int unico
 
 	if (line == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_REF);
-		return 0;
+		return false;
+	}
+
+	if (output_text_line_handle == NULL) {
+		msg_report(MSG_WRITE_NO_FILE);
+		return false;
 	}
 
 	encoding_write_unicode_char(buffer, ENCODING_CHAR_BUF_LEN, unicode);
 
-	if (fputs(buffer, stdout) == EOF) {
+	if (fputs(buffer, output_text_line_handle) == EOF) {
 		msg_report(MSG_WRITE_FAILED);
 		return false;
 	}

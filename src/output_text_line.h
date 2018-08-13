@@ -37,6 +37,21 @@
 struct output_text_line;
 
 /**
+ * Open a file to write the text output to.
+ *
+ * \param *filename	Pointer to the name of the file to write.
+ * \return		True on success; False on failure.
+ */
+
+bool output_text_line_open(char *filename);
+
+/**
+ * Close the current text output file.
+ */
+
+void output_text_line_close(void);
+
+/**
  * Create a new text line output instance.
  *
  * \return		Pointer to the new line block, or NULL on failure.
