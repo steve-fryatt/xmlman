@@ -56,7 +56,8 @@
 
 /* Static Function Prototypes. */
 
-static bool xmlman_process_mode(char *file, struct manual *document, bool (*mode)(struct manual *, struct filename *));
+static bool xmlman_process_mode(char *file, struct manual *document, enum encoding_target encoding, enum encoding_line_end line_end,
+		bool (*mode)(struct manual *, struct filename *, enum encoding_target, enum encoding_line_end));
 
 /**
  * Main program entry point.
@@ -75,11 +76,13 @@ int main(int argc, char *argv[])
 	char			*input_file = NULL;
 	char			*out_debug = NULL, *out_text = NULL, *out_html = NULL, *out_strong = NULL;
 	struct manual		*document = NULL;
+	enum encoding_target	output_encoding = ENCODING_TARGET_NONE;
+	enum encoding_line_end	output_line_end = ENCODING_LINE_END_NONE;
 
 	/* Decode the command line options. */
 
 	options = args_process_line(argc, argv,
-			"source/A,verbose/S,help/S,debug/K,text/K,html/K,strong/K");
+			"source/A,verbose/S,help/S,encoding/K,lineend/K,debug/K,text/K,html/K,strong/K");
 	if (options == NULL)
 		param_error = true;
 
@@ -93,6 +96,26 @@ int main(int argc, char *argv[])
 					input_file = options->data->value.string;
 			} else {
 				param_error = true;
+			}
+		} else if (strcmp(options->name, "encoding") == 0) {
+			if (options->data != NULL) {
+				if (options->data->value.string != NULL) {
+					output_encoding = encoding_find_target(options->data->value.string);
+					if (output_encoding == ENCODING_TARGET_NONE)
+						param_error = true;
+				} else {
+					param_error = true;
+				}
+			}
+		} else if (strcmp(options->name, "lineend") == 0) {
+			if (options->data != NULL) {
+				if (options->data->value.string != NULL) {
+					output_line_end = encoding_find_line_end(options->data->value.string);
+					if (output_line_end == ENCODING_LINE_END_NONE)
+						param_error = true;
+				} else {
+					param_error = true;
+				}
 			}
 		} else if (strcmp(options->name, "debug") == 0) {
 			if (options->data != NULL) {
@@ -145,6 +168,8 @@ int main(int argc, char *argv[])
 
 		printf(" -help                  Produce this help information.\n");
 		printf(" -verbose               Generate verbose process information.\n");
+		printf(" -encoding <name>       Override the output encoding.\n");
+		printf(" -lineend <name>        Override the output line ending type.\n");
 
 		printf(" -text <file>           Generate text format output.\n");
 		printf(" -html <file>           Generate HTML format output.\n");
@@ -164,16 +189,16 @@ int main(int argc, char *argv[])
 
 	/* Generate the selected outputs. */
 
-	if (!xmlman_process_mode(out_debug, document, output_debug))
+	if (!xmlman_process_mode(out_debug, document, output_encoding, output_line_end, output_debug))
 		return EXIT_FAILURE;
 
-	if (!xmlman_process_mode(out_html, document, output_html))
+	if (!xmlman_process_mode(out_html, document, output_encoding, output_line_end, output_html))
 		return EXIT_FAILURE;
 
-	if (!xmlman_process_mode(out_strong, document, output_strong))
+	if (!xmlman_process_mode(out_strong, document, output_encoding, output_line_end, output_strong))
 		return EXIT_FAILURE;
 
-	if (!xmlman_process_mode(out_text, document, output_text))
+	if (!xmlman_process_mode(out_text, document, output_encoding, output_line_end, output_text))
 		return EXIT_FAILURE;
 
 	return EXIT_SUCCESS;
@@ -184,12 +209,15 @@ int main(int argc, char *argv[])
  *
  * \param *file			The filename to output to, or NULL to skip.
  * \param *document		The document to be output.
+ * \param encoding		The requested encoding for the output.
+ * \param line_end		The requested line ending for the output.
  * \param *mode			The function to use to write the output.
  * \return			True if successful or skipped; False on
  *				failure or error.
  */
 
-static bool xmlman_process_mode(char *file, struct manual *document, bool (*mode)(struct manual *, struct filename *))
+static bool xmlman_process_mode(char *file, struct manual *document, enum encoding_target encoding, enum encoding_line_end line_end,
+		bool (*mode)(struct manual *, struct filename *, enum encoding_target, enum encoding_line_end))
 {
 	struct filename	*filename;
 	bool		result;
@@ -204,7 +232,7 @@ static bool xmlman_process_mode(char *file, struct manual *document, bool (*mode
 	if (filename == NULL)
 		return false;
 
-	result = mode(document, filename);
+	result = mode(document, filename, encoding, line_end);
 
 	filename_destroy(filename);
 

@@ -307,6 +307,7 @@ static struct encoding_map encoding_acorn_latin2[] = {
 struct encoding_table {
 	enum encoding_target	encoding;
 	struct encoding_map	*table;
+	const char		*name;
 };
 
 /**
@@ -314,9 +315,9 @@ struct encoding_table {
  */
 
 static struct encoding_table encoding_list[] = {
-	{ENCODING_TARGET_UTF8,		NULL},
-	{ENCODING_TARGET_ACORN_LATIN1,	encoding_acorn_latin1},
-	{ENCODING_TARGET_ACORN_LATIN2,	encoding_acorn_latin2}
+	{ENCODING_TARGET_UTF8,		NULL,			"UTF8"},
+	{ENCODING_TARGET_ACORN_LATIN1,	encoding_acorn_latin1,	"AcornL1"},
+	{ENCODING_TARGET_ACORN_LATIN2,	encoding_acorn_latin2,	"AcornL2"}
 };
 
 /**
@@ -326,6 +327,7 @@ static struct encoding_table encoding_list[] = {
 struct encoding_line_end_table {
 	enum encoding_line_end	line_end;
 	const char		*sequence;
+	const char		*name;
 };
 
 /**
@@ -333,10 +335,10 @@ struct encoding_line_end_table {
  */
 
 static struct encoding_line_end_table encoding_line_end_list[] = {
-	{ENCODING_LINE_END_CR,		"\r"},
-	{ENCODING_LINE_END_LF,		"\n"},
-	{ENCODING_LINE_END_CRLF,	"\r\n"},
-	{ENCODING_LINE_END_LFCR,	"\n\r"}
+	{ENCODING_LINE_END_CR,		"\r",		"CR"},
+	{ENCODING_LINE_END_LF,		"\n",		"LF"},
+	{ENCODING_LINE_END_CRLF,	"\r\n",		"CRLF"},
+	{ENCODING_LINE_END_LFCR,	"\n\r",		"LFCR"}
 };
 
 /**
@@ -361,6 +363,25 @@ static int encoding_current_line_end = -1;
 
 static int encoding_find_mapped_character(int unicode);
 
+/**
+ * Find an encoding type based on a textual name.
+ *
+ * \param *name			The encoding name to match.
+ * \return			The encoding type, or
+ *				ENCODING_TARGET_NONE.
+ */
+
+enum encoding_target encoding_find_target(char *name)
+{
+	int i;
+
+	for (i = 0; i < ENCODING_TARGET_MAX; i++) {
+		if (strcmp(name, encoding_list[i].name) == 0)
+			return encoding_list[i].encoding;
+	}
+
+	return ENCODING_TARGET_NONE;
+}
 
 /**
  * Select an encoding table.
@@ -429,6 +450,26 @@ bool encoding_select_table(enum encoding_target target)
 	}
 
 	return true;
+}
+
+/**
+ * Find a line ending type based on a textual name.
+ *
+ * \param *name			The line ending name to match.
+ * \return			The line ending type, or
+ *				ENCODING_LINE_END_NONE.
+ */
+
+enum encoding_line_end encoding_find_line_end(char *name)
+{
+	int i;
+
+	for (i = 0; i < ENCODING_LINE_END_MAX; i++) {
+		if (strcmp(name, encoding_line_end_list[i].name) == 0)
+			return encoding_line_end_list[i].line_end;
+	}
+
+	return ENCODING_LINE_END_NONE;
 }
 
 /**

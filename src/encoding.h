@@ -71,7 +71,8 @@ enum encoding_target {
 	ENCODING_TARGET_UTF8,		/**< UTF8 encoding.				*/
 	ENCODING_TARGET_ACORN_LATIN1,	/**< RISC OS Latin 1 encoding.			*/
 	ENCODING_TARGET_ACORN_LATIN2,	/**< RISC OS Latin 2 encoding.			*/
-	ENCODING_TARGET_MAX		/**< The maximum nubmber of encodings.		*/
+	ENCODING_TARGET_MAX,		/**< The maximum nubmber of encodings.		*/
+	ENCODING_TARGET_NONE		/**< No encoding.				*/
 };
 
 /**
@@ -85,9 +86,19 @@ enum encoding_line_end {
 	ENCODING_LINE_END_LF,		/**< A single Line Feed (RISC OS or Unix).	*/
 	ENCODING_LINE_END_CRLF,		/**< Carriage Return then Line Feed (DOS).	*/
 	ENCODING_LINE_END_LFCR,		/**< Line Feed then Carriage Return.		*/
-	ENCODING_LINE_END_MAX		/**< The maximum nubmber of line endings.	*/
+	ENCODING_LINE_END_MAX,		/**< The maximum nubmber of line endings.	*/
+	ENCODING_LINE_END_NONE		/**< No line ending.				*/
 };
 
+/**
+ * Find an encoding type based on a textual name.
+ *
+ * \param *name			The encoding name to match.
+ * \return			The encoding type, or
+ *				ENCODING_TARGET_NONE.
+ */
+
+enum encoding_target encoding_find_target(char *name);
 /**
  * Select an encoding table.
  *
@@ -95,6 +106,16 @@ enum encoding_line_end {
  */
 
 bool encoding_select_table(enum encoding_target target);
+
+/**
+ * Find a line ending type based on a textual name.
+ *
+ * \param *name			The line ending name to match.
+ * \return			The line ending type, or
+ *				ENCODING_LINE_END_NONE.
+ */
+
+enum encoding_line_end encoding_find_line_end(char *name);
 
 /**
  * Select a type of line ending.

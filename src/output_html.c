@@ -72,10 +72,12 @@ static const char *output_html_convert_entity(enum manual_entity_type entity);
  *
  * \param *document	The manual to be output.
  * \param *filename	The filename to use to write to.
+ * \param encoding	The encoding to use for output.
+ * \param line_end	The line ending to use for output.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-bool output_html(struct manual *document, struct filename *filename)
+bool output_html(struct manual *document, struct filename *filename, enum encoding_target encoding, enum encoding_line_end line_end)
 {
 	if (document == NULL || document->manual == NULL)
 		return false;

@@ -31,6 +31,7 @@
 #define XMLMAN_OUTPUT_HTML_H
 
 #include <stdbool.h>
+#include "encoding.h"
 #include "filename.h"
 #include "manual.h"
 
@@ -39,10 +40,12 @@
  *
  * \param *document	The manual to be output.
  * \param *filename	The filename to use to write to.
+ * \param encoding	The encoding to use for output.
+ * \param line_end	The line ending to use for output.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-bool output_html(struct manual *document, struct filename *filename);
+bool output_html(struct manual *document, struct filename *filename, enum encoding_target encoding, enum encoding_line_end line_end);
 
 #endif
 
