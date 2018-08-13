@@ -163,18 +163,19 @@ int main(int argc, char *argv[])
 	}
 
 	if (param_error || output_help) {
-		printf("XML Manual Creation -- Usage:\n");
-		printf("xmlman <infile> [-text <outfile>] [-strong <outfile>] [-html <outfile] [<options>]\n\n");
+		printf("\nXML Manual Creation -- Usage:\n");
+		printf("xmlman <infile> [-text <outfile>] [-strong <outfile>] [-html <outfile>] [-debug <outfile>]\n");
+		printf("       [-encoding <name>] [lineend <name>] [<options>]\n\n");
 
 		printf(" -help                  Produce this help information.\n");
 		printf(" -verbose               Generate verbose process information.\n");
 		printf(" -encoding <name>       Override the output encoding.\n");
 		printf(" -lineend <name>        Override the output line ending type.\n");
 
-		printf(" -text <file>           Generate text format output.\n");
-		printf(" -html <file>           Generate HTML format output.\n");
-		printf(" -strong <file>         Generate StrongHelp format output.\n");
-		printf(" -debug <file>          Generate Debug format output.\n");
+		printf(" -text <outfile>        Generate text format output to <outfile>.\n");
+		printf(" -html <outfile>        Generate HTML format output to <outfile>.\n");
+		printf(" -strong <outfile>      Generate StrongHelp format output to <outfile>.\n");
+		printf(" -debug <outfile>       Generate Debug format output to <outfile>.\n");
 
 		return (output_help) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
