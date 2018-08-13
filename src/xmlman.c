@@ -38,20 +38,33 @@
 /* Local source headers. */
 
 #include "args.h"
-#include "parse.h"
+#include "encoding.h"
+#include "filename.h"
 #include "manual.h"
 #include "msg.h"
 #include "output_debug.h"
 #include "output_html.h"
 #include "output_strong.h"
 #include "output_text.h"
-#include "encoding.h"
+#include "parse.h"
 
 /* OSLib source headers. */
 
 #ifdef RISCOS
 #include "oslib/osfile.h"
 #endif
+
+/* Static Function Prototypes. */
+
+static bool xmlman_process_mode(char *file, struct manual *document, bool (*mode)(struct manual *, struct filename *));
+
+/**
+ * Main program entry point.
+ *
+ * \param argc			The number of command line arguments.
+ * \param *argv[]		The array of command line arguments.
+ * \return			The outcome of the execution.
+ */
 
 int main(int argc, char *argv[])
 {
@@ -60,12 +73,13 @@ int main(int argc, char *argv[])
 	bool			verbose_output = false;
 	struct args_option	*options;
 	char			*input_file = NULL;
+	char			*out_debug = NULL, *out_text = NULL, *out_html = NULL, *out_strong = NULL;
 	struct manual		*document = NULL;
 
 	/* Decode the command line options. */
 
 	options = args_process_line(argc, argv,
-			"source/A,verbose/S,help/S");
+			"source/A,verbose/S,help/S,debug/K,text/K,html/K,strong/K");
 	if (options == NULL)
 		param_error = true;
 
@@ -79,6 +93,34 @@ int main(int argc, char *argv[])
 					input_file = options->data->value.string;
 			} else {
 				param_error = true;
+			}
+		} else if (strcmp(options->name, "debug") == 0) {
+			if (options->data != NULL) {
+				if (options->data->value.string != NULL)
+					out_debug = options->data->value.string;
+				else
+					param_error = true;
+			}
+		} else if (strcmp(options->name, "text") == 0) {
+			if (options->data != NULL) {
+				if (options->data->value.string != NULL)
+					out_text = options->data->value.string;
+				else
+					param_error = true;
+			}
+		} else if (strcmp(options->name, "html") == 0) {
+			if (options->data != NULL) {
+				if (options->data->value.string != NULL)
+					out_html = options->data->value.string;
+				else
+					param_error = true;
+			}
+		} else if (strcmp(options->name, "strong") == 0) {
+			if (options->data != NULL) {
+				if (options->data->value.string != NULL)
+					out_strong = options->data->value.string;
+				else
+					param_error = true;
 			}
 		} else if (strcmp(options->name, "verbose") == 0) {
 			if (options->data != NULL && options->data->value.boolean == true)
@@ -104,6 +146,11 @@ int main(int argc, char *argv[])
 		printf(" -help                  Produce this help information.\n");
 		printf(" -verbose               Generate verbose process information.\n");
 
+		printf(" -text <file>           Generate text format output.\n");
+		printf(" -html <file>           Generate HTML format output.\n");
+		printf(" -strong <file>         Generate StrongHelp format output.\n");
+		printf(" -debug <file>          Generate Debug format output.\n");
+
 		return (output_help) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
@@ -117,15 +164,50 @@ int main(int argc, char *argv[])
 
 	/* Generate the selected outputs. */
 
-	if (!output_html(document))
+	if (!xmlman_process_mode(out_debug, document, output_debug))
 		return EXIT_FAILURE;
 
-	if (!output_strong(document))
+	if (!xmlman_process_mode(out_html, document, output_html))
 		return EXIT_FAILURE;
 
-	if (!output_text(document))
+	if (!xmlman_process_mode(out_strong, document, output_strong))
+		return EXIT_FAILURE;
+
+	if (!xmlman_process_mode(out_text, document, output_text))
 		return EXIT_FAILURE;
 
 	return EXIT_SUCCESS;
+}
+
+/**
+ * Run an output job for a given output mode.
+ *
+ * \param *file			The filename to output to, or NULL to skip.
+ * \param *document		The document to be output.
+ * \param *mode			The function to use to write the output.
+ * \return			True if successful or skipped; False on
+ *				failure or error.
+ */
+
+static bool xmlman_process_mode(char *file, struct manual *document, bool (*mode)(struct manual *, struct filename *))
+{
+	struct filename	*filename;
+	bool		result;
+
+	if (document == NULL || mode == NULL)
+		return false;
+
+	if (file == NULL)
+		return true;
+
+	filename = filename_make((xmlChar *) file, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
+	if (filename == NULL)
+		return false;
+
+	result = mode(document, filename);
+
+	filename_destroy(filename);
+
+	return result;
 }
 

@@ -31,16 +31,18 @@
 #define XMLMAN_OUTPUT_TEXT_H
 
 #include <stdbool.h>
+#include "filename.h"
 #include "manual.h"
 
 /**
  * Output a manual in text form.
  *
  * \param *document	The manual to be output.
+ * \param *filename	The filename to use to write to.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-bool output_text(struct manual *document);
+bool output_text(struct manual *document, struct filename *filename);
 
 #endif
 

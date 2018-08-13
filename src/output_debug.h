@@ -31,16 +31,18 @@
 #define XMLMAN_OUTPUT_DEBUG_H
 
 #include <stdbool.h>
+#include "filename.h"
 #include "manual.h"
 
 /**
  * Output a manual in debug form.
  *
  * \param *document	The manual to be output.
+ * \param *filename	The filename to use to write to.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-bool output_debug(struct manual *document);
+bool output_debug(struct manual *document, struct filename *filename);
 
 #endif
 

@@ -38,6 +38,7 @@
 #include "output_text.h"
 
 #include "encoding.h"
+#include "filename.h"
 #include "manual_data.h"
 #include "msg.h"
 #include "output_text_line.h"
@@ -76,10 +77,11 @@ static const char *output_text_convert_entity(enum manual_entity_type entity);
  * Output a manual in text form.
  *
  * \param *document	The manual to be output.
+ * \param *filename	The filename to use to write to.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-bool output_text(struct manual *document)
+bool output_text(struct manual *document, struct filename *filename)
 {
 	struct manual_data *chapter;
 	int base_indent = 0;
