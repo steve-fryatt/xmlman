@@ -365,7 +365,7 @@ bool filename_add(struct filename *name, struct filename *add, int levels)
  * \return			Pointer to the filename, or NULL on failure.
  */
 
-xmlChar *filename_convert(struct filename *name, enum filename_platform platform)
+char *filename_convert(struct filename *name, enum filename_platform platform)
 {
 	size_t			length = 0;
 	xmlChar			*c = NULL, *d = NULL, *filename = NULL;
@@ -422,7 +422,7 @@ xmlChar *filename_convert(struct filename *name, enum filename_platform platform
 
 	*d = '\0';
 
-	return filename;
+	return (char *) filename;
 }
 
 /**

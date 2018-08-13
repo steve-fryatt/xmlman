@@ -79,14 +79,33 @@ static const char *output_html_convert_entity(enum manual_entity_type entity);
 
 bool output_html(struct manual *document, struct filename *filename, enum encoding_target encoding, enum encoding_line_end line_end)
 {
+	char *file = NULL;
+
 	if (document == NULL || document->manual == NULL)
 		return false;
 
-	encoding_select_table(ENCODING_TARGET_UTF8);
-	encoding_select_line_end(ENCODING_LINE_END_LF);
+	/* Output encoding defaults to UTF8. */
 
-	if (!output_html_file_open("test.html"))
+	encoding_select_table((encoding != ENCODING_TARGET_NONE) ? encoding : ENCODING_TARGET_UTF8);
+
+	/* Output line endings default to LF. */
+
+	encoding_select_line_end((line_end != ENCODING_LINE_END_NONE) ? line_end : ENCODING_LINE_END_LF);
+
+	/* Find and open the output file. */
+
+	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL);
+	if (file == NULL) {
+		msg_report(MSG_WRITE_NO_FILENAME);
 		return false;
+	}
+
+	if (!output_html_file_open(file)) {
+		free(file);
+		return false;
+	}
+
+	free(file);
 
 	if (!output_html_file_write_plain("<!DOCTYPE html>") || !output_html_file_write_newline()) {
 		output_html_file_close();

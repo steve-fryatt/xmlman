@@ -1,1 +1,1 @@
-./buildlinux/xmlman test/test.xml
+./buildlinux/xmlman test/test.xml -html test-out/html-out.html

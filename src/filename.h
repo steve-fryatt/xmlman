@@ -149,7 +149,7 @@ bool filename_add(struct filename *name, struct filename *add, int levels);
  * \return			Pointer to the filename, or NULL on failure.
  */
 
-xmlChar *filename_convert(struct filename *name, enum filename_platform platform);
+char *filename_convert(struct filename *name, enum filename_platform platform);
 
 #endif
 
