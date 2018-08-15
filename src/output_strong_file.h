@@ -49,6 +49,23 @@ bool output_strong_file_open(char *filename);
 
 void output_strong_file_close(void);
 
+/**
+ * Open a file within the current StrongHelp file, ready for writing.
+ *
+ * \param *filename	The internal filename, in Filecore format.
+ * \param type		The RISC OS numeric filetype.
+ * \return		True on success; False on failure.
+ */
+
+bool output_strong_file_sub_open(char *filename, int type);
+
+/**
+ * Close the current file within the current StrongHelp output file.
+ *
+ * \return		True on success; False on failure.
+ */
+
+bool output_strong_file_sub_close(void);
 
 /**
  * Write a UTF8 string to the current StrongHelp output file, in the
