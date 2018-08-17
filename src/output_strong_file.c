@@ -42,21 +42,53 @@
 #include "encoding.h"
 #include "msg.h"
 
+/**
+ * An internal file node data block, used for tracking the contents of
+ * the StrongHelp file as it is written.
+ */
 
 struct output_strong_file_object {
+	/**
+	 * File offset to the referenced object, in bytes, or zero.
+	 */
+
 	int					file_offset;
+
+	/**
+	 * Pointer to the object's filename, or NULL.
+	 */
 
 	char					*filename;
 
+	/**
+	 * The filetype of the object, or -1 for directories.
+	 */
+
 	int					type;
+
+	/**
+	 * The size of the referenced object, in bytes.
+	 */
 
 	int					size;
 
+	/**
+	 * If the node is a directory, pointer to the first node
+	 * within it. NULL for files.
+	 */
+
 	struct output_strong_file_object	*contents;
+
+	/**
+	 * Pointer to the next node in the current directory, or NULL.
+	 */
 
 	struct output_strong_file_object	*next;
 };
 
+/**
+ * A StrongHelp file root block.
+ */
 
 struct output_strong_file_root {
 	int32_t		help;
@@ -64,6 +96,10 @@ struct output_strong_file_root {
 	int32_t		version;
 	int32_t		free_offset;
 };
+
+/**
+ * A StrongHelp directory entry block.
+ */
 
 struct output_strong_file_dir_entry {
 	int32_t		object_offset;
@@ -78,16 +114,28 @@ struct output_strong_file_dir_entry {
 	};
 };
 
+/**
+ * A StrongHelp data (file) block header.
+ */
+
 struct output_strong_file_dir_block {
 	int32_t		dir;
 	int32_t		size;
 	int32_t		used;
 };
 
+/**
+ * A StrongHelp directory block header.
+ */
+
 struct output_strong_file_data_block {
 	int32_t		data;
 	int32_t		size;
 };
+
+/**
+ * A StrongHelp free block header.
+ */
 
 struct output_strong_file_free_block {
 	int32_t		free;
@@ -100,7 +148,14 @@ struct output_strong_file_free_block {
 /**
  * A file type indicating a directory in our internal data structures.
  */
+
 #define OUTPUT_STRONG_FILE_TYPE_DIR ((int) -1)
+
+/**
+ * Calculate the padding required to bring a file offset to a word boundary.
+ */
+
+#define OUTPUT_STRONG_FILE_PADDING(position) ((4 - ((position) % 4)) % 4)
 
 /* Global Variables. */
 
@@ -273,7 +328,7 @@ bool output_strong_file_sub_close(void)
 
 	/* Pad the file out to a multiple of four bytes. */
 
-	padding = (4 - (position % 4)) % 4;
+	padding = OUTPUT_STRONG_FILE_PADDING(position);
 
 	printf("Position %d, padding with %d bytes\n", position, padding);
 
