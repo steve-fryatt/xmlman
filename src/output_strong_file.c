@@ -52,7 +52,7 @@ struct output_strong_file_object {
 	 * File offset to the referenced object, in bytes, or zero.
 	 */
 
-	int					file_offset;
+	size_t					file_offset;
 
 	/**
 	 * Pointer to the object's filename, or NULL.
@@ -70,7 +70,7 @@ struct output_strong_file_object {
 	 * The size of the referenced object, in bytes.
 	 */
 
-	int					size;
+	size_t					size;
 
 	/**
 	 * If the node is a directory, pointer to the first node
@@ -108,10 +108,6 @@ struct output_strong_file_dir_entry {
 	int32_t		size;
 	int32_t		flags;
 	int32_t		reserved;
-	union {
-		int32_t	name_space;
-		char	name[4];
-	};
 };
 
 /**
@@ -157,6 +153,12 @@ struct output_strong_file_free_block {
 
 #define OUTPUT_STRONG_FILE_PADDING(position) ((4 - ((position) % 4)) % 4)
 
+/**
+ * Convert a long file position into a RISC OS sized 32-bit word.
+ */
+
+#define OUTPUT_STRONG_FILE_TO_RISCOS(position) ((size_t) ((position) & 0xffffffff))
+
 /* Global Variables. */
 
 /**
@@ -177,6 +179,12 @@ static struct output_strong_file_object *output_strong_file_current_block = NULL
 
 static struct output_strong_file_object *output_strong_file_root = NULL;
 
+/**
+ * The position of the root directory block.
+ */
+
+static size_t output_strong_file_root_dir_offset = 0;
+
 /* Static Function Prototypes. */
 
 static bool output_strong_file_write_char(int unicode);
@@ -184,7 +192,10 @@ static bool output_strong_file_write_char(int unicode);
 static struct output_strong_file_object *output_strong_file_add_entry(struct output_strong_file_object *directory, char *filename, int type);
 static struct output_strong_file_object *output_strong_file_link_object(struct output_strong_file_object *directory, char *filename, int type);
 static struct output_strong_file_object *output_strong_file_create_object(char *filename, int type);
+static bool output_strong_file_count_directory(struct output_strong_file_object *directory);
+static bool output_strong_file_write_catalogue(struct output_strong_file_object *directory, size_t *offset, size_t *length);
 static int output_strong_file_strcmp(char *s1, char *s2);
+static bool output_strong_file_pad(void);
 
 /**
  * Open a file to write the StrongHelp output to.
@@ -197,7 +208,6 @@ bool output_strong_file_open(char *filename)
 {
 	struct output_strong_file_root		root;
 	struct output_strong_file_dir_entry	dir;
-	int					offset;
 
 	/* Create a root directory object. */
 
@@ -231,7 +241,7 @@ bool output_strong_file_open(char *filename)
 
 	/* Write the root directory entry. */
 
-	offset = ftell(output_strong_file_handle);
+	output_strong_file_root_dir_offset = OUTPUT_STRONG_FILE_TO_RISCOS(ftell(output_strong_file_handle));
 
 	dir.object_offset = 0;
 	dir.load_address = 0xfffffd00;
@@ -239,14 +249,23 @@ bool output_strong_file_open(char *filename)
 	dir.size = 0;
 	dir.flags = 0x100;
 	dir.reserved = 0;
-	dir.name_space = 0;
 
 	if (fwrite(&dir, sizeof(struct output_strong_file_dir_entry), 1, output_strong_file_handle) != 1) {
 		msg_report(MSG_WRITE_FAILED);
 		return false;
 	}
 
-	return true;
+	if (fputs("$", output_strong_file_handle) == EOF) {
+		msg_report(MSG_WRITE_FAILED);
+		return false;
+	}
+
+	if (fputc('\0', output_strong_file_handle) == EOF) {
+		msg_report(MSG_WRITE_FAILED);
+		return false;
+	}
+
+	return output_strong_file_pad();
 }
 
 /**
@@ -255,8 +274,36 @@ bool output_strong_file_open(char *filename)
 
 void output_strong_file_close(void)
 {
+	struct output_strong_file_dir_entry	dir;
+	size_t					offset, length;
+
 	if (output_strong_file_handle == NULL)
 		return;
+
+	if (output_strong_file_count_directory(output_strong_file_root)) {
+		if (output_strong_file_write_catalogue(output_strong_file_root, &offset, &length)) {
+
+			/* Write the root directory entry. */
+
+			dir.object_offset = offset;
+			dir.load_address = 0xfffffd00;
+			dir.exec_address = 0x00000000;
+			dir.size = length - 8;
+			dir.flags = 0x100;
+			dir.reserved = 0;
+
+			if (fseek(output_strong_file_handle, output_strong_file_root_dir_offset, SEEK_SET) == -1)
+				msg_report(MSG_WRITE_FAILED);
+
+			if (fwrite(&dir, sizeof(struct output_strong_file_dir_entry), 1, output_strong_file_handle) != 1)
+				msg_report(MSG_WRITE_FAILED);
+		} else {
+			fprintf(stderr, "Failed to write catalogue.\n");
+		}
+	} else {
+		fprintf(stderr, "Failed to calculate directory sizes.\n");
+	}
+
 
 	fclose(output_strong_file_handle);
 	output_strong_file_handle = NULL;
@@ -285,7 +332,7 @@ bool output_strong_file_sub_open(char *filename, int type)
 		return false;
 	}
 
-	output_strong_file_current_block->file_offset = ftell(output_strong_file_handle);
+	output_strong_file_current_block->file_offset = OUTPUT_STRONG_FILE_TO_RISCOS(ftell(output_strong_file_handle));
 
 	data.data = 0x41544144;
 	data.size = 0;
@@ -306,7 +353,8 @@ bool output_strong_file_sub_open(char *filename, int type)
 
 bool output_strong_file_sub_close(void)
 {
-	long position, padding;
+	struct output_strong_file_data_block	data;
+	size_t					position;
 
 	if (output_strong_file_handle == NULL) {
 		msg_report(MSG_WRITE_NO_FILE);
@@ -320,26 +368,33 @@ bool output_strong_file_sub_close(void)
 
 	/* Find the position of the end of the file, and calculate its size. */
 
-	position = ftell(output_strong_file_handle);
+	position = OUTPUT_STRONG_FILE_TO_RISCOS(ftell(output_strong_file_handle));
 
 	output_strong_file_current_block->size = position - output_strong_file_current_block->file_offset;
+
+	if (fseek(output_strong_file_handle, output_strong_file_current_block->file_offset, SEEK_SET) == -1) {
+		msg_report(MSG_WRITE_FAILED);
+		return false;
+	}
+
+	data.data = 0x41544144;
+	data.size = output_strong_file_current_block->size;
+
+	if (fwrite(&data, sizeof(struct output_strong_file_data_block), 1, output_strong_file_handle) != 1) {
+		msg_report(MSG_WRITE_FAILED);
+		return false;
+	}
+
+	if (fseek(output_strong_file_handle, position, SEEK_SET) == -1) {
+		msg_report(MSG_WRITE_FAILED);
+		return false;
+	}
 
 	output_strong_file_current_block = NULL;
 
 	/* Pad the file out to a multiple of four bytes. */
 
-	padding = OUTPUT_STRONG_FILE_PADDING(position);
-
-	printf("Position %d, padding with %d bytes\n", position, padding);
-
-	for (; padding > 0; padding--) {
-		if (fputc('\0', output_strong_file_handle) == EOF) {
-			msg_report(MSG_WRITE_FAILED);
-			return false;
-		}
-	}
-
-	return true;
+	return output_strong_file_pad();
 }
 
 /**
@@ -471,6 +526,7 @@ static struct output_strong_file_object *output_strong_file_link_object(struct o
 
 		if (previous == NULL) {
 			printf("Link to head.\n");
+			new->next = directory->contents;
 			directory->contents = new;
 		} else {
 			printf("Link in line.\n");
@@ -511,6 +567,144 @@ static struct output_strong_file_object *output_strong_file_create_object(char *
 
 	return new;
 };
+
+/**
+ * Count the size of a directory node, and then recurse into all of
+ * its subdirectories.
+ *
+ * \param *directory	Pointer to the directory to process.
+ * \return		True on success; False on error.
+ */
+
+static bool output_strong_file_count_directory(struct output_strong_file_object *directory)
+{
+	struct output_strong_file_object	*node = NULL;
+	size_t					count = 0, bytes, node_size;
+
+	if (directory == NULL)
+		return false;
+
+	printf("Counting directory: '%s'\n", directory->filename);
+
+	bytes = sizeof(struct output_strong_file_dir_block);
+
+	node = directory->contents;
+
+	while (node != NULL) {
+		node_size = sizeof(struct output_strong_file_dir_entry) + strlen(node->filename) + 1;
+
+		printf("Node for '%s' is %d bytes.\n", node->filename, node_size);
+
+		node_size += OUTPUT_STRONG_FILE_PADDING(node_size);
+
+		printf("Padded node for '%s' is %d bytes.\n", node->filename, node_size);
+
+		bytes += node_size;
+		count++;
+
+		if (node->contents != NULL && !output_strong_file_count_directory(node))
+			return false;
+
+		node = node->next;
+	}
+
+	printf("Directory '%s' size is %d bytes (%d objects).\n", directory->filename, bytes, count);
+
+	directory->size = bytes;
+
+	return true;
+}
+
+/**
+ * Write the catalogue entries for a directory and any sub-directories
+ * to the file.
+ *
+ * \param *directory	Pointer to the directory to write.
+ * \param *offset	Pointer to a variable to return the file offset
+ *			for the catalogue.
+ * \param *length	Pointer to a variable to return the catalogue size.
+ * \return		True if successful; False on error.
+ */
+
+static bool output_strong_file_write_catalogue(struct output_strong_file_object *directory, size_t *offset, size_t *length)
+{
+	struct output_strong_file_object	*node = NULL;
+	struct output_strong_file_dir_block	dir;
+	struct output_strong_file_dir_entry	entry;
+	size_t					position;
+
+	if (directory == NULL || offset == NULL || length == NULL)
+		return false;
+
+	/* Write out any subdirectories first, so that we know their details. */
+
+	node = directory->contents;
+
+	while (node != NULL) {
+		if (node->contents != NULL) {
+			if (!output_strong_file_write_catalogue(node, offset, length))
+				return false;
+
+			node->file_offset = *offset;
+			node->size = *length;
+		}
+
+		node = node->next;
+	}
+
+	/* Write out this file. */
+
+	printf("Writing the '%s' directory.\n", directory->filename);
+
+	position = OUTPUT_STRONG_FILE_TO_RISCOS(ftell(output_strong_file_handle));
+
+	/* Write the directory block header. */
+
+	dir.dir = 0x24524944;
+	dir.size = directory->size;
+	dir.used = directory->size;
+
+	if (fwrite(&dir, sizeof(struct output_strong_file_dir_block), 1, output_strong_file_handle) != 1) {
+		msg_report(MSG_WRITE_FAILED);
+		return false;
+	}
+
+	node = directory->contents;
+
+	while (node != NULL) {
+		entry.object_offset = node->file_offset;
+		entry.load_address = 0xfffffd00;
+		entry.exec_address = 0x00000000;
+		entry.size = (node->type == OUTPUT_STRONG_FILE_TYPE_DIR) ? node->size - 8 : node->size;
+		entry.flags = (node->type == OUTPUT_STRONG_FILE_TYPE_DIR) ? 0x100 : 0x37;
+		entry.reserved = 0;
+
+		if (fwrite(&entry, sizeof(struct output_strong_file_dir_entry), 1, output_strong_file_handle) != 1) {
+			msg_report(MSG_WRITE_FAILED);
+			return false;
+		}
+
+		if (fputs(node->filename, output_strong_file_handle) == EOF) {
+			msg_report(MSG_WRITE_FAILED);
+			return false;
+		}
+
+		if (fputc('\0', output_strong_file_handle) == EOF) {
+			msg_report(MSG_WRITE_FAILED);
+			return false;
+		}
+
+		if (!output_strong_file_pad())
+			return false;
+
+		node = node->next;
+	}
+
+	*offset = position;
+	*length = directory->size;
+
+	return true;
+}
 
 /**
  * Compare two filenames in a Filecore compatible way.
@@ -662,6 +856,37 @@ static bool output_strong_file_write_char(int unicode)
 	if (fputs(buffer, output_strong_file_handle) == EOF) {
 		msg_report(MSG_WRITE_FAILED);
 		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Pad the current output file to a word boundary.
+ *
+ * \return		True on success; False on failure.
+ */
+
+static bool output_strong_file_pad(void)
+{
+	size_t position, padding;
+
+	if (output_strong_file_handle == NULL) {
+		msg_report(MSG_WRITE_NO_FILE);
+		return false;
+	}
+
+	position = OUTPUT_STRONG_FILE_TO_RISCOS(ftell(output_strong_file_handle));
+
+	padding = OUTPUT_STRONG_FILE_PADDING(position);
+
+	printf("Position %d, padding with %d bytes\n", position, padding);
+
+	for (; padding > 0; padding--) {
+		if (fputc('\0', output_strong_file_handle) == EOF) {
+			msg_report(MSG_WRITE_FAILED);
+			return false;
+		}
 	}
 
 	return true;
