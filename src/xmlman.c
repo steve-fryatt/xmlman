@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 	
 	output_strong_file_sub_close();
 
-	output_strong_file_sub_open("Direct.Wibble", 0xfff);
+	output_strong_file_sub_open("Direct.Wibble", 0xffd);
 
 	output_strong_file_write_text((xmlChar *) "Hello World!");
 	output_strong_file_write_newline();

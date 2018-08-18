@@ -673,7 +673,7 @@ static bool output_strong_file_write_catalogue(struct output_strong_file_object 
 
 	while (node != NULL) {
 		entry.object_offset = node->file_offset;
-		entry.load_address = 0xfffffd00;
+		entry.load_address = (node->type == OUTPUT_STRONG_FILE_TYPE_DIR) ? 0xfffffd00 : 0xfff00000 | (node->type << 8);
 		entry.exec_address = 0x00000000;
 		entry.size = (node->type == OUTPUT_STRONG_FILE_TYPE_DIR) ? node->size - 8 : node->size;
 		entry.flags = (node->type == OUTPUT_STRONG_FILE_TYPE_DIR) ? 0x100 : 0x37;
