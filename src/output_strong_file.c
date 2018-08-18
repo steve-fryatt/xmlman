@@ -41,6 +41,7 @@
 
 #include "encoding.h"
 #include "msg.h"
+#include "string.h"
 
 /**
  * An internal file node data block, used for tracking the contents of
@@ -196,7 +197,6 @@ static struct output_strong_file_object *output_strong_file_link_object(struct o
 static struct output_strong_file_object *output_strong_file_create_object(char *filename, int type);
 static bool output_strong_file_count_directory(struct output_strong_file_object *directory);
 static bool output_strong_file_write_catalogue(struct output_strong_file_object *directory, size_t *offset, size_t *length);
-static int output_strong_file_strcmp(char *s1, char *s2);
 static bool output_strong_file_write_char(int unicode);
 static bool output_strong_file_write_filename(char *filename);
 static bool output_strong_file_pad(void);
@@ -485,7 +485,7 @@ static struct output_strong_file_object *output_strong_file_link_object(struct o
 
 	current = directory->contents;
 
-	while ((current != NULL) && ((compare = output_strong_file_strcmp(current->filename, filename)) < 0)) {
+	while ((current != NULL) && ((compare = string_nocase_strcmp(current->filename, filename)) < 0)) {
 		previous = current;
 		current = current->next;
 	}
@@ -713,24 +713,6 @@ static bool output_strong_file_write_catalogue(struct output_strong_file_object 
 	*length = directory->size;
 
 	return true;
-}
-
-/**
- * Compare two filenames in a Filecore compatible way.
- *
- * \param *s1		Pointer to the first string to compare.
- * \param *s2		Pointer to the second string to compare.
- * \return		Integer describing the result of the comparison.
- */
-
-static int output_strong_file_strcmp(char *s1, char *s2)
-{
-	while (*s1 != '\0' && *s2 != '\0' && (toupper(*s1) - toupper(*s2)) == 0) {
-		s1++;
-		s2++;
-	}
-
-	return (toupper(*s1) - toupper(*s2));
 }
 
 /**
