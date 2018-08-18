@@ -64,7 +64,7 @@ bool output_html_file_open(char *filename)
 	output_html_file_handle = fopen(filename, "w");
 
 	if (output_html_file_handle == NULL) {
-		fprintf(stderr, "Failed to open HTML file for output.\n");
+		msg_report(MSG_WRITE_OPEN_FAIL, filename);
 		return false;
 	}
 

@@ -219,7 +219,7 @@ bool output_strong_file_open(char *filename)
 	output_strong_file_root = output_strong_file_create_object("$", OUTPUT_STRONG_FILE_TYPE_DIR);
 
 	if (output_strong_file_root == NULL) {
-		fprintf(stderr, "Failed to create file directory structure.\n");
+		msg_report(MSG_STRONG_ROOT_FAIL);
 		return false;
 	}
 
@@ -228,7 +228,7 @@ bool output_strong_file_open(char *filename)
 	output_strong_file_handle = fopen(filename, "w");
 
 	if (output_strong_file_handle == NULL) {
-		fprintf(stderr, "Failed to open StrongHelp file for output.\n");
+		msg_report(MSG_WRITE_OPEN_FAIL, filename);
 		return false;
 	}
 
@@ -296,11 +296,9 @@ void output_strong_file_close(void)
 
 			if (fwrite(&dir, sizeof(struct output_strong_file_dir_entry), 1, output_strong_file_handle) != 1)
 				msg_report(MSG_WRITE_FAILED);
-		} else {
-			fprintf(stderr, "Failed to write catalogue.\n");
 		}
 	} else {
-		fprintf(stderr, "Failed to calculate directory sizes.\n");
+		msg_report(MSG_STRONG_COUNT_FAIL);
 	}
 
 	/* Close the file. */
@@ -330,7 +328,7 @@ bool output_strong_file_sub_open(char *filename, int type)
 
 	output_strong_file_current_block = output_strong_file_add_entry(output_strong_file_root, filename, type);
 	if (output_strong_file_current_block == NULL) {
-		fprintf(stderr, "Failed to create new file block.\n");
+		msg_report(MSG_STRONG_NEW_NODE_FAIL);
 		return false;
 	}
 
@@ -368,7 +366,7 @@ bool output_strong_file_sub_close(void)
 	}
 
 	if (output_strong_file_current_block == NULL) {
-		fprintf(stderr, "No file block.\n");
+		msg_report(MSG_STRONG_NO_FILE);
 		return false;
 	}
 
@@ -501,7 +499,7 @@ static struct output_strong_file_object *output_strong_file_link_object(struct o
 			 * we can't resolve.
 			 */
 
-			fprintf(stderr, "A '%s' object already exists in the '%s' directory.\n", filename, directory->filename);
+			msg_report(MSG_STRONG_NAME_EXISTS, filename, directory->filename);
 			return NULL;
 		} else if (current->contents == NULL) {
 			/* There's already a file with the name that we want
@@ -757,7 +755,7 @@ bool output_strong_file_write_text(xmlChar *text)
 	}
 
 	if (output_strong_file_current_block == NULL) {
-		fprintf(stderr, "No file block.\n");
+		msg_report(MSG_STRONG_NO_FILE);
 		return false;
 	}
 
@@ -792,7 +790,7 @@ bool output_strong_file_write_plain(char *text, ...)
 	}
 
 	if (output_strong_file_current_block == NULL) {
-		fprintf(stderr, "No file block.\n");
+		msg_report(MSG_STRONG_NO_FILE);
 		return false;
 	}
 
@@ -822,7 +820,7 @@ bool output_strong_file_write_newline(void)
 	}
 
 	if (output_strong_file_current_block == NULL) {
-		fprintf(stderr, "No file block.\n");
+		msg_report(MSG_STRONG_NO_FILE);
 		return false;
 	}
 
@@ -859,7 +857,7 @@ static bool output_strong_file_write_char(int unicode)
 	}
 
 	if (output_strong_file_current_block == NULL) {
-		fprintf(stderr, "No file block.\n");
+		msg_report(MSG_STRONG_NO_FILE);
 		return false;
 	}
 

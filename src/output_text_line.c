@@ -137,7 +137,7 @@ bool output_text_line_open(char *filename)
 	output_text_line_handle = fopen(filename, "w");
 
 	if (output_text_line_handle == NULL) {
-		fprintf(stderr, "Failed to open text file for output.\n");
+		msg_report(MSG_WRITE_OPEN_FAIL, filename);
 		return false;
 	}
 

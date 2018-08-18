@@ -107,7 +107,15 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"No line ending selected",					false},
 
 
+	{MSG_ERROR,	"Failed to create StrongHelp root structure",			false},
+	{MSG_ERROR,	"Failed to calculate StrongHelp directory sizes",		false},
+	{MSG_ERROR,	"Failed to create new object node block",			false},
+	{MSG_ERROR,	"No active StrongHelp file block",				false},
+	{MSG_ERROR,	"A '%s' object already exists in the '%s' directory",		false},
+
+
 	{MSG_ERROR,	"No filename supplied for output",				false},
+	{MSG_ERROR,	"Failed to open file '%s' for output",				false},
 	{MSG_ERROR,	"No file open for output",					false},
 	{MSG_ERROR,	"Failure to write to output file",				false},
 	{MSG_ERROR,	"Unknown memory error",						false}
