@@ -191,14 +191,13 @@ static size_t output_strong_file_root_dir_offset = 0;
 
 /* Static Function Prototypes. */
 
-static bool output_strong_file_write_char(int unicode);
-
 static struct output_strong_file_object *output_strong_file_add_entry(struct output_strong_file_object *directory, char *filename, int type);
 static struct output_strong_file_object *output_strong_file_link_object(struct output_strong_file_object *directory, char *filename, int type);
 static struct output_strong_file_object *output_strong_file_create_object(char *filename, int type);
 static bool output_strong_file_count_directory(struct output_strong_file_object *directory);
 static bool output_strong_file_write_catalogue(struct output_strong_file_object *directory, size_t *offset, size_t *length);
 static int output_strong_file_strcmp(char *s1, char *s2);
+static bool output_strong_file_write_char(int unicode);
 static bool output_strong_file_write_filename(char *filename);
 static bool output_strong_file_pad(void);
 
