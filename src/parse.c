@@ -357,6 +357,12 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 
 		case PARSE_STACK_CONTENT_RESOURCES:
 			switch (element) {
+			case PARSE_ELEMENT_DOWNLOADS:
+				break;
+			case PARSE_ELEMENT_IMAGES:
+				break;
+			case PARSE_ELEMENT_MODE:
+				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Resources");
 				break;
@@ -421,7 +427,7 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 		element = parse_element_find_type(reader);
 
 		if (element != old_stack->closing_element) {
-			printf("Unexpected closing element '<%s>' in block.\n", parse_element_find_tag(element));
+			msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
 			break;
 		}
 
@@ -453,10 +459,8 @@ static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struc
 	/* Create a new chapter structure. */
 
 	new_chapter = manual_data_create(type);
-	if (new_chapter == NULL) {
-		fprintf(stderr, "Failed to create new chapter data.\n");
+	if (new_chapter == NULL)
 		return false;
-	}
 
 	/* Process any entities which are found. */
 
@@ -572,8 +576,7 @@ static bool parse_process_add_resources(xmlTextReaderPtr reader, struct parse_st
  * \param reader		The XML Reader to read the node from.
  * \param *old_stack		The parent stack entry, within which the
  *				new block will be added.
- * \param type			The type of block object (Paragraph or
- *				Title) to add.
+ * \param type			The type of block object to add.
  * \param element		The XML element to close the object.
  * \return			TRUE on success, or FALSE on failure.
  */
@@ -633,7 +636,7 @@ static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stac
 	/* Content can only be stored within block objects. */
 
 	if (old_stack->content != PARSE_STACK_CONTENT_BLOCK) {
-		fprintf(stderr, "Unexpected content.\n");
+		msg_report(MSG_UNEXPECTED_CONTENT);
 		return true;
 	}
 
@@ -655,15 +658,13 @@ static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stac
 		break;
 
 	default:
-		fprintf(stderr, "Unhandled object type\n");
+		msg_report(MSG_UNEXPECTED_XML, node_type, "Content Node");
 		return false;
 	}
 
 	new_object = manual_data_create(object_type);
-	if (new_object == NULL) {
-		fprintf(stderr, "Failed to create new object data.\n");
+	if (new_object == NULL)
 		return false;
-	}
 
 	parse_link_to_chain(old_stack, new_object);
 
@@ -713,7 +714,7 @@ static struct manual_data *parse_create_new_stacked_object(enum parse_stack_cont
 	/* Any pre-existing object must have the correct type. */
 
 	if (object != NULL && object->type != type) {
-		fprintf(stderr, "Mismatched pre-existing object type.\n");
+		msg_report(MSG_UNEXPECTED_PUSH, manual_data_find_object_name(object->type), manual_data_find_object_name(type));
 		return NULL;
 	}
 
@@ -725,13 +726,8 @@ static struct manual_data *parse_create_new_stacked_object(enum parse_stack_cont
 
 	/* Create the new object structure, if one wasn't supplied. */
 
-	if (object == NULL) {
+	if (object == NULL)
 		object = manual_data_create(type);
-		if (object == NULL) {
-			fprintf(stderr, "Failed to create new object data.\n");
-			return NULL;
-		}
-	}
 
 	/* Link the object into the stack. */
 

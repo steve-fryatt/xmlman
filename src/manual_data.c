@@ -33,6 +33,8 @@
 
 #include "manual_data.h"
 
+#include "msg.h"
+
 /* Constant Declarations. */
 
 /**
@@ -96,8 +98,10 @@ struct manual_data *manual_data_create(enum manual_data_object_type type)
 	struct manual_data *data;
 
 	data = malloc(sizeof(struct manual_data));
-	if (data == NULL)
+	if (data == NULL) {
+		msg_report(MSG_DATA_MALLOC_FAIL);
 		return NULL;
+	}
 
 	data->type = type;
 
@@ -141,7 +145,7 @@ struct manual_data *manual_data_create(enum manual_data_object_type type)
 
 const char *manual_data_find_object_name(enum manual_data_object_type type)
 {
-	int		i;
+	int i;
 
 	for (i = 0; manual_data_object_type_names[i].type != MANUAL_DATA_OBJECT_TYPE_NONE && manual_data_object_type_names[i].type != type; i++);
 

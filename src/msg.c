@@ -87,11 +87,16 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Source document '%s' does not validate",			false},
 	{MSG_ERROR,	"Source document '%s' did not parse with XML Reader",		false},
 	{MSG_WARNING,	"Unexpected '<%s>' element found in %s node",			false},
+	{MSG_WARNING,	"Unexpected '<%s>' closing element in block",			false},
 	{MSG_ERROR,	"Unexpected stack entry type found",				false},
 	{MSG_WARNING,	"Unexpected XML object type %d found in %s",			false},
 	{MSG_WARNING,	"Attempt to add unexpected block of type %s",			false},
+	{MSG_ERROR,	"Attempt to push incorrect %s block on to stack (expected %s)",	false},
+
+	{MSG_ERROR,	"Attempt to add content into unexpected stack location %d",	false},
 
 	{MSG_ERROR,	"Unknown element '<%s>'",					false},
+	{MSG_ERROR,	"Failed to allocate new manual data node",			false},
 
 	{MSG_ERROR,	"Unexpected object type found",					false},
 	{MSG_ERROR,	"Stack full",							false},
