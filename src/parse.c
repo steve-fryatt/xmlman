@@ -636,7 +636,7 @@ static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stac
 	/* Content can only be stored within block objects. */
 
 	if (old_stack->content != PARSE_STACK_CONTENT_BLOCK) {
-		msg_report(MSG_UNEXPECTED_CONTENT);
+		msg_report(MSG_UNEXPECTED_CONTENT, old_stack->content);
 		return true;
 	}
 
