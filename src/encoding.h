@@ -61,13 +61,44 @@
  */
 #define ENCODING_UTF8_NBHY "\xe2\x80\x91"
 
+/**
+ * UTF8 Single Left Quote Sequence
+ */
 #define ENCODING_UTF8_LSQUO "\xe2\x80\x98"
+
+/**
+ * UTF8 Single Right Quote Sequence
+ */
 #define ENCODING_UTF8_RSQUO "\xe2\x80\x99"
+
+/**
+ * UTF8 Double Left Quote Sequence
+ */
 #define ENCODING_UTF8_LDQUO "\xe2\x80\x9c"
+
+/**
+ * UTF8 Double Right Quote Sequence
+ */
 #define ENCODING_UTF8_RDQUO "\xe2\x80\x9d"
+
+/**
+ * UTF8 En-Dash Sequence
+ */
 #define ENCODING_UTF8_NDASH "\xe2\x80\x93"
+
+/**
+ * UTF8 Em-Dash Sequence
+ */
 #define ENCODING_UTF8_MDASH "\xe2\x80\x94"
+
+/**
+ * UTF8 Minus Sign Sequence
+ */
 #define ENCODING_UTF8_MINUS "\xe2\x88\x92"
+
+/**
+ * UTF8 Multiplication Sign Sequence
+ */
 #define ENCODING_UTF8_TIMES "\xc3\x97"
 
 /**
