@@ -85,9 +85,6 @@ bool output_debug(struct manual *document, struct filename *filename, enum encod
 		if (chapter->id != NULL)
 			printf("Chapter ID '%s'\n", chapter->id);
 
-		if (chapter->chapter.filename != NULL)
-			printf("Associated with file '%s'\n", chapter->chapter.filename);
-
 		/* Output the section details. */
 
 		section = chapter->first_child;
