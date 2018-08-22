@@ -123,6 +123,9 @@ struct manual_data *manual_data_create(enum manual_data_object_type type)
 	case MANUAL_DATA_OBJECT_TYPE_ENTITY:
 		data->chunk.entity = MANUAL_ENTITY_NONE;
 		break;
+
+	default:
+		break;
 	}
 
 	return data;
