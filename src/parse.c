@@ -355,6 +355,14 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 			}
 			break;
 
+		case PARSE_STACK_CONTENT_RESOURCES:
+			switch (element) {
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Resources");
+				break;
+			}
+			break;
+
 		case PARSE_STACK_CONTENT_BLOCK:
 			switch (element) {
 			case PARSE_ELEMENT_CITE:
