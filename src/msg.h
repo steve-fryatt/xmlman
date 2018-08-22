@@ -86,9 +86,11 @@ enum msg_type {
 
 /**
  * Initialise the message system.
+ *
+ * \param verbose	True to generate verbose output, otherwise false.
  */
 
-void msg_initialise(void);
+void msg_initialise(bool verbose);
 
 
 /**

@@ -55,6 +55,7 @@
  */
 
 enum msg_level {
+	MSG_VERBOSE,			/**< A Verbose informational message.				*/
 	MSG_INFO,			/**< An informational message.					*/
 	MSG_WARNING,			/**< A warning message.						*/
 	MSG_ERROR			/**< An error message (sets the 'error reported' flag).		*/
@@ -134,13 +135,22 @@ static char	msg_location[MSG_MAX_LOCATION_TEXT];
 static bool	msg_error_reported = false;
 
 /**
- * Initialise the message system.
+ * Set to true if verbose output is required; otherwise false.
  */
 
-void msg_initialise(void)
+static bool	msg_verbose_output = false;
+
+/**
+ * Initialise the message system.
+ *
+ * \param verbose	True to generate verbose output, otherwise false.
+ */
+
+void msg_initialise(bool verbose)
 {
 	*msg_location = '\0';
 	msg_error_reported = false;
+	msg_verbose_output = verbose;
 }
 
 /**
@@ -169,8 +179,17 @@ void msg_report(enum msg_type type, ...)
 	char		message[MSG_MAX_MESSAGE], *level;
 	va_list		ap;
 
+	/* Check that the message code is valid. */
+
 	if (type < 0 || type >= MSG_MAX_MESSAGES)
 		return;
+
+	/* Discard verbose messages unless we're in verbose mode. */
+
+	if (msg_messages[type].level == MSG_VERBOSE && !msg_verbose_output)
+		return;
+
+	/* Build the message. */
 
 	va_start(ap, type);
 	vsnprintf(message, MSG_MAX_MESSAGE, msg_messages[type].text, ap);
@@ -178,8 +197,11 @@ void msg_report(enum msg_type type, ...)
 
 	message[MSG_MAX_MESSAGE - 1] = '\0';
 
+	/* Select the message prefix. */
+
 	switch (msg_messages[type].level) {
 	case MSG_INFO:
+	case MSG_VERBOSE:
 		level = "Info";
 		break;
 	case MSG_WARNING:
@@ -193,6 +215,8 @@ void msg_report(enum msg_type type, ...)
 		level = "Message:";
 		break;
 	}
+
+	/* Output the message to screen. */
 
 	if (msg_messages[type].show_location)
 		fprintf(stderr, "%s: %s %s\n", level, message, msg_location);

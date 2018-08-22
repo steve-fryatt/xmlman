@@ -153,6 +153,10 @@ int main(int argc, char *argv[])
 		options = options->next;
 	}
 
+	/* Initialise the messaging system. */
+
+	msg_initialise(verbose_output);
+
 	/* Generate any necessary verbose or help output. If param_error is true,
 	 * then we need to give some usage guidance and exit with an error.
 	 */
