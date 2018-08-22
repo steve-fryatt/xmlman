@@ -36,6 +36,8 @@
 
 #include "parse_element.h"
 
+#include "msg.h"
+
 /**
  * An element definition structure.
  */
@@ -87,7 +89,10 @@ enum parse_element_type parse_element_find_type(xmlTextReaderPtr reader)
 	if (name == NULL)
 		return PARSE_ELEMENT_NONE;
 
-	for (i = 0; parse_element_tags[i].type != PARSE_ELEMENT_NONE && xmlStrcmp(BAD_CAST parse_element_tags[i].tag, name) != 0; i++);
+	for (i = 0; parse_element_tags[i].type != PARSE_ELEMENT_NONE && xmlStrcmp((const xmlChar *) parse_element_tags[i].tag, name) != 0; i++);
+
+	if (parse_element_tags[i].type == PARSE_ELEMENT_NONE)
+		msg_report(MSG_UNKNOWN_ELEMENT, (char *) name);
 
 	return parse_element_tags[i].type;
 }
@@ -102,7 +107,7 @@ enum parse_element_type parse_element_find_type(xmlTextReaderPtr reader)
 
 const char *parse_element_find_tag(enum parse_element_type type)
 {
-	int		i;
+	int i;
 
 	for (i = 0; parse_element_tags[i].type != PARSE_ELEMENT_NONE && parse_element_tags[i].type != type; i++);
 
