@@ -60,6 +60,21 @@ enum manual_data_object_type {
 };
 
 
+struct manual_data_mode {
+	struct filename				*filename;
+	struct filename				*folder;
+};
+
+struct manual_data_resources {
+	struct manual_data_mode			text;
+	struct manual_data_mode			strong;
+	struct manual_data_mode			html;
+
+	struct filename				*images;
+	struct filename				*downloads;
+};
+
+
 /**
  * Data for a manual block chunk.
  */
@@ -91,12 +106,20 @@ struct manual_data_chapter {
 
 	bool					processed;
 
-	/**
-	 * Pointer to the chapter filename, or NULL if this is an inline
-	 * chapter.
-	 */
 
-	struct filename				*filename;
+	union {
+		/**
+		 * Pointer to the chapter filename, or NULL if this is an
+		 * inline or processed chapter.
+		 */
+		struct filename			*filename;
+
+		/**
+		 * Pointer to the chapter's resources, or NULL if none
+		 * are present.
+		 */
+		struct manual_data_resources	*resources;
+	};
 };
 
 /**

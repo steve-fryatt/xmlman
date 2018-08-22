@@ -1,51 +1,96 @@
-<!-- Manual -->
+<!-- XML Manual DTD.
+   -
+   - Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+   -
+   - This file is part of XmlMan:
+   -
+   -   http://www.stevefryatt.org.uk/software/
+   -
+   - Licensed under the EUPL, Version 1.1 only (the "Licence");
+   - You may not use this work except in compliance with the
+   - Licence.
+   -
+   - You may obtain a copy of the Licence at:
+   -
+   -   http://joinup.ec.europa.eu/software/page/eupl
+   -
+   - Unless required by applicable law or agreed to in
+   - writing, software distributed under the Licence is
+   - distributed on an "AS IS" basis, WITHOUT WARRANTIES
+   - OR CONDITIONS OF ANY KIND, either express or implied.
+   -
+   - See the Licence for the specific language governing
+   - permissions and limitations under the Licence.
+  -->
 
-<!ELEMENT manual (title | breadcrumb | icons | resources | index | chapter)*>
-<!ATTLIST manual version CDATA #REQUIRED>
+<!-- Resources -->
 
-<!-- Breadcrumb -->
+<!ELEMENT filename (#PCDATA)>
+<!ELEMENT folder (#PCDATA)>
 
-<!ELEMENT breadcrumb (dir*)>
+<!ELEMENT mode (filename | folder)*>
+<!ATTLIST mode type CDATA #REQUIRED>
 
-<!ELEMENT dir (#PCDATA)>
+<!ELEMENT images (#PCDATA)>
+<!ELEMENT downloads (#PCDATA)>
+
+<!ELEMENT resources (mode | images | downloads)*>
+
+<!-- Title -->
+
+<!ELEMENT title (#PCDATA)>
+
+<!-- Index and Chapter -->
+
+<!ELEMENT chapterlist (EMPTY)>
+
+<!ELEMENT section (resources | section | title | p | table | codeblock | image | download)*>
+<!ATTLIST section id CDATA #IMPLIED>
+
+<!ELEMENT index (resources | title | chapterlist | section)*>
+<!ATTLIST index id CDATA #IMPLIED>
+
+<!ELEMENT chapter (EMPTY | resources | title | summary | section)*>
+<!ATTLIST chapter id CDATA #IMPLIED>
+<!ATTLIST chapter file CDATA #IMPLIED>
+
+<!ELEMENT summary (#PCDATA | code | command | const | em | event | file | function | icon | intro | key | link | maths | menu | mouse | name | reference | strong | swi | variable)*> <!-- Needs to match P -->
+<!ELEMENT p (#PCDATA | code | command | const | em | event | file | function | icon | intro | key | link | maths | menu | mouse | name | reference | strong | swi | variable)*> <!-- Needs to match P -->
 
 <!-- Icons -->
-
-<!ELEMENT icons (zip | armv7 | iyonix)*>
-
-<!ELEMENT zip (#PCDATA)>
-<!ATTLIST zip alt CDATA #IMPLIED>
-<!ATTLIST zip width CDATA #REQUIRED>
-<!ATTLIST zip height CDATA #REQUIRED>
-
-<!ELEMENT armv7 (#PCDATA)>
-<!ATTLIST armv7 alt CDATA #IMPLIED>
-<!ATTLIST armv7 width CDATA #REQUIRED>
-<!ATTLIST armv7 height CDATA #REQUIRED>
 
 <!ELEMENT iyonix (#PCDATA)>
 <!ATTLIST iyonix alt CDATA #IMPLIED>
 <!ATTLIST iyonix width CDATA #REQUIRED>
 <!ATTLIST iyonix height CDATA #REQUIRED>
 
-<!-- Index and Chapter -->
+<!ELEMENT armv7 (#PCDATA)>
+<!ATTLIST armv7 alt CDATA #IMPLIED>
+<!ATTLIST armv7 width CDATA #REQUIRED>
+<!ATTLIST armv7 height CDATA #REQUIRED>
 
-<!ELEMENT index (filename | title | resources | chapterlist | section)*>
-<!ATTLIST index id CDATA #IMPLIED>
+<!ELEMENT zip (#PCDATA)>
+<!ATTLIST zip alt CDATA #IMPLIED>
+<!ATTLIST zip width CDATA #REQUIRED>
+<!ATTLIST zip height CDATA #REQUIRED>
 
-<!ELEMENT chapter (EMPTY | filename | title | resources | summary | section)*>
-<!ATTLIST chapter id CDATA #IMPLIED>
-<!ATTLIST chapter file CDATA #IMPLIED>
+<!ELEMENT icons (zip | armv7 | iyonix)*>
 
-<!ELEMENT filename (#PCDATA)>
+<!-- Breadcrumb -->
 
-<!ELEMENT chapterlist (EMPTY)>
+<!ELEMENT dir (#PCDATA)>
 
-<!ELEMENT section (section | title | p | table | codeblock | image | download)*>
-<!ATTLIST section id CDATA #IMPLIED>
+<!ELEMENT breadcrumb (dir*)>
 
-<!ELEMENT summary (#PCDATA | code | command | const | em | event | file | function | icon | intro | key | link | maths | menu | mouse | name | reference | strong | swi | variable)*> <!-- Needs to match P -->
-<!ELEMENT p (#PCDATA | code | command | const | em | event | file | function | icon | intro | key | link | maths | menu | mouse | name | reference | strong | swi | variable)*> <!-- Needs to match P -->
+<!-- Manual -->
+
+<!ELEMENT manual (title | breadcrumb | icons | resources | index | chapter)*>
+<!ATTLIST manual version CDATA #REQUIRED>
+
+
+
+
+
 
 <!-- Table -->
 
@@ -108,18 +153,6 @@
 <!ELEMENT link (#PCDATA)>
 <!ATTLIST link href CDATA #REQUIRED>
 
-<!-- Title -->
-
-<!ELEMENT title (#PCDATA)>
-
-<!-- Resources -->
-
-<!ELEMENT resources (images | downloads | common | chapters)*>
-
-<!ELEMENT images (#PCDATA)>
-<!ELEMENT downloads (#PCDATA)>
-<!ELEMENT common (#PCDATA)>
-<!ELEMENT chapters (#PCDATA)>
 
 <!-- Entities -->
 

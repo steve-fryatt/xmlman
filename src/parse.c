@@ -49,10 +49,12 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 static void parse_process_node(xmlTextReaderPtr reader, struct manual_data **manual, struct manual_data **chapter);
 static void parse_process_outer_node(xmlTextReaderPtr reader, struct manual_data **manual);
 static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data **chapter);
+static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack, enum manual_data_object_type type);
 static bool parse_process_add_chapter(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack,
 		enum manual_data_object_type type, enum parse_element_type element, struct manual_data *chapter);
-static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack, enum manual_data_object_type type);
 static bool parse_process_add_section(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack,
+		enum manual_data_object_type type, enum parse_element_type element);
+static bool parse_process_add_resources(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack,
 		enum manual_data_object_type type, enum parse_element_type element);
 static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack,
 		enum manual_data_object_type type, enum parse_element_type element);
@@ -75,8 +77,6 @@ struct manual *parse_document(char *filename)
 	struct manual		*document = NULL;
 	struct manual_data	*manual = NULL, *chapter = NULL;
 	struct filename		*document_root = NULL, *document_base = NULL;
-
-	msg_initialise();
 
 	document_base = filename_make((xmlChar *) filename, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
 	if (document_base == NULL)
@@ -112,8 +112,12 @@ struct manual *parse_document(char *filename)
 		if (!chapter->chapter.processed) {
 			document_base = filename_up(document_root, 0);
 
-			if (filename_add(document_base, chapter->chapter.filename, 0));
+			if (filename_add(document_base, chapter->chapter.filename, 0)); {
+				filename_destroy(chapter->chapter.filename);
+				chapter->chapter.filename = NULL;
+
 				parse_file(document_base, &manual, &chapter);
+			}
 
 			filename_destroy(document_base);
 		}
@@ -249,10 +253,8 @@ static void parse_process_outer_node(xmlTextReaderPtr reader, struct manual_data
 	switch (element) {
 	case PARSE_ELEMENT_MANUAL:
 		new_stack = parse_stack_push(PARSE_STACK_CONTENT_MANUAL, element);
-		if (new_stack == NULL) {
-			fprintf(stderr, "Failed to allocate stack.\n");
+		if (new_stack == NULL)
 			return;
-		}
 
 		/* Create a new manual if this is the root file. */
 
@@ -262,6 +264,9 @@ static void parse_process_outer_node(xmlTextReaderPtr reader, struct manual_data
 		/* Record the current manual on the stack. */
 
 		new_stack->object = *manual;
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Outer");
 		break;
 	}
 }
@@ -304,6 +309,12 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 				else
 					parse_process_add_chapter(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_CHAPTER, element, *chapter);
 				break;
+			case PARSE_ELEMENT_RESOURCES:
+				parse_process_add_resources(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_MANUAL, element);
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Manual");
+				break;
 			}
 			break;
 
@@ -314,6 +325,12 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 				break;
 			case PARSE_ELEMENT_SECTION:
 				parse_process_add_section(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_SECTION, element);
+				break;
+			case PARSE_ELEMENT_RESOURCES:
+				parse_process_add_resources(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_CHAPTER, element);
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Chapter");
 				break;
 			}
 			break;
@@ -326,8 +343,14 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 			case PARSE_ELEMENT_SECTION:
 				parse_process_add_section(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_SECTION, element);
 				break;
+			case PARSE_ELEMENT_RESOURCES:
+				parse_process_add_resources(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_SECTION, element);
+				break;
 			case PARSE_ELEMENT_PARAGRAPH:
 				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, element);
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Section");
 				break;
 			}
 			break;
@@ -364,9 +387,15 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 			case PARSE_ELEMENT_WINDOW:
 				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_WINDOW, element);
 				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Block");
+				break;
 			}
 			break;
 
+		case PARSE_STACK_CONTENT_NONE:
+			msg_report(MSG_UNEXPECTED_STACK);
+			break;
 		}
 		break;
 
@@ -390,7 +419,50 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 
 		parse_stack_pop();
 		break;
+
+	default:
+		msg_report(MSG_UNEXPECTED_XML, type, "Inner Node");
+		break;
 	}
+}
+
+/**
+ * Add a new placeholder chapter to the document structure.
+ *
+ * \param reader		The XML Reader to read the node from.
+ * \param *old_stack		The parent stack entry, within which the
+ *				new chapter will be added.
+ * \param type			The type of chapter object (Chapter or
+ *				Index) to add.
+ * \return			TRUE on success, or FALSE on failure.
+ */
+
+static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack, enum manual_data_object_type type)
+{
+	struct manual_data	*new_chapter;
+	xmlChar*		filename = NULL;
+
+	/* Create a new chapter structure. */
+
+	new_chapter = manual_data_create(type);
+	if (new_chapter == NULL) {
+		fprintf(stderr, "Failed to create new chapter data.\n");
+		return false;
+	}
+
+	/* Process any entities which are found. */
+
+	filename = xmlTextReaderGetAttribute(reader, (const xmlChar *) "file");
+
+	new_chapter->chapter.filename = filename_make(filename, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
+
+	free(filename);
+
+	/* Link the new item in to the document structure. */
+
+	parse_link_to_chain(old_stack, new_chapter);
+
+	return true;
 }
 
 /**
@@ -435,45 +507,6 @@ static bool parse_process_add_chapter(xmlTextReaderPtr reader, struct parse_stac
 }
 
 /**
- * Add a new placeholder chapter to the document structure.
- *
- * \param reader		The XML Reader to read the node from.
- * \param *old_stack		The parent stack entry, within which the
- *				new chapter will be added.
- * \param type			The type of chapter object (Chapter or
- *				Index) to add.
- * \return			TRUE on success, or FALSE on failure.
- */
-
-static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack, enum manual_data_object_type type)
-{
-	struct manual_data	*new_chapter;
-	xmlChar*		filename = NULL;
-
-	/* Create a new chapter structure. */
-
-	new_chapter = manual_data_create(type);
-	if (new_chapter == NULL) {
-		fprintf(stderr, "Failed to create new chapter data.\n");
-		return false;
-	}
-
-	/* Process any entities which are found. */
-
-	filename = xmlTextReaderGetAttribute(reader, (const xmlChar *) "file");
-
-	new_chapter->chapter.filename = filename_make(filename, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
-
-	free(filename);
-
-	/* Link the new item in to the document structure. */
-
-	parse_link_to_chain(old_stack, new_chapter);
-
-	return true;
-}
-
-/**
  * Add a new section to the document structure.
  *
  * \param reader		The XML Reader to read the node from.
@@ -504,6 +537,26 @@ static bool parse_process_add_section(xmlTextReaderPtr reader, struct parse_stac
 	return true;
 }
 
+/**
+ * Add a new resources block to the document structure.
+ *
+ * \param reader		The XML Reader to read the node from.
+ * \param *old_stack		The parent stack entry, within which the
+ *				new section will be added.
+ * \param type			The type of section object (Section) which
+ *				will contain the resources structure..
+ * \param element		The XML element to close the object.
+ * \return			TRUE on success, or FALSE on failure.
+ */
+
+static bool parse_process_add_resources(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack,
+		enum manual_data_object_type type, enum parse_element_type element)
+{
+	if (parse_create_new_stacked_object(PARSE_STACK_CONTENT_RESOURCES, element, type, old_stack->object) == NULL)
+		return false;
+
+	return true;
+}
 
 /**
  * Add a new block to the document structure.
@@ -545,11 +598,13 @@ static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_
 	case MANUAL_DATA_OBJECT_TYPE_TITLE:
 		old_stack->object->title = new_block;
 		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK_ADD, manual_data_find_object_name(type));
+		break;
 	}
 
 	return true;
 }
-
 
 /**
  * Add a content node to the document structure.
@@ -620,11 +675,14 @@ static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stac
 	case XML_READER_TYPE_ENTITY_REFERENCE:
 		new_object->chunk.entity = manual_entity_find_type(reader);
 		break;
+
+	default:
+		msg_report(MSG_UNEXPECTED_XML, node_type, "Content Node");
+		break;
 	}
 
 	return true;
 }
-
 
 /**
  * Create a new object which is pushed on to the stack.
@@ -654,10 +712,8 @@ static struct manual_data *parse_create_new_stacked_object(enum parse_stack_cont
 	/* Push an entry on to the stack ready to be processed. */
 
 	stack = parse_stack_push(content, element);
-	if (stack == NULL) {
-		fprintf(stderr, "Failed to allocate stack.\n");
+	if (stack == NULL)
 		return NULL;
-	}
 
 	/* Create the new object structure, if one wasn't supplied. */
 
@@ -700,7 +756,6 @@ static void parse_link_to_chain(struct parse_stack_entry *parent, struct manual_
 
 	parent->current_child = object;
 }
-
 
 /**
  * Handle errors reported by the XML Reader.

@@ -11,10 +11,17 @@
 
 <chapter id="chap-start-basic">
 <resources>
-<images>Chapter01</images>
-<downloads>Chapter01</downloads>
+ <mode type="strong">
+  <filename>Introduction</filename>
+ </mode>
+ <mode type="html">
+  <filename>introduction.html</filename>
+ </mode>
+
+ <images>Chapter01</images>
+ <downloads>Chapter01</downloads>
 </resources>
-<filename>introduction.html</filename>
+
 <title>Starting in BASIC</title>
 
 <summary>For those familiar with BBC&nbsp;BASIC, we start by getting a simple application up and running using this language.</summary>

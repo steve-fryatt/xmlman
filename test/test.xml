@@ -11,16 +11,13 @@
 <iyonix alt="Iyonix OK" width="34" height="39">../../software/images/iyonix.gif</iyonix>
 </icons>
 <resources>
-<images>Images</images>
-<downloads>Downloads</downloads>
-<common>Common</common>
-<chapters>Chapters</chapters>
+ <images>Images</images>
+ <downloads>Downloads</downloads>
 </resources>
 
 <!-- Index -->
 
 <index>
-<filename>index.html</filename>
 <title>Manual Index</title>
 <section>
 <p>Like many other RISC&nbsp;OS users,   I started programming in
@@ -64,21 +61,6 @@ handle large, variable amounts of data or   multiple documents.</p>
 </index>
 
 <chapter file="chapter1.xml"/>
-<chapter file="ch02-moving-to-c.xml"/>
-<chapter file="ch03-compiling.xml"/>
-<chapter file="ch04-event-driven.xml"/>
-<chapter file="ch05-compile-better.xml"/>
-<chapter file="ch06-ibar.xml"/>
-<chapter file="ch07-click.xml"/>
-<chapter file="ch08-report.xml"/>
-<chapter file="ch09-debug.xml"/>
-<chapter file="ch10-report2.xml"/>
-<chapter file="ch11-windows.xml"/>
-<chapter file="ch12-window-theory.xml"/>
-<chapter file="ch13-window-handling.xml"/>
-<chapter file="ch14-icons-intro.xml"/>
-<chapter file="ch15-icons-indirect.xml"/>
-<chapter file="ch16-interact-click.xml"/>
-<chapter file="ch17-appdir.xml"/>
+<chapter file="file-structure.xml"/>
 
 </manual>

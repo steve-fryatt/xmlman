@@ -63,6 +63,7 @@ static struct parse_element_definition parse_element_tags[] = {
 	{PARSE_ELEMENT_PARAGRAPH,	"p"},
 	{PARSE_ELEMENT_SECTION,		"section"},
 	{PARSE_ELEMENT_TITLE,		"title"},
+	{PARSE_ELEMENT_RESOURCES,	"resources"},
 	{PARSE_ELEMENT_CHAPTER,		"chapter"},
 	{PARSE_ELEMENT_INDEX,		"index"},
 	{PARSE_ELEMENT_MANUAL,		"manual"},
