@@ -101,6 +101,11 @@ bool output_strong(struct manual *document, struct filename *filename, enum enco
 
 	free(file);
 
+	if (!output_strong_file_sub_open("!Root", 0xfff)) {
+		output_strong_file_close();
+		return false;
+	}
+
 	if (!output_strong_file_write_plain("<!DOCTYPE html>") || !output_strong_file_write_newline()) {
 		output_strong_file_close();
 		return false;
@@ -122,6 +127,11 @@ bool output_strong(struct manual *document, struct filename *filename, enum enco
 	}
 
 	if (!output_strong_file_write_plain("</html>") || !output_strong_file_write_newline()) {
+		output_strong_file_close();
+		return false;
+	}
+
+	if (!output_strong_file_sub_close()) {
 		output_strong_file_close();
 		return false;
 	}
@@ -421,27 +431,27 @@ static const char *output_strong_convert_entity(enum manual_entity_type entity)
 {
 	switch (entity) {
 	case MANUAL_ENTITY_NBSP:
-		return "&nbsp;";
+		return ENCODING_UTF8_NBSP;
 	case MANUAL_ENTITY_AMP:
-		return "&amp;";
+		return "&";
 	case MANUAL_ENTITY_LSQUO:
-		return "&lsquo;";
+		return ENCODING_UTF8_LSQUO;
 	case MANUAL_ENTITY_RSQUO:
-		return "&rsquo;";
+		return ENCODING_UTF8_RSQUO;
 	case MANUAL_ENTITY_QUOT:
-		return "&quot;";
+		return "\"";
 	case MANUAL_ENTITY_LDQUO:
-		return "&ldquo;";
+		return ENCODING_UTF8_LDQUO;
 	case MANUAL_ENTITY_RDQUO:
-		return "&rdquo;";
+		return ENCODING_UTF8_RDQUO;
 	case MANUAL_ENTITY_MINUS:
-		return "&minus";
+		return ENCODING_UTF8_MINUS;
 	case MANUAL_ENTITY_NDASH:
-		return "&ndash;";
+		return ENCODING_UTF8_NDASH;
 	case MANUAL_ENTITY_MDASH:
-		return "&mdash";
+		return ENCODING_UTF8_MDASH;
 	case MANUAL_ENTITY_TIMES:
-		return "&times;";
+		return ENCODING_UTF8_TIMES;
 	default:
 		msg_report(MSG_ENTITY_NO_MAP, manual_entity_find_name(entity));
 		return "?";

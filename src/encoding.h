@@ -61,6 +61,15 @@
  */
 #define ENCODING_UTF8_NBHY "\xe2\x80\x91"
 
+#define ENCODING_UTF8_LSQUO "\xe2\x80\x98"
+#define ENCODING_UTF8_RSQUO "\xe2\x80\x99"
+#define ENCODING_UTF8_LDQUO "\xe2\x80\x9c"
+#define ENCODING_UTF8_RDQUO "\xe2\x80\x9d"
+#define ENCODING_UTF8_NDASH "\xe2\x80\x93"
+#define ENCODING_UTF8_MDASH "\xe2\x80\x94"
+#define ENCODING_UTF8_MINUS "\xe2\x88\x92"
+#define ENCODING_UTF8_TIMES "\xc3\x97"
+
 /**
  * A list of possible target encodings.
  *

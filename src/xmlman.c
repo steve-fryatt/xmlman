@@ -54,9 +54,6 @@
 #include "oslib/osfile.h"
 #endif
 
-
-#include "output_strong_file.h"
-
 /* Static Function Prototypes. */
 
 static bool xmlman_process_mode(char *file, struct manual *document, enum encoding_target encoding, enum encoding_line_end line_end,
@@ -81,79 +78,6 @@ int main(int argc, char *argv[])
 	struct manual		*document = NULL;
 	enum encoding_target	output_encoding = ENCODING_TARGET_NONE;
 	enum encoding_line_end	output_line_end = ENCODING_LINE_END_NONE;
-
-
-	/********************************************************/
-
-	encoding_select_table(ENCODING_TARGET_ACORN_LATIN1);
-	encoding_select_line_end(ENCODING_LINE_END_LF);
-
-
-	output_strong_file_open("test-out/strong,3d6");
-
-	output_strong_file_sub_open("!Root", 0xfff);
-	
-	output_strong_file_write_text((xmlChar *) "Hello World!");
-	output_strong_file_write_newline();
-	output_strong_file_write_text((xmlChar *) "The Root fileGG");
-	
-	output_strong_file_sub_close();
-
-	output_strong_file_sub_open("!Configure", 0xffd);
-	
-	output_strong_file_write_text((xmlChar *) "Hello World!");
-	output_strong_file_write_newline();
-	output_strong_file_write_text((xmlChar *) "The Configure file");
-	
-	output_strong_file_sub_close();
-
-	output_strong_file_sub_open("Name", 0xfff);
-	
-	output_strong_file_write_text((xmlChar *) "Hello World!");
-	output_strong_file_write_newline();
-	output_strong_file_write_text((xmlChar *) "A file in a directory");
-	
-	output_strong_file_sub_close();
-
-
-	output_strong_file_sub_open("Name", 0xfff);
-	
-	output_strong_file_write_text((xmlChar *) "Hello World!");
-	output_strong_file_write_newline();
-	output_strong_file_write_text((xmlChar *) "A file in a directory");
-	
-	output_strong_file_sub_close();
-
-	output_strong_file_sub_open("Name.Child", 0xfff);
-	
-	output_strong_file_write_text((xmlChar *) "Hello World!");
-	output_strong_file_write_newline();
-	output_strong_file_write_text((xmlChar *) "A file in a directory");
-	
-	output_strong_file_sub_close();
-
-
-	output_strong_file_sub_open("Direct.File", 0xfff);
-	
-	output_strong_file_write_text((xmlChar *) "Hello World!");
-	output_strong_file_write_newline();
-	output_strong_file_write_text((xmlChar *) "A file in a directory");
-	
-	output_strong_file_sub_close();
-
-	output_strong_file_sub_open("Direct.Wibble", 0xffd);
-
-	output_strong_file_write_text((xmlChar *) "Hello World!");
-	output_strong_file_write_newline();
-	output_strong_file_write_text((xmlChar *) "A file in a directory");
-	
-	output_strong_file_sub_close();
-
-	output_strong_file_close();
-
-	return EXIT_SUCCESS;
-
-	/********************************************************/
 
 	/* Decode the command line options. */
 
