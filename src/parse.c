@@ -183,11 +183,11 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 	if (xmlTextReaderIsValid(reader) != 1)
 		msg_report(MSG_INVALID, file);
 
+	if (ret != 0)
+		msg_report(MSG_XML_FAIL, file);
+
 	xmlFreeTextReader(reader);
 	free(file);
-
-	if (ret != 0)
-		fprintf(stderr, "%s : failed to parse\n", filename);
 
 	return true;
 }
