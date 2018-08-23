@@ -55,7 +55,8 @@ static bool parse_process_add_chapter(xmlTextReaderPtr reader, struct parse_stac
 static bool parse_process_add_section(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack,
 		enum manual_data_object_type type, enum parse_element_type element);
 static bool parse_process_add_resources(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack,
-		enum manual_data_object_type type, enum parse_element_type element);
+		enum parse_element_type element);
+static bool parse_process_collect_resources(struct parse_stack_entry *old_stack);
 static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack,
 		enum manual_data_object_type type, enum parse_element_type element);
 static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack);
@@ -285,7 +286,7 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 {
 	xmlReaderTypes			type;
 	enum parse_element_type		element;
-	struct parse_stack_entry	*old_stack;
+	struct parse_stack_entry	*old_stack, *parent_stack;
 
 	old_stack = parse_stack_peek(PARSE_STACK_TOP);
 
@@ -310,7 +311,7 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 					parse_process_add_chapter(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_CHAPTER, element, *chapter);
 				break;
 			case PARSE_ELEMENT_RESOURCES:
-				parse_process_add_resources(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_MANUAL, element);
+				parse_process_add_resources(reader, old_stack, element);
 				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Manual");
@@ -327,7 +328,7 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 				parse_process_add_section(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_SECTION, element);
 				break;
 			case PARSE_ELEMENT_RESOURCES:
-				parse_process_add_resources(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_CHAPTER, element);
+				parse_process_add_resources(reader, old_stack, element);
 				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Chapter");
@@ -344,7 +345,7 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 				parse_process_add_section(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_SECTION, element);
 				break;
 			case PARSE_ELEMENT_RESOURCES:
-				parse_process_add_resources(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_SECTION, element);
+				parse_process_add_resources(reader, old_stack, element);
 				break;
 			case PARSE_ELEMENT_PARAGRAPH:
 				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, element);
@@ -358,10 +359,29 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 		case PARSE_STACK_CONTENT_RESOURCES:
 			switch (element) {
 			case PARSE_ELEMENT_DOWNLOADS:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_RESOURCE_DOWNLOAD, element);
 				break;
 			case PARSE_ELEMENT_IMAGES:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_RESOURCE_IMAGE, element);
 				break;
 			case PARSE_ELEMENT_MODE:
+				parse_process_add_resources(reader, old_stack, element);
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Resources");
+				break;
+			}
+			break;
+
+		case PARSE_STACK_CONTENT_MODE_TEXT:
+		case PARSE_STACK_CONTENT_MODE_HTML:
+		case PARSE_STACK_CONTENT_MODE_STRONG:
+			switch (element) {
+			case PARSE_ELEMENT_FILENAME:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_RESOURCE_FILE, element);
+				break;
+			case PARSE_ELEMENT_FOLDER:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_RESOURCE_FOLDER, element);
 				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Resources");
@@ -428,6 +448,53 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 
 		if (element != old_stack->closing_element) {
 			msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+			break;
+		}
+
+		parent_stack = parse_stack_peek(PARSE_STACK_PARENT);
+
+		if (parent_stack != NULL) {
+			switch (parent_stack->content) {
+			case PARSE_STACK_CONTENT_RESOURCES:
+				switch (element) {
+				case PARSE_ELEMENT_IMAGES:
+				case PARSE_ELEMENT_DOWNLOADS:
+					parse_process_collect_resources(old_stack);
+					break;
+				case PARSE_ELEMENT_MODE:
+					break;
+				default:
+					msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+					break;
+				}
+				break;
+			case PARSE_STACK_CONTENT_MODE_TEXT:
+			case PARSE_STACK_CONTENT_MODE_STRONG:
+			case PARSE_STACK_CONTENT_MODE_HTML:
+				switch (element) {
+				case PARSE_ELEMENT_FILENAME:
+				case PARSE_ELEMENT_FOLDER:
+					parse_process_collect_resources(old_stack);
+					break;
+				default:
+					msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+					break;
+				}
+				break;
+			default:
+				break;
+			}
+		}
+
+		switch (old_stack->content) {
+		case PARSE_STACK_CONTENT_RESOURCES:
+		case PARSE_STACK_CONTENT_MODE_TEXT:
+		case PARSE_STACK_CONTENT_MODE_STRONG:
+		case PARSE_STACK_CONTENT_MODE_HTML:
+			if (old_stack->object != NULL)
+				free(old_stack->object);
+			break;
+		default:
 			break;
 		}
 
@@ -555,20 +622,161 @@ static bool parse_process_add_section(xmlTextReaderPtr reader, struct parse_stac
  * \param reader		The XML Reader to read the node from.
  * \param *old_stack		The parent stack entry, within which the
  *				new section will be added.
- * \param type			The type of section object (Section) which
- *				will contain the resources structure..
  * \param element		The XML element to close the object.
  * \return			TRUE on success, or FALSE on failure.
  */
 
 static bool parse_process_add_resources(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack,
-		enum manual_data_object_type type, enum parse_element_type element)
+		enum parse_element_type element)
 {
-	if (parse_create_new_stacked_object(PARSE_STACK_CONTENT_RESOURCES, element, type, old_stack->object) == NULL)
+	enum parse_stack_content	content = PARSE_STACK_CONTENT_NONE;
+	xmlChar				*type;
+
+	switch (element) {
+	case PARSE_ELEMENT_RESOURCES:
+		content = PARSE_STACK_CONTENT_RESOURCES;
+		break;
+	case PARSE_ELEMENT_MODE:
+		type = xmlTextReaderGetAttribute(reader, (const xmlChar *) "type");
+		if (type == NULL) {
+			msg_report(MSG_MISSING_ATTRIBUTE, "type");
+			return false;
+		}
+
+		if (xmlStrcmp((const xmlChar *) "text", type) == 0) {
+			content = PARSE_STACK_CONTENT_MODE_TEXT;
+		} else if (xmlStrcmp((const xmlChar *) "html", type) == 0) {
+			content = PARSE_STACK_CONTENT_MODE_HTML;
+		} else if (xmlStrcmp((const xmlChar *) "strong", type) == 0) {
+			content = PARSE_STACK_CONTENT_MODE_STRONG;
+		} else {
+			msg_report(MSG_UNKNOWN_MODE, (char *) type);
+		}
+
+		free(type);
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Resources");
+		break;
+	}
+
+	if (content == PARSE_STACK_CONTENT_NONE)
 		return false;
+
+	parse_create_new_stacked_object(content, element, MANUAL_DATA_OBJECT_TYPE_NONE, NULL);
+
+	/* The new object isn't linked to the chain, as we don't wish
+	 * to include it in the document. At the end, we'll pick the
+	 * stand-alone chain up and process it.
+	 */
 
 	return true;
 }
+
+/**
+ * Collect a resource specifier from a block object, copying its contents
+ * into a single string and freeing the components blocks.
+ *
+ * \param *old_stack		The parent stack entry pointing to the
+ *				object to be collected.
+ * \return			TRUE on success, or FALSE on failure.
+ */
+
+static bool parse_process_collect_resources(struct parse_stack_entry *old_stack)
+{
+	struct manual_data	*object, *chunk;
+	xmlChar			*c, *resource, *r;
+	size_t			length = 0;
+
+	/* Resource data is collected as a block object. */
+
+	if (old_stack == NULL || old_stack->content != PARSE_STACK_CONTENT_BLOCK) {
+		msg_report(MSG_BAD_RESOURCE_BLOCK);
+		return false;
+	}
+
+	/* If there's no block object, we can't do anything. */
+
+	object = old_stack->object;
+	if (object == NULL) {
+		msg_report(MSG_BAD_RESOURCE_BLOCK);
+		return false;
+	}
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_RESOURCE_FILE:
+	case MANUAL_DATA_OBJECT_TYPE_RESOURCE_FOLDER:
+	case MANUAL_DATA_OBJECT_TYPE_RESOURCE_IMAGE:
+	case MANUAL_DATA_OBJECT_TYPE_RESOURCE_DOWNLOAD:
+		break;
+	default:
+		msg_report(MSG_BAD_RESOURCE_BLOCK);
+		return false;
+	}
+
+	chunk = object->first_child;
+
+	while (chunk != NULL) {
+		switch (chunk->type) {
+		case MANUAL_DATA_OBJECT_TYPE_TEXT:
+			c = chunk->chunk.text;
+			if (c == NULL)
+				break;
+
+			while (*c++ != '\0')
+				length++;
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
+			length++;
+			break;
+		default:
+			msg_report(MSG_BAD_TYPE);
+			break;
+		}
+
+		chunk = chunk->next;
+	}
+
+	resource = malloc(length + 1);
+	if (resource == NULL)
+		return false;
+
+	r = resource;
+
+	chunk = object->first_child;
+
+	while (chunk != NULL) {
+		switch (chunk->type) {
+		case MANUAL_DATA_OBJECT_TYPE_TEXT:
+			c = chunk->chunk.text;
+			if (c == NULL)
+				break;
+
+			while (*c != '\0')
+				*r++ = *c++;
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
+			*r++ = '?';
+			break;
+		default:
+			msg_report(MSG_BAD_TYPE);
+			break;
+		}
+
+		chunk = chunk->next;
+	}
+
+	*r = '\0';
+
+	printf("Found resource: %s\n", resource);
+
+	// \TODO -- locate/create resource block and store filename.
+
+	free(resource);
+
+	return true;
+}
+
 
 /**
  * Add a new block to the document structure.
@@ -608,6 +816,10 @@ static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_
 		break;
 	case MANUAL_DATA_OBJECT_TYPE_TITLE:
 		old_stack->object->title = new_block;
+		break;
+	case MANUAL_DATA_OBJECT_TYPE_RESOURCE_IMAGE:
+	case MANUAL_DATA_OBJECT_TYPE_RESOURCE_DOWNLOAD:
+		old_stack->object = new_block;
 		break;
 	default:
 		msg_report(MSG_UNEXPECTED_BLOCK_ADD, manual_data_find_object_name(type));
@@ -726,7 +938,7 @@ static struct manual_data *parse_create_new_stacked_object(enum parse_stack_cont
 
 	/* Create the new object structure, if one wasn't supplied. */
 
-	if (object == NULL)
+	if (object == NULL && type != MANUAL_DATA_OBJECT_TYPE_NONE)
 		object = manual_data_create(type);
 
 	/* Link the object into the stack. */

@@ -132,15 +132,19 @@ struct parse_stack_entry *parse_stack_peek(int offset)
  * given content type.
  *
  * \param content		The required content type.
+ * \param offset		The number of entries to offset above the
+ *				found entry (0 for none).
  * \return			Pointer to the peeked entry, or NULL.
  */
 
-struct parse_stack_entry *parse_stack_peek_content(enum parse_stack_content content)
+struct parse_stack_entry *parse_stack_peek_content(enum parse_stack_content content, int offset)
 {
 	int	stack_pos = parse_stack_size - 1;
 
 	while (stack_pos >= 0 && parse_stack[stack_pos].content != content)
 		stack_pos--;
+
+	stack_pos -= offset;
 
 	if (stack_pos < 0)
 		return NULL;

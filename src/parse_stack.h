@@ -43,6 +43,9 @@ enum parse_stack_content {
 	PARSE_STACK_CONTENT_NONE,		/**< No, or undefined, content.			*/
 	PARSE_STACK_CONTENT_MANUAL,		/**< A top-level manual structure.		*/
 	PARSE_STACK_CONTENT_RESOURCES,		/**< A resources structure.			*/
+	PARSE_STACK_CONTENT_MODE_TEXT,		/**< A resources mode structure for text.	*/
+	PARSE_STACK_CONTENT_MODE_HTML,		/**< A resources mode structure for HTML.	*/
+	PARSE_STACK_CONTENT_MODE_STRONG,	/**< A resources mode structure for StrongHelp.	*/
 	PARSE_STACK_CONTENT_CHAPTER,		/**< A chapter or index structure.		*/
 	PARSE_STACK_CONTENT_SECTION,		/**< A section structure.			*/
 	PARSE_STACK_CONTENT_BLOCK		/**< An object block structure.			*/
@@ -130,10 +133,12 @@ struct parse_stack_entry *parse_stack_peek(int offset);
  * given content type.
  *
  * \param content		The required content type.
+ * \param offset		The number of entries to offset above the
+ *				found entry (0 for none).
  * \return			Pointer to the peeked entry, or NULL.
  */
 
-struct parse_stack_entry *parse_stack_peek_content(enum parse_stack_content content);
+struct parse_stack_entry *parse_stack_peek_content(enum parse_stack_content content, int offset);
 
 #endif
 

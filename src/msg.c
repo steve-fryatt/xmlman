@@ -92,6 +92,9 @@ static struct msg_data msg_messages[] = {
 	{MSG_WARNING,	"Unexpected XML object type %d found in %s",			false},
 	{MSG_WARNING,	"Attempt to add unexpected block of type %s",			false},
 	{MSG_ERROR,	"Attempt to push incorrect %s block on to stack (expected %s)",	false},
+	{MSG_ERROR,	"Missing '%s' attribute",					false},
+	{MSG_ERROR,	"Unknown '%s' mode",						false},
+	{MSG_ERROR,	"Attempt to read resources from unexpected block",		false},
 
 	{MSG_ERROR,	"Attempt to add content into unexpected stack location %d",	false},
 

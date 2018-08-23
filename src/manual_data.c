@@ -80,6 +80,11 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_MOUSE,			"Mouse"},
 	{MANUAL_DATA_OBJECT_TYPE_WINDOW,		"Window"},
 
+	{MANUAL_DATA_OBJECT_TYPE_RESOURCE_FILE,		"File Resource"},
+	{MANUAL_DATA_OBJECT_TYPE_RESOURCE_FOLDER,	"Folder Resource"},
+	{MANUAL_DATA_OBJECT_TYPE_RESOURCE_IMAGE,	"Image Resource"},
+	{MANUAL_DATA_OBJECT_TYPE_RESOURCE_DOWNLOAD,	"Download Resource"},
+
 
 	{MANUAL_DATA_OBJECT_TYPE_TEXT,			"Text"},
 	{MANUAL_DATA_OBJECT_TYPE_ENTITY,		"Entity"},
