@@ -213,25 +213,13 @@ bool output_strong_file_open(struct filename *filename)
 {
 	struct output_strong_file_root		root;
 	struct output_strong_file_dir_entry	dir;
-	char					*file = NULL;
 
 	/* Open the file to disc. */
 
-	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL);
-	if (file == NULL) {
-		msg_report(MSG_WRITE_NO_FILENAME);
+	output_strong_file_handle = filename_fopen(filename, "w");
+
+	if (output_strong_file_handle == NULL)
 		return false;
-	}
-
-	output_strong_file_handle = fopen(file, "w");
-
-	if (output_strong_file_handle == NULL) {
-		msg_report(MSG_WRITE_OPEN_FAIL, file);
-		free(file);
-		return false;
-	}
-
-	free(file);
 
 	/* Create a root directory object. */
 

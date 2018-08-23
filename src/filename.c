@@ -39,6 +39,8 @@
 
 #include "filename.h"
 
+#include "msg.h"
+
 /**
  * A filename node, containing a root, directory or leafname.
  */
@@ -193,6 +195,35 @@ void filename_destroy(struct filename *name)
 	/* Free the instance data itself. */
 
 	free(name);
+}
+
+/**
+ * Open a file using a filename instance.
+ *
+ * \param *filename		The instance to open.
+ * \param *mode			The required read/write mode.
+ * \return			The resulting file handle, or NULL.
+ */
+
+FILE *filename_fopen(struct filename *filename, const char *mode)
+{
+	char	*file = NULL;
+	FILE	*handle = NULL;
+
+	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL);
+	if (file == NULL) {
+		msg_report(MSG_WRITE_NO_FILENAME);
+		return NULL;
+	}
+
+	handle = fopen(file, mode);
+
+	if (handle == NULL)
+		msg_report(MSG_WRITE_OPEN_FAIL, file);
+
+	free(file);
+
+	return handle;
 }
 
 /**

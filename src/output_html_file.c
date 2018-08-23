@@ -62,23 +62,10 @@ static bool output_html_file_write_char(int unicode);
 
 bool output_html_file_open(struct filename *filename)
 {
-	char *file = NULL;
+	output_html_file_handle = filename_fopen(filename, "w");
 
-	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL);
-	if (file == NULL) {
-		msg_report(MSG_WRITE_NO_FILENAME);
+	if (output_html_file_handle == NULL)
 		return false;
-	}
-
-	output_html_file_handle = fopen(file, "w");
-
-	if (output_html_file_handle == NULL) {
-		msg_report(MSG_WRITE_OPEN_FAIL, file);
-		free(file);
-		return false;
-	}
-
-	free(file);
 
 	return true;
 }

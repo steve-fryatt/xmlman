@@ -101,6 +101,16 @@ struct filename *filename_make(xmlChar *name, enum filename_type type, enum file
 void filename_destroy(struct filename *name);
 
 /**
+ * Open a file using a filename instance.
+ *
+ * \param *filename		The instance to open.
+ * \param *mode			The required read/write mode.
+ * \return			The resulting file handle, or NULL.
+ */
+
+FILE *filename_fopen(struct filename *filename, const char *mode);
+
+/**
  * Dump the contents of a filename instance for debug purposes.
  *
  * \param *name			The name instance to dump.

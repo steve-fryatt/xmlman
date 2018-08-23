@@ -135,23 +135,10 @@ static bool output_text_line_write_char(struct output_text_line *line, int c);
 
 bool output_text_line_open(struct filename *filename)
 {
-	char *file = NULL;
+	output_text_line_handle = filename_fopen(filename, "w");
 
-	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL);
-	if (file == NULL) {
-		msg_report(MSG_WRITE_NO_FILENAME);
+	if (output_text_line_handle == NULL)
 		return false;
-	}
-
-	output_text_line_handle = fopen(file, "w");
-
-	if (output_text_line_handle == NULL) {
-		msg_report(MSG_WRITE_OPEN_FAIL, file);
-		free(file);
-		return false;
-	}
-
-	free(file);
 
 	return true;
 }
