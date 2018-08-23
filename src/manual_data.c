@@ -91,6 +91,10 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_NONE,			""}
 };
 
+/* Static Function Prototypes. */
+
+static void manual_data_initialise_mode_resources(struct manual_data_mode *mode);
+
 /**
  * Create a new manual_data structure.
  *
@@ -173,17 +177,27 @@ struct manual_data_resources *manual_data_get_resources(struct manual_data *obje
 		object->chapter.resources->images = NULL;
 		object->chapter.resources->downloads = NULL;
 
-		object->chapter.resources->text.filename = NULL;
-		object->chapter.resources->text.folder = NULL;
-
-		object->chapter.resources->strong.filename = NULL;
-		object->chapter.resources->strong.folder = NULL;
-
-		object->chapter.resources->strong.filename = NULL;
-		object->chapter.resources->strong.folder = NULL;
+		manual_data_initialise_mode_resources(&(object->chapter.resources->text));
+		manual_data_initialise_mode_resources(&(object->chapter.resources->html));
+		manual_data_initialise_mode_resources(&(object->chapter.resources->strong));
 	}
 
 	return object->chapter.resources;
+}
+
+/**
+ * Initialise the resources block for a mode.
+ *
+ * \param *mode		Pointer to the mode resources block to initialise.
+ */
+
+static void manual_data_initialise_mode_resources(struct manual_data_mode *mode)
+{
+	if (mode == NULL)
+		return;
+
+	mode->filename = NULL;
+	mode->folder = NULL;
 }
 
 /**
