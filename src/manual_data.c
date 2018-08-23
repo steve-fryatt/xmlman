@@ -141,6 +141,52 @@ struct manual_data *manual_data_create(enum manual_data_object_type type)
 }
 
 /**
+ * Return a pointer to an object's resources structure, if one would be
+ * valid, creating it first if required.
+ *
+ * \param *object	Pointer to the object of interest.
+ * \return		Pointer to the resources block, or NULL.
+ */
+
+struct manual_data_resources *manual_data_get_resources(struct manual_data *object)
+{
+	if (object == NULL)
+		return NULL;
+
+	/* Only the following nodes can take resources. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		break;
+	default:
+		return NULL;
+	}
+
+	if (object->chapter.resources == NULL) {
+		object->chapter.resources = malloc(sizeof(struct manual_data_resources));
+		if (object->chapter.resources == NULL)
+			return NULL;
+
+		object->chapter.resources->images = NULL;
+		object->chapter.resources->downloads = NULL;
+
+		object->chapter.resources->text.filename = NULL;
+		object->chapter.resources->text.folder = NULL;
+
+		object->chapter.resources->strong.filename = NULL;
+		object->chapter.resources->strong.folder = NULL;
+
+		object->chapter.resources->strong.filename = NULL;
+		object->chapter.resources->strong.folder = NULL;
+	}
+
+	return object->chapter.resources;
+}
+
+/**
  * Given an object type, return the textual object type name.
  *
  * \param type		The object type to look up.

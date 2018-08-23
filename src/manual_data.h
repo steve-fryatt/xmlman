@@ -35,6 +35,10 @@
 #include "manual_entity.h"
 #include "filename.h"
 
+/**
+ * The possible node object types.
+ */
+
 enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_NONE,
 	MANUAL_DATA_OBJECT_TYPE_MANUAL,
@@ -63,21 +67,52 @@ enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_ENTITY,
 };
 
+/**
+ * Resource data for a data output mode.
+ */
 
 struct manual_data_mode {
+	/**
+	 * Relative filename for the section output.
+	 */
 	struct filename				*filename;
+
+	/**
+	 * Relative folder name for the section output.
+	 */
 	struct filename				*folder;
 };
 
+/**
+ * Resource data for a manual, chapter or section node.
+ */
+
 struct manual_data_resources {
+	/**
+	 * Resources for the text output mode.
+	 */
 	struct manual_data_mode			text;
+
+	/**
+	 * Resources for the StrongHelp output mode.
+	 */
 	struct manual_data_mode			strong;
+
+	/**
+	 * Resources for the HTML output mode.
+	 */
 	struct manual_data_mode			html;
 
+	/**
+	 * The relative path to the image source folder.
+	 */
 	struct filename				*images;
+
+	/**
+	 * The relative path to the download source folder.
+	 */
 	struct filename				*downloads;
 };
-
 
 /**
  * Data for a manual block chunk.
@@ -85,16 +120,14 @@ struct manual_data_resources {
 
 struct manual_data_chunk {
 	union {
-	/**
-	 * Pointer to the chunk text.
-	 */
-
+		/**
+		 * Pointer to the chunk text.
+		 */
 		xmlChar				*text;
 
-	/**
-	 * The chunk entity type.
-	 */
-
+		/**
+		 * The chunk entity type.
+		 */
 		enum manual_entity_type		entity;
 	};
 };
@@ -197,6 +230,16 @@ struct manual_data {
  */
 
 struct manual_data *manual_data_create(enum manual_data_object_type type);
+
+/**
+ * Return a pointer to an object's resources structure, if one would be
+ * valid, creating it first if required.
+ *
+ * \param *object	Pointer to the object of interest.
+ * \return		Pointer to the resources block, or NULL.
+ */
+
+struct manual_data_resources *manual_data_get_resources(struct manual_data *object);
 
 /**
  * Given an object type, return the textual object type name.

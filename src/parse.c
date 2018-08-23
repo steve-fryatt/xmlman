@@ -56,7 +56,7 @@ static bool parse_process_add_section(xmlTextReaderPtr reader, struct parse_stac
 		enum manual_data_object_type type, enum parse_element_type element);
 static bool parse_process_add_resources(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack,
 		enum parse_element_type element);
-static bool parse_process_collect_resources(struct parse_stack_entry *old_stack);
+static bool parse_process_collect_resources(struct parse_stack_entry *old_stack, enum parse_stack_content content);
 static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack,
 		enum manual_data_object_type type, enum parse_element_type element);
 static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack);
@@ -459,7 +459,7 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 				switch (element) {
 				case PARSE_ELEMENT_IMAGES:
 				case PARSE_ELEMENT_DOWNLOADS:
-					parse_process_collect_resources(old_stack);
+					parse_process_collect_resources(old_stack, parent_stack->content);
 					break;
 				case PARSE_ELEMENT_MODE:
 					break;
@@ -474,7 +474,7 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 				switch (element) {
 				case PARSE_ELEMENT_FILENAME:
 				case PARSE_ELEMENT_FOLDER:
-					parse_process_collect_resources(old_stack);
+					parse_process_collect_resources(old_stack, parent_stack->content);
 					break;
 				default:
 					msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
@@ -682,11 +682,13 @@ static bool parse_process_add_resources(xmlTextReaderPtr reader, struct parse_st
  * \return			TRUE on success, or FALSE on failure.
  */
 
-static bool parse_process_collect_resources(struct parse_stack_entry *old_stack)
+static bool parse_process_collect_resources(struct parse_stack_entry *old_stack, enum parse_stack_content content)
 {
-	struct manual_data	*object, *chunk;
-	xmlChar			*c, *resource, *r;
-	size_t			length = 0;
+	struct parse_stack_entry	*parent_stack;
+	struct manual_data		*object, *chunk, *previous;
+	xmlChar				*c, *resource, *r;
+	size_t				length = 0;
+	struct manual_data_resources	*resources = NULL;
 
 	/* Resource data is collected as a block object. */
 
@@ -703,6 +705,8 @@ static bool parse_process_collect_resources(struct parse_stack_entry *old_stack)
 		return false;
 	}
 
+	/* We only wish to claim the following types. */
+
 	switch (object->type) {
 	case MANUAL_DATA_OBJECT_TYPE_RESOURCE_FILE:
 	case MANUAL_DATA_OBJECT_TYPE_RESOURCE_FOLDER:
@@ -713,6 +717,8 @@ static bool parse_process_collect_resources(struct parse_stack_entry *old_stack)
 		msg_report(MSG_BAD_RESOURCE_BLOCK);
 		return false;
 	}
+
+	/* Find the combined length of the resource, and claim some memory. */
 
 	chunk = object->first_child;
 
@@ -741,6 +747,10 @@ static bool parse_process_collect_resources(struct parse_stack_entry *old_stack)
 	if (resource == NULL)
 		return false;
 
+	/* Copy the resource content into the memory buffer, and free
+	 * the objects as we go.
+	 */
+
 	r = resource;
 
 	chunk = object->first_child;
@@ -754,6 +764,8 @@ static bool parse_process_collect_resources(struct parse_stack_entry *old_stack)
 
 			while (*c != '\0')
 				*r++ = *c++;
+
+			free(chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
 			*r++ = '?';
@@ -763,14 +775,75 @@ static bool parse_process_collect_resources(struct parse_stack_entry *old_stack)
 			break;
 		}
 
+		previous = chunk;
 		chunk = chunk->next;
+
+		free(previous);
 	}
 
 	*r = '\0';
 
-	printf("Found resource: %s\n", resource);
+	/* Find the stack entry above the resources block, where the
+	 * resource will be saved, and get the resource block.
+	 */
 
-	// \TODO -- locate/create resource block and store filename.
+	parent_stack = parse_stack_peek_content(PARSE_STACK_CONTENT_RESOURCES, PARSE_STACK_PARENT);
+
+	if (parent_stack == NULL || parent_stack->object == NULL) {
+		free(resource);
+		return false;
+	}
+
+	resources = manual_data_get_resources(parent_stack->object);
+	if (resources == NULL) {
+		free(resource);
+		return false;
+	}
+
+	/* Copy the resource into the block in the required location. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_RESOURCE_FILE:
+		switch (content) {
+		case PARSE_STACK_CONTENT_MODE_TEXT:
+			resources->text.filename = filename_make(resource, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
+			break;
+		case PARSE_STACK_CONTENT_MODE_STRONG:
+			resources->strong.filename = filename_make(resource, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
+			break;
+		case PARSE_STACK_CONTENT_MODE_HTML:
+			resources->html.filename = filename_make(resource, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
+			break;
+		default:
+			break;
+		}
+		break;
+	case MANUAL_DATA_OBJECT_TYPE_RESOURCE_FOLDER:
+		switch (content) {
+		case PARSE_STACK_CONTENT_MODE_TEXT:
+			resources->text.folder = filename_make(resource, FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
+			break;
+		case PARSE_STACK_CONTENT_MODE_STRONG:
+			resources->strong.folder = filename_make(resource, FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
+			break;
+		case PARSE_STACK_CONTENT_MODE_HTML:
+			resources->html.folder = filename_make(resource, FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
+			break;
+		default:
+			break;
+		}
+		break;
+	case MANUAL_DATA_OBJECT_TYPE_RESOURCE_IMAGE:
+		resources->images = filename_make(resource, FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
+		break;
+	case MANUAL_DATA_OBJECT_TYPE_RESOURCE_DOWNLOAD:
+		resources->downloads = filename_make(resource, FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
+		break;
+	default:
+		break;
+	}
+
+	/* Free the local copy of the name. */
 
 	free(resource);
 
