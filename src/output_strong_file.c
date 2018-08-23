@@ -40,6 +40,7 @@
 #include "output_strong_file.h"
 
 #include "encoding.h"
+#include "filename.h"
 #include "msg.h"
 #include "string.h"
 
@@ -208,26 +209,38 @@ static bool output_strong_file_pad(void);
  * \return		True on success; False on failure.
  */
 
-bool output_strong_file_open(char *filename)
+bool output_strong_file_open(struct filename *filename)
 {
 	struct output_strong_file_root		root;
 	struct output_strong_file_dir_entry	dir;
+	char					*file = NULL;
+
+	/* Open the file to disc. */
+
+	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL);
+	if (file == NULL) {
+		msg_report(MSG_WRITE_NO_FILENAME);
+		return false;
+	}
+
+	output_strong_file_handle = fopen(file, "w");
+
+	if (output_strong_file_handle == NULL) {
+		msg_report(MSG_WRITE_OPEN_FAIL, file);
+		free(file);
+		return false;
+	}
+
+	free(file);
 
 	/* Create a root directory object. */
 
 	output_strong_file_root = output_strong_file_create_object("$", OUTPUT_STRONG_FILE_TYPE_DIR);
 
 	if (output_strong_file_root == NULL) {
+		fclose(output_strong_file_handle);
+		output_strong_file_handle = NULL;
 		msg_report(MSG_STRONG_ROOT_FAIL);
-		return false;
-	}
-
-	/* Open the file to disc. */
-
-	output_strong_file_handle = fopen(filename, "w");
-
-	if (output_strong_file_handle == NULL) {
-		msg_report(MSG_WRITE_OPEN_FAIL, filename);
 		return false;
 	}
 
@@ -239,6 +252,8 @@ bool output_strong_file_open(char *filename)
 	root.free_offset = -1;
 
 	if (fwrite(&root, sizeof(struct output_strong_file_root), 1, output_strong_file_handle) != 1) {
+		fclose(output_strong_file_handle);
+		output_strong_file_handle = NULL;
 		msg_report(MSG_WRITE_FAILED);
 		return false;
 	}
@@ -255,11 +270,19 @@ bool output_strong_file_open(char *filename)
 	dir.reserved = 0;
 
 	if (fwrite(&dir, sizeof(struct output_strong_file_dir_entry), 1, output_strong_file_handle) != 1) {
+		fclose(output_strong_file_handle);
+		output_strong_file_handle = NULL;
 		msg_report(MSG_WRITE_FAILED);
 		return false;
 	}
 
-	return output_strong_file_write_filename("$");
+	if (!output_strong_file_write_filename("$")) {
+		fclose(output_strong_file_handle);
+		output_strong_file_handle = NULL;
+		return false;
+	}
+
+	return true;
 }
 
 /**

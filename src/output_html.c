@@ -79,8 +79,6 @@ static const char *output_html_convert_entity(enum manual_entity_type entity);
 
 bool output_html(struct manual *document, struct filename *filename, enum encoding_target encoding, enum encoding_line_end line_end)
 {
-	char *file = NULL;
-
 	if (document == NULL || document->manual == NULL)
 		return false;
 
@@ -94,18 +92,8 @@ bool output_html(struct manual *document, struct filename *filename, enum encodi
 
 	/* Find and open the output file. */
 
-	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL);
-	if (file == NULL) {
-		msg_report(MSG_WRITE_NO_FILENAME);
+	if (!output_html_file_open(filename))
 		return false;
-	}
-
-	if (!output_html_file_open(file)) {
-		free(file);
-		return false;
-	}
-
-	free(file);
 
 	if (!output_html_file_write_plain("<!DOCTYPE html>") || !output_html_file_write_newline()) {
 		output_html_file_close();

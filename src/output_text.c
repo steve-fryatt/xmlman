@@ -87,7 +87,6 @@ bool output_text(struct manual *document, struct filename *filename, enum encodi
 {
 	struct manual_data	*chapter;
 	int			base_indent = 0;
-	char			*file = NULL;
 
 	if (document == NULL || document->manual == NULL)
 		return false;
@@ -102,18 +101,8 @@ bool output_text(struct manual *document, struct filename *filename, enum encodi
 
 	/* Find and open the output file. */
 
-	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL);
-	if (file == NULL) {
-		msg_report(MSG_WRITE_NO_FILENAME);
+	if (!output_text_line_open(filename))
 		return false;
-	}
-
-	if (!output_text_line_open(file)) {
-		free(file);
-		return false;
-	}
-
-	free(file);
 
 	if (!output_text_write_heading(document->manual, base_indent)) {
 		output_text_line_close();

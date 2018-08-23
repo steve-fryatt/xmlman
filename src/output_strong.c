@@ -73,8 +73,6 @@ static const char *output_strong_convert_entity(enum manual_entity_type entity);
 
 bool output_strong(struct manual *document, struct filename *filename, enum encoding_target encoding, enum encoding_line_end line_end)
 {
-	char *file = NULL;
-
 	if (document == NULL || document->manual == NULL)
 		return false;
 
@@ -88,18 +86,8 @@ bool output_strong(struct manual *document, struct filename *filename, enum enco
 
 	/* Find and open the output file. */
 
-	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL);
-	if (file == NULL) {
-		msg_report(MSG_WRITE_NO_FILENAME);
+	if (!output_strong_file_open(filename))
 		return false;
-	}
-
-	if (!output_strong_file_open(file)) {
-		free(file);
-		return false;
-	}
-
-	free(file);
 
 	if (!output_strong_file_sub_open("!Root", 0xfff)) {
 		output_strong_file_close();

@@ -34,6 +34,8 @@
 
 #include <libxml/xmlstring.h>
 
+#include "filename.h"
+
 struct output_text_line;
 
 /**
@@ -43,7 +45,7 @@ struct output_text_line;
  * \return		True on success; False on failure.
  */
 
-bool output_text_line_open(char *filename);
+bool output_text_line_open(struct filename *filename);
 
 /**
  * Close the current text output file.

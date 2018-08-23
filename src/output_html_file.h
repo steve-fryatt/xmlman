@@ -34,6 +34,8 @@
 
 #include <libxml/xmlstring.h>
 
+#include "filename.h"
+
 /**
  * Open a file to write the HTML output to.
  *
@@ -41,7 +43,7 @@
  * \return		True on success; False on failure.
  */
 
-bool output_html_file_open(char *filename);
+bool output_html_file_open(struct filename *filename);
 
 /**
  * Close the current HTML output file.

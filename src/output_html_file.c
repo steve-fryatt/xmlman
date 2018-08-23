@@ -39,6 +39,7 @@
 #include "output_html_file.h"
 
 #include "encoding.h"
+#include "filename.h"
 #include "msg.h"
 
 /* Global Variables. */
@@ -59,14 +60,25 @@ static bool output_html_file_write_char(int unicode);
  * \return		True on success; False on failure.
  */
 
-bool output_html_file_open(char *filename)
+bool output_html_file_open(struct filename *filename)
 {
-	output_html_file_handle = fopen(filename, "w");
+	char *file = NULL;
 
-	if (output_html_file_handle == NULL) {
-		msg_report(MSG_WRITE_OPEN_FAIL, filename);
+	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL);
+	if (file == NULL) {
+		msg_report(MSG_WRITE_NO_FILENAME);
 		return false;
 	}
+
+	output_html_file_handle = fopen(file, "w");
+
+	if (output_html_file_handle == NULL) {
+		msg_report(MSG_WRITE_OPEN_FAIL, file);
+		free(file);
+		return false;
+	}
+
+	free(file);
 
 	return true;
 }

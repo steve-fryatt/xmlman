@@ -38,6 +38,7 @@
 #include "output_text_line.h"
 
 #include "encoding.h"
+#include "filename.h"
 #include "msg.h"
 
 /**
@@ -132,14 +133,25 @@ static bool output_text_line_write_char(struct output_text_line *line, int c);
  * \return		True on success; False on failure.
  */
 
-bool output_text_line_open(char *filename)
+bool output_text_line_open(struct filename *filename)
 {
-	output_text_line_handle = fopen(filename, "w");
+	char *file = NULL;
 
-	if (output_text_line_handle == NULL) {
-		msg_report(MSG_WRITE_OPEN_FAIL, filename);
+	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL);
+	if (file == NULL) {
+		msg_report(MSG_WRITE_NO_FILENAME);
 		return false;
 	}
+
+	output_text_line_handle = fopen(file, "w");
+
+	if (output_text_line_handle == NULL) {
+		msg_report(MSG_WRITE_OPEN_FAIL, file);
+		free(file);
+		return false;
+	}
+
+	free(file);
 
 	return true;
 }
