@@ -129,6 +129,11 @@ struct manual_data *manual_data_create(enum manual_data_object_type type)
 		data->chapter.processed = false;
 		break;
 
+	case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		data->chapter.resources = NULL;
+		break;
+
 	case MANUAL_DATA_OBJECT_TYPE_TEXT:
 		data->chunk.text = NULL;
 		break;

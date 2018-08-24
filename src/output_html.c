@@ -57,6 +57,10 @@
 
 #define OUTPUT_HTML_TITLE_TAG_BLOCK_LEN 6
 
+/* Global Variables. */
+
+static const char *output_html_root_filename = "index.html";
+
 /* Static Function Prototypes. */
 
 static bool output_html_write_head(struct manual_data *manual);
@@ -66,6 +70,7 @@ static bool output_html_write_section(struct manual_data *section, int level);
 static bool output_html_write_heading(struct manual_data *node, int level);
 static bool output_html_write_text(enum manual_data_object_type type, struct manual_data *text);
 static const char *output_html_convert_entity(enum manual_entity_type entity);
+static bool output_html_complete_filenames(struct manual_data *data, bool *single_file);
 
 /**
  * Output a manual in HTML form.
@@ -79,7 +84,12 @@ static const char *output_html_convert_entity(enum manual_entity_type entity);
 
 bool output_html(struct manual *document, struct filename *filename, enum encoding_target encoding, enum encoding_line_end line_end)
 {
+	bool single_file = true;
+
 	if (document == NULL || document->manual == NULL)
+		return false;
+
+	if (!output_html_complete_filenames(document->manual, &single_file))
 		return false;
 
 	/* Output encoding defaults to UTF8. */
@@ -448,5 +458,67 @@ static const char *output_html_convert_entity(enum manual_entity_type entity)
 		msg_report(MSG_ENTITY_NO_MAP, manual_entity_find_name(entity));
 		return "?";
 	}
+}
+
+/**
+ * Scan the document structure, identifying if any sections will be in
+ * their own files and filling in any unspecified filenames.
+ *
+ * \param *data			Pointer to the node to scan from.
+ * \param *single_file		Pointer to boolean, set to false if a
+ *				single output file proves impossible.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_complete_filenames(struct manual_data *data, bool *single_file)
+{
+	bool this_node, child_nodes;
+
+	if (data == NULL || single_file == NULL)
+		return false;
+
+	/* Don't scan beyond nodes which support new files. */
+
+	switch (data->type) {
+	case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		break;
+	default:
+		return true;
+	}
+
+	while (data != NULL) {
+		this_node = true;
+		child_nodes = true;
+
+		if (data->chapter.resources != NULL) {
+			if (data->chapter.resources->html.filename != NULL)
+				this_node = false;
+
+			if (data->chapter.resources->html.folder != NULL) {
+				this_node = false;
+
+				if (data->chapter.resources->html.filename == NULL)
+					data->chapter.resources->html.filename = filename_make((xmlChar *) output_html_root_filename,
+							FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
+			}
+		}
+
+		if (data->first_child != NULL && !output_html_complete_filenames(data->first_child, &child_nodes))
+			return false;
+
+		if (this_node == true && child_nodes == false && data->next != NULL) {
+			printf("Error: orphaned nodes.\n");
+		}
+
+		if (!this_node || !child_nodes)
+			*single_file = false;
+
+		data = data->next;
+	}
+
+	return true;
 }
 
