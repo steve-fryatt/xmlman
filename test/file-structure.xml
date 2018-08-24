@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+
+<!DOCTYPE xmlmanual SYSTEM "manual.dtd">
+
+<manual version="1.8.6">
+
+<!-- Chapter 1
+   -
+   - Starting out in BASIC
+  -->
+
+<chapter id="chap-file-structure">
+<resources>
+ <mode type="strong">
+  <filename>FileStructure</filename>
+ </mode>
+ <mode type="html">
+  <filename>file-structure.html</filename>
+ </mode>
+</resources>
+
+<title>Document File Structure</title>
+
+<summary>For those familiar with BBC&nbsp;BASIC, we start by getting a simple application up and running using this language.</summary>
+
+
+</chapter>
+</manual>
+
