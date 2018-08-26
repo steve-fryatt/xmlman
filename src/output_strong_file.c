@@ -486,7 +486,7 @@ static struct output_strong_file_object *output_strong_file_add_entry(struct out
 static struct output_strong_file_object *output_strong_file_link_object(struct output_strong_file_object *directory, char *filename, int type)
 {
 	struct output_strong_file_object	*current = NULL, *previous = NULL, *new = NULL;
-	int					compare;
+	int					compare = -1;
 	char					*new_name = NULL, *root = "!Root";
 
 	if (directory == NULL || filename == NULL)
