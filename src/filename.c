@@ -35,6 +35,10 @@
 
 #include <libxml/xmlstring.h>
 
+#ifdef LINUX
+#include <sys/stat.h>
+#endif
+
 /* Local source headers. */
 
 #include "filename.h"
@@ -203,30 +207,84 @@ void filename_destroy(struct filename *name)
 /**
  * Open a file using a filename instance.
  *
- * \param *filename		The instance to open.
+ * \param *name			The instance to open.
  * \param *mode			The required read/write mode.
  * \return			The resulting file handle, or NULL.
  */
 
-FILE *filename_fopen(struct filename *filename, const char *mode)
+FILE *filename_fopen(struct filename *name, const char *mode)
 {
-	char	*file = NULL;
+	char	*filename = NULL;
 	FILE	*handle = NULL;
 
-	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL, 0);
-	if (file == NULL) {
+	filename = filename_convert(name, FILENAME_PLATFORM_LOCAL, 0);
+	if (filename == NULL) {
 		msg_report(MSG_WRITE_NO_FILENAME);
 		return NULL;
 	}
 
-	handle = fopen(file, mode);
+	handle = fopen(filename, mode);
 
 	if (handle == NULL)
-		msg_report(MSG_WRITE_OPEN_FAIL, file);
+		msg_report(MSG_WRITE_OPEN_FAIL, filename);
 
-	free(file);
+	free(filename);
 
 	return handle;
+}
+
+/**
+ * Create a directory, and optionally any intermediate directories which are
+ * required. If the intermediate directories are not created, the call will fail
+ * if they do not exist.
+ *
+ * \param *name			A filename instance referring to the directory
+ *				to be created.
+ * \param intermediate		True to create intermediate directories;
+ *				otherwise False.
+ * \return			True if successful; False on failure.
+ */
+
+bool filename_mkdir(struct filename *name, bool intermediate)
+{
+	size_t		length = 0;
+	xmlChar		*filename = NULL;
+	int		levels, nodes = 0;
+
+	nodes = filename_count_nodes(name);
+	if (nodes == 0)
+		return false;
+
+	length = filename_get_storage_size(name);
+	if (length == 0)
+		return false;
+
+	filename = malloc(length);
+	if (filename == NULL)
+		return false;
+
+	for (levels = (intermediate) ? 1 : nodes; levels <= nodes; levels++) {
+		if (!filename_copy_to_buffer(name, filename, length, FILENAME_PLATFORM_LOCAL, levels)) {
+			free(filename);
+			return false;
+		}
+
+#ifdef LINUX
+		if (mkdir((char *) filename, 0577) != 0) {
+			free(filename);
+			return false;
+		}
+#endif
+#ifdef RISCOS
+		free(filename);
+
+		return false;
+#endif
+	}
+
+	free(filename);
+
+	return true;
 }
 
 /**

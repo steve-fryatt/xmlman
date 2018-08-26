@@ -103,12 +103,26 @@ void filename_destroy(struct filename *name);
 /**
  * Open a file using a filename instance.
  *
- * \param *filename		The instance to open.
+ * \param *name			The instance to open.
  * \param *mode			The required read/write mode.
  * \return			The resulting file handle, or NULL.
  */
 
-FILE *filename_fopen(struct filename *filename, const char *mode);
+FILE *filename_fopen(struct filename *name, const char *mode);
+
+/**
+ * Create a directory, and optionally any intermediate directories which are
+ * required. If the intermediate directories are not created, the call will fail
+ * if they do not exist.
+ *
+ * \param *name			A filename instance referring to the directory
+ *				to be created.
+ * \param intermediate		True to create intermediate directories;
+ *				otherwise False.
+ * \return			True if successful; False on failure.
+ */
+
+bool filename_mkdir(struct filename *name, bool intermediate);
 
 /**
  * Dump the contents of a filename instance for debug purposes.
