@@ -156,10 +156,11 @@ bool filename_add(struct filename *name, struct filename *add, int levels);
  *
  * \param *name			The filename instance to be converted.
  * \param platform		The required target platform.
+ * \param levels		The number of levels to copy, or zero for all.
  * \return			Pointer to the filename, or NULL on failure.
  */
 
-char *filename_convert(struct filename *name, enum filename_platform platform);
+char *filename_convert(struct filename *name, enum filename_platform platform, int levels);
 
 #endif
 

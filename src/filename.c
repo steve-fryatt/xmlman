@@ -76,6 +76,9 @@ struct filename {
 
 /* Static Function Prototypes */
 
+static size_t filename_get_storage_size(struct filename *name);
+static bool filename_copy_to_buffer(struct filename *name, xmlChar *buffer, size_t length, enum filename_platform platform, int levels);
+static int filename_count_nodes(struct filename *name);
 static char filename_get_separator(enum filename_platform platform);
 
 /**
@@ -210,7 +213,7 @@ FILE *filename_fopen(struct filename *filename, const char *mode)
 	char	*file = NULL;
 	FILE	*handle = NULL;
 
-	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL);
+	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL, 0);
 	if (file == NULL) {
 		msg_report(MSG_WRITE_NO_FILENAME);
 		return NULL;
@@ -270,7 +273,6 @@ void filename_dump(struct filename *name)
 struct filename *filename_up(struct filename *name, int up)
 {
 	struct filename		*new_name = NULL;
-	struct filename_node	*node = NULL;
 	int			levels = 0;
 
 	if (name == NULL)
@@ -278,12 +280,7 @@ struct filename *filename_up(struct filename *name, int up)
 
 	/* Count the number of levels in the filename. */
 
-	node = name->name;
-
-	while (node != NULL) {
-		levels++;
-		node = node->next;
-	}
+	levels = filename_count_nodes(name);
 
 	/* Adjust the levels if a parent directory is required. */
 
@@ -393,20 +390,53 @@ bool filename_add(struct filename *name, struct filename *add, int levels)
  *
  * \param *name			The filename instance to be converted.
  * \param platform		The required target platform.
+ * \param levels		The number of levels to copy, or zero for all.
  * \return			Pointer to the filename, or NULL on failure.
  */
 
-char *filename_convert(struct filename *name, enum filename_platform platform)
+char *filename_convert(struct filename *name, enum filename_platform platform, int levels)
 {
 	size_t			length = 0;
-	xmlChar			*c = NULL, *d = NULL, *filename = NULL;
-	char			separator;
-	struct filename_node	*node = NULL;
+	xmlChar			*filename = NULL;
 
 	if (name == NULL)
 		return NULL;
 
-	/* Calculate the amount of memory required. */
+	if (levels <= 0)
+		levels = filename_count_nodes(name);
+
+	/* Calculate and allocate the amount of memory required. */
+
+	length = filename_get_storage_size(name);
+	if (length == 0)
+		return NULL;
+
+	filename = malloc(length);
+	if (filename == NULL)
+		return NULL;
+
+	/* Copy the filename. */
+
+	if (!filename_copy_to_buffer(name, filename, length, platform, levels)) {
+		free(filename);
+		return NULL;
+	}
+
+	return (char *) filename;
+}
+
+/**
+ * Return the size of buffer required to hold a representation of a filename.
+ *
+ * \param *name			The filename instance to be counted.
+ * \return			The number of bytes, or zero on failure.
+ */
+
+static size_t filename_get_storage_size(struct filename *name)
+{
+	size_t			length = 0;
+	xmlChar			*c = NULL;
+	struct filename_node	*node = NULL;
 
 	node = name->name;
 
@@ -425,35 +455,83 @@ char *filename_convert(struct filename *name, enum filename_platform platform)
 		node = node->next;
 	}
 
-	filename = malloc(length);
-	if (filename == NULL)
-		return NULL;
+	return length;
+}
 
-	/* Copy the filename. */
+/**
+ * Copy a filename into a supplied buffer in the given form.
+ *
+ * \param *name			The filename instance to be copied.
+ * \param *buffer		Pointer to the buffer to take the filename.
+ * \param length		The length of the supplied buffer, in bytes.
+ * \param platform		The required target platform.
+ * \param levels		The number of levels to copy, or zero for all.
+ * \return			True if successful; false on error.
+ */
+
+static bool filename_copy_to_buffer(struct filename *name, xmlChar *buffer, size_t length, enum filename_platform platform, int levels)
+{
+	struct filename_node	*node = NULL;
+	int			ptr = 0;
+	xmlChar			*c = NULL; 
+	char			separator;
+
+	if (buffer == NULL || length == 0)
+		return false;
 
 	node = name->name;
-	d = filename;
 	separator = filename_get_separator(platform);
 
-	while (node != NULL) {
+	/* Copy the name into the buffer, byte by byte. */
+
+	while ((ptr < length) && (node != NULL) && (levels-- > 0)) {
 		c = node->name;
 
 		/* Copy the character bytes in the name. */
 
-		while (*c != '\0')
-			*d++ = *c++;
+		while ((ptr < length) && (*c != '\0'))
+			buffer[ptr++] = *c++;
 
-		/* Add one for the separator or terminator. */
+		/* Copy a separator after each intermediate node. */
 
-		if (node->next != NULL)
-			*d++ = separator;
+		if ((ptr < length) && (node->next != NULL) && (levels > 0))
+			buffer[ptr++] = separator;
 
 		node = node->next;
 	}
 
-	*d = '\0';
+	/* If the buffer overran, terminate it and exit. */
 
-	return (char *) filename;
+	if (ptr >= length) {
+		buffer[0] = '\0';
+		return false;
+	}
+
+	buffer[ptr] = '\0';
+
+	return true;
+}
+
+/**
+ * Count the number of nodes in a filname.
+ *
+ * \param *name			The filename instance to be counted.
+ * \return			The number of nodes, or zero on failure.
+ */
+
+static int filename_count_nodes(struct filename *name)
+{
+	struct filename_node	*node = NULL;
+	int			levels = 0;
+
+	node = name->name;
+
+	while (node != NULL) {
+		levels++;
+		node = node->next;
+	}
+
+	return levels;
 }
 
 /**

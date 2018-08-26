@@ -156,7 +156,7 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 	char			*file = NULL;
 	int			ret;
 
-	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL);
+	file = filename_convert(filename, FILENAME_PLATFORM_LOCAL, 0);
 
 	if (file == NULL) {
 		msg_report(MSG_FILE_MISSING);
