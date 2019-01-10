@@ -447,7 +447,7 @@ static const char *output_html_convert_entity(enum manual_entity_type entity)
 	case MANUAL_ENTITY_RDQUO:
 		return "&rdquo;";
 	case MANUAL_ENTITY_MINUS:
-		return "&minus";
+		return "&minus;";
 	case MANUAL_ENTITY_NDASH:
 		return "&ndash;";
 	case MANUAL_ENTITY_MDASH:
