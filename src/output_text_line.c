@@ -379,7 +379,7 @@ static bool output_text_line_add_column_text(struct output_text_line_column *col
 
 		if ((write_ptr >= column->size) && !output_text_line_update_column_memory(column)) {
 			column->text[write_ptr - 1] = '\0';
-			msg_report(MSG_TEST_LINE_NO_MEM);
+			msg_report(MSG_TEXT_LINE_NO_MEM);
 			return false;
 		}
 	}
