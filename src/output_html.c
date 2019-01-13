@@ -490,8 +490,8 @@ static bool output_html_complete_filenames(struct manual_data *data, bool *singl
 	}
 
 	while (data != NULL) {
-		this_node = true;
-		child_nodes = true;
+		this_node = true;	/**< Track whether this node is OK for single file.		*/
+		child_nodes = true;	/**< Track whether any child nodes are OK for single file.	*/
 
 		if (data->chapter.resources != NULL) {
 			if (data->chapter.resources->html.filename != NULL)
