@@ -41,7 +41,7 @@
 
 struct manual {
 	/**
-	 * Poiinter to the first node in the manual.
+	 * Pointer to the first node in the manual.
 	 */
 
 	struct manual_data	*manual;
