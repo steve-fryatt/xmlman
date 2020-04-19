@@ -146,8 +146,8 @@ struct manual_data_chapter {
 
 	union {
 		/**
-		 * Pointer to the chapter filename, or NULL if this is an
-		 * inline or processed chapter.
+		 * Pointer to the chapter source filename, or NULL if this
+		 * is an inline or processed chapter.
 		 */
 		struct filename			*filename;
 
