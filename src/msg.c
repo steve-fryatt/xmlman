@@ -228,7 +228,7 @@ void msg_report(enum msg_type type, ...)
 		msg_error_reported = true;
 		break;
 	default:
-		level = "Message:";
+		level = "Message";
 		break;
 	}
 
