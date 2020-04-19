@@ -291,13 +291,17 @@ bool filename_mkdir(struct filename *name, bool intermediate)
  * Dump the contents of a filename instance for debug purposes.
  *
  * \param *name			The name instance to dump.
+ * \param *label		A label to apply, or NULL for none.
  */
 
-void filename_dump(struct filename *name)
+void filename_dump(struct filename *name, char *label)
 {
 	struct filename_node *node;
 
 	printf(">=======================\n");
+
+	if (label != NULL)
+		printf("%s\n------------------------\n", label);
 
 	if (name == NULL) {
 		printf("No name!\n");
@@ -319,8 +323,8 @@ void filename_dump(struct filename *name)
 }
 
 /**
- * Duplicate a filename, optionally removing one or more leaves to remove the
- * leave filename or move up to a parent directory.
+ * Duplicate a filename, optionally removing one or more leaves to remove
+ * the leaf filename or move up to a parent directory.
  *
  * \param *name			The name to be duplicated.
  * \param up			The number of levels to move up, or zero for a

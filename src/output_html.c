@@ -102,6 +102,8 @@ bool output_html(struct manual *document, struct filename *filename, enum encodi
 
 	/* Find and open the output file. */
 
+	filename_dump(filename, "Base filename");
+
 	if (!output_html_file_open(filename))
 		return false;
 
@@ -211,11 +213,18 @@ static bool output_html_write_chapter(struct manual_data *chapter, int level)
 
 	/* Confirm that this is a chapter. */
 
-//	if (chapter->type != MANUAL_DATA_OBJECT_TYPE_CHAPTER) {
-//		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_CHAPTER),
-//				manual_data_find_object_name(chapter->type));
-//		return false;
-//	}
+	if (chapter->type != MANUAL_DATA_OBJECT_TYPE_CHAPTER && chapter->type != MANUAL_DATA_OBJECT_TYPE_INDEX) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_CHAPTER),
+				manual_data_find_object_name(chapter->type));
+		return false;
+	}
+
+	if (chapter->chapter.resources != NULL) {
+		filename_dump(chapter->chapter.resources->html.filename, "Filename");
+		filename_dump(chapter->chapter.resources->html.folder, "Foldername");
+	} else {
+		printf("*** NO NAME ***\n");
+	}
 
 	if (!output_html_file_write_newline())
 		return false;

@@ -128,9 +128,10 @@ bool filename_mkdir(struct filename *name, bool intermediate);
  * Dump the contents of a filename instance for debug purposes.
  *
  * \param *name			The name instance to dump.
+ * \param *label		A label to apply, or NULL for none.
  */
 
-void filename_dump(struct filename *name);
+void filename_dump(struct filename *name, char *label);
 
 /**
  * Duplicate a filename, optionally removing one or more leaves to remove the
