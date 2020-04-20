@@ -444,6 +444,34 @@ bool filename_add(struct filename *name, struct filename *add, int levels)
 	return true;
 }
 
+
+/**
+ * Join two filenames together, returing the result as a new filename.
+ * This is effectively an alternative to filename_add(), where the full
+ * names are required and the result is in a new instance.
+ *
+ * \param *first		The first filename instance to be included.
+ * \param *second		The second filename instance to be included.
+ * \return			The new filename instance, or NULL on failure.
+ */
+
+struct filename *filename_join(struct filename *first, struct filename *second)
+{
+	struct filename *name;
+
+	name = filename_up(first, 0);
+	if (name == NULL)
+		return NULL;
+
+	if (!filename_add(name, second, 0)) {
+		filename_destroy(name);
+		return NULL;
+	}
+
+	return name;
+}
+
+
 /**
  * Convert a filename instance into a string suitable for a given target
  * platform. Conversion between platforms of root filenames is unlikely
