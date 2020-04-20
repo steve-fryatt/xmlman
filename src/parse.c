@@ -278,7 +278,7 @@ static void parse_process_outer_node(xmlTextReaderPtr reader, struct manual_data
  *
  * \param reader	The XML Reader to read the node from.
  * \param **chapter	Pointer a pointer to the current chapter. The
- *			chapter pointer can be  NULL if this is the root
+ *			chapter pointer can be NULL if this is the root
  *			file.
  */
 
