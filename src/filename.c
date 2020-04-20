@@ -36,6 +36,7 @@
 #include <libxml/xmlstring.h>
 
 #ifdef LINUX
+#include <errno.h>
 #include <sys/stat.h>
 #endif
 
@@ -270,7 +271,8 @@ bool filename_mkdir(struct filename *name, bool intermediate)
 		}
 
 #ifdef LINUX
-		if (mkdir((char *) filename, 0577) != 0) {
+		if ((mkdir((char *) filename, 0755) != 0) && (errno != EEXIST)) {
+			msg_report(MSG_WRITE_CDIR_FAIL, filename);
 			free(filename);
 			return false;
 		}
