@@ -15,6 +15,12 @@
  <downloads>Downloads</downloads>
 </resources>
 
+<!-- Introduction -->
+
+<section>
+<p>This is a preliminary introduction.</p>
+</section>
+
 <!-- Index -->
 
 <index>
@@ -56,11 +62,24 @@ handle large, variable amounts of data or   multiple documents.</p>
 </section>
 </section>
 
-<chapterlist/>
+<!-- chapterlist/ -->
 
 </index>
 
+<section>
+<p>This comes before chapter 1.</p>
+</section>
+
 <chapter file="chapter1.xml"/>
+
+<section>
+<p>This comes between chapters 1 and 2.</p>
+</section>
+
 <chapter file="file-structure.xml"/>
+
+<section>
+<p>This comes right at the end of the file.</p>
+</section>
 
 </manual>

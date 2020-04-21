@@ -1,4 +1,4 @@
-/* Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2020, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -39,13 +39,13 @@
  * Output a manual in HTML form.
  *
  * \param *document	The manual to be output.
- * \param *filename	The filename to use to write to.
+ * \param *folder	The folder to write the manual to.
  * \param encoding	The encoding to use for output.
  * \param line_end	The line ending to use for output.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-bool output_html(struct manual *document, struct filename *filename, enum encoding_target encoding, enum encoding_line_end line_end);
+bool output_html(struct manual *document, struct filename *folder, enum encoding_target encoding, enum encoding_line_end line_end);
 
 #endif
 

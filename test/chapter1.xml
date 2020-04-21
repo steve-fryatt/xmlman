@@ -15,7 +15,7 @@
   <filename>Introduction</filename>
  </mode>
  <mode type="html">
-  <filename>introduction.html</filename>
+  <folder>introduction</folder>
  </mode>
 
  <images>Chapter01</images>
@@ -35,6 +35,12 @@
 </section>
 
 <section id="sect-start-basic-reg">
+<resources>
+ <mode type="html">
+  <filename>starting-with-basic.html</filename>
+ </mode>
+</resources>
+
 <title>Registering with the Wimp</title>
 
 <p>When an application starts, it must initialise itself: loading any data it needs from disc, setting up any data structures and registering itself with the Wimp. This last point, done with the <swi>Wimp_Initialise</swi> SWI, is the first thing that differentiates multitasking applications from single-tasking ones. If we were working in BASIC, the initialisation for a very simple application might look like this.</p>
@@ -62,6 +68,12 @@ SYS &quot;Wimp_Initialise&quot;, 310, &amp;4B534154, &quot;Example App&quot;, 0<
 </section>
 
 <section id="sect-start-basic-instruc2">
+<resources>
+ <mode type="html">
+  <filename>doing-what-were-told.html</filename>
+ </mode>
+</resources>
+
 <title>Doing what we&rsquo;re told</title>
 
 <p>With the initialisation complete, the application can move on to the business of multitasking. RISC&nbsp;OS uses a system of &lsquo;cooperative multitasking&rsquo;: that is, each application must yield control back to the Wimp as soon as it&rsquo;s finished its current activity. If an application doesn&rsquo;t yield for more than a few fractions of a second at a time, the desktop can very quickly become extremely sluggish.</p>
@@ -95,6 +107,12 @@ UNTIL quit%</code>
 </section>
 
 <section>
+<resources>
+ <mode type="html">
+  <filename>tidying-up.html</filename>
+ </mode>
+</resources>
+
 <title>Tidying up</title>
 
 <p>Ending a Wimp application is the reverse of starting one up: it must free any resources it has claimed, and de-register itself from the Wimp. The latter is done with the <swi>Wimp_CloseDown</swi> SWI.</p>
@@ -109,6 +127,12 @@ END</code>
 </section>
 
 <section id="sect-start-basic-together">
+<resources>
+ <mode type="html">
+  <filename>putting-it-all-together.html</filename>
+ </mode>
+</resources>
+
 <title>Putting it all together</title>
 
 <p>Putting the pieces together, we end up with the program in <reference id="list-start-basic-simple"/>.</p>

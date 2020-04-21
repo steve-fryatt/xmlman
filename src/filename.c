@@ -449,9 +449,11 @@ bool filename_add(struct filename *name, struct filename *add, int levels)
  * Join two filenames together, returing the result as a new filename.
  * This is effectively an alternative to filename_add(), where the full
  * names are required and the result is in a new instance.
+ * 
+ * If *second is NULL, *first is simply duplicated and returned.
  *
  * \param *first		The first filename instance to be included.
- * \param *second		The second filename instance to be included.
+ * \param *second		The second filename instance to be included, or NULL.
  * \return			The new filename instance, or NULL on failure.
  */
 
@@ -459,9 +461,18 @@ struct filename *filename_join(struct filename *first, struct filename *second)
 {
 	struct filename *name;
 
+	/* Duplicate the first filename. */
+
 	name = filename_up(first, 0);
 	if (name == NULL)
 		return NULL;
+
+	/* If there's no second filename, just return the duplicate. */
+
+	if (second == NULL)
+		return name;
+
+	/* Append the second filename. */
 
 	if (!filename_add(name, second, 0)) {
 		filename_destroy(name);

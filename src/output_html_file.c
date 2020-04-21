@@ -1,4 +1,4 @@
-/* Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2020, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -62,6 +62,9 @@ static bool output_html_file_write_char(int unicode);
 
 bool output_html_file_open(struct filename *filename)
 {
+	if (filename == NULL)
+		return false;
+
 	output_html_file_handle = filename_fopen(filename, "w");
 
 	if (output_html_file_handle == NULL)

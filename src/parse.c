@@ -105,22 +105,24 @@ struct manual *parse_document(char *filename)
 	chapter = manual->first_child;
 
 	while (chapter != NULL) {
-		if (chapter->type != MANUAL_DATA_OBJECT_TYPE_CHAPTER && chapter->type != MANUAL_DATA_OBJECT_TYPE_INDEX) {
-			msg_report(MSG_BAD_TYPE);
-			return NULL;
-		}
-
-		if (!chapter->chapter.processed) {
-			document_base = filename_up(document_root, 0);
-
-			if (filename_add(document_base, chapter->chapter.filename, 0)); {
-				filename_destroy(chapter->chapter.filename);
-				chapter->chapter.filename = NULL;
-
-				parse_file(document_base, &manual, &chapter);
+		if (chapter->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+			if (chapter->type != MANUAL_DATA_OBJECT_TYPE_CHAPTER && chapter->type != MANUAL_DATA_OBJECT_TYPE_INDEX) {
+				msg_report(MSG_BAD_TYPE);
+				return NULL;
 			}
 
-			filename_destroy(document_base);
+			if (!chapter->chapter.processed) {
+				document_base = filename_up(document_root, 0);
+
+				if (filename_add(document_base, chapter->chapter.filename, 0)); {
+					filename_destroy(chapter->chapter.filename);
+					chapter->chapter.filename = NULL;
+
+					parse_file(document_base, &manual, &chapter);
+				}
+
+				filename_destroy(document_base);
+			}
 		}
 
 		chapter = chapter->next;
@@ -309,6 +311,9 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 					parse_process_add_placeholder_chapter(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_CHAPTER);
 				else
 					parse_process_add_chapter(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_CHAPTER, element, *chapter);
+				break;
+			case PARSE_ELEMENT_SECTION:
+				parse_process_add_section(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_SECTION, element);
 				break;
 			case PARSE_ELEMENT_RESOURCES:
 				parse_process_add_resources(reader, old_stack, element);
@@ -499,6 +504,9 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 		}
 
 		parse_stack_pop();
+		break;
+
+	case XML_READER_TYPE_COMMENT:
 		break;
 
 	default:

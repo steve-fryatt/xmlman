@@ -1,4 +1,4 @@
-/* Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2020, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -59,37 +59,39 @@
 
 /* Global Variables. */
 
-static const char *output_html_root_filename = "index.html";
+static const char *output_html_root_filename_text = "index.html";
+
+static struct filename *output_html_root_filename;
+
+static int output_html_base_level = 1;
 
 /* Static Function Prototypes. */
 
+static bool output_html_write_manual(struct manual_data *manual, struct filename *folder);
+static bool output_html_write_chapter(struct manual_data *chapter, int level, struct filename *folder, bool in_line);
+static bool output_html_write_section(struct manual_data *section, int level, struct filename *folder, bool in_line);
 static bool output_html_write_head(struct manual_data *manual);
-static bool output_html_write_body(struct manual_data *manual);
-static bool output_html_write_chapter(struct manual_data *chapter, int level);
-static bool output_html_write_section(struct manual_data *section, int level);
+static bool output_html_write_foot(struct manual_data *manual);
 static bool output_html_write_heading(struct manual_data *node, int level);
 static bool output_html_write_text(enum manual_data_object_type type, struct manual_data *text);
 static const char *output_html_convert_entity(enum manual_entity_type entity);
-static bool output_html_complete_filenames(struct manual_data *data, bool *single_file);
+static bool output_html_find_folders(struct filename *base, struct manual_data_resources *resources, struct filename **folder, struct filename **file);
 
 /**
  * Output a manual in HTML form.
  *
  * \param *document	The manual to be output.
- * \param *filename	The filename to use to write to.
+ * \param *folder	The folder to write the manual to.
  * \param encoding	The encoding to use for output.
  * \param line_end	The line ending to use for output.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-bool output_html(struct manual *document, struct filename *filename, enum encoding_target encoding, enum encoding_line_end line_end)
+bool output_html(struct manual *document, struct filename *folder, enum encoding_target encoding, enum encoding_line_end line_end)
 {
-	bool single_file = true;
+	bool result;
 
 	if (document == NULL || document->manual == NULL)
-		return false;
-
-	if (!output_html_complete_filenames(document->manual, &single_file))
 		return false;
 
 	/* Output encoding defaults to UTF8. */
@@ -100,98 +102,104 @@ bool output_html(struct manual *document, struct filename *filename, enum encodi
 
 	encoding_select_line_end((line_end != ENCODING_LINE_END_NONE) ? line_end : ENCODING_LINE_END_LF);
 
-	/* Find and open the output file. */
+	/* Write the manual file content. */
 
-	filename_dump(filename, "Base filename");
+	output_html_root_filename = filename_make((xmlChar *) output_html_root_filename_text, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
 
-	if (!output_html_file_open(filename))
+	result = output_html_write_manual(document->manual, folder);
+
+	filename_destroy(output_html_root_filename);
+
+	return result;
+}
+
+/**
+ * Write an HTML manual body block out.
+ *
+ * \param *manual	The manual to base the block on.
+ * \param *folder	The folder into which to write the manual.
+ * \return		TRUE if successful, otherwise FALSE.
+ */
+
+static bool output_html_write_manual(struct manual_data *manual, struct filename *folder)
+{
+	struct manual_data *object;
+	struct filename *filename;
+
+	if (manual == NULL || folder == NULL)
 		return false;
 
-	if (!output_html_file_write_plain("<!DOCTYPE html>") || !output_html_file_write_newline()) {
+	/* Open the index file. */
+
+	if (!filename_mkdir(folder, true))
+		return false;
+
+	filename = filename_join(folder, output_html_root_filename);
+
+	if (!output_html_file_open(filename)) {
+		filename_destroy(filename);
+		return false;
+	}
+
+	filename_destroy(filename);
+
+	if (!output_html_write_head(manual)) {
 		output_html_file_close();
 		return false;
 	}
 
-	if (!output_html_file_write_plain("<html>") || !output_html_file_write_newline()) {
-		output_html_file_close();
-		return false;
+	/* Output the inline details. */
+
+	object = manual->first_child;
+
+	while (object != NULL) {
+		switch (object->type) {
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_INDEX:
+			if (!output_html_write_chapter(object, output_html_base_level, folder, true)) {
+				output_html_file_close();
+				return false;
+			}
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			if (!output_html_write_section(object, output_html_base_level, folder, true)) {
+				output_html_file_close();
+				return false;
+			}
+			break;
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(object->type));
+			break;
+		}
+
+		object = object->next;
 	}
 
-	if (!output_html_write_head(document->manual)) {
-		output_html_file_close();
-		return false;
-	}
-
-	if (!output_html_write_body(document->manual)) {
-		output_html_file_close();
-		return false;
-	}
-
-	if (!output_html_file_write_plain("</html>") || !output_html_file_write_newline()) {
+	if (!output_html_write_foot(manual)) {
 		output_html_file_close();
 		return false;
 	}
 
 	output_html_file_close();
 
-	return true;
-}
+	/* Output the separate files. */
 
-/**
- * Write an HTML file head block out.
- *
- * \param *manual	The manual to base the block on.
- * \return		TRUE if successful, otherwise FALSE.
- */
+	object = manual->first_child;
 
-static bool output_html_write_head(struct manual_data *manual)
-{
-	if (manual == NULL)
-		return false;
+	while (object != NULL) {
+		switch (object->type) {
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_INDEX:
+			if (!output_html_write_chapter(object, output_html_base_level, folder, false))
+				return false;
+			break;
 
-	if (!output_html_file_write_plain("<head>") || !output_html_file_write_newline())
-		return false;
+		default:
+			break;
+		}
 
-	if (!output_html_write_heading(manual, 0))
-		return false;
-
-	if (!output_html_file_write_plain("</head>") || !output_html_file_write_newline())
-		return false;
-
-	return true;
-}
-
-/**
- * Write an HTML file body block out.
- *
- * \param *manual	The manual to base the block on.
- * \return		TRUE if successful, otherwise FALSE.
- */
-
-static bool output_html_write_body(struct manual_data *manual)
-{
-	struct manual_data *chapter;
-	int base_level = 1;
-
-	if (manual == NULL)
-		return false;
-
-	if (!output_html_file_write_plain("<body>") || !output_html_file_write_newline())
-		return false;
-
-	/* Output the chapter details. */
-
-	chapter = manual->first_child;
-
-	while (chapter != NULL) {
-		if (!output_html_write_chapter(chapter, base_level))
-			return false;
-
-		chapter = chapter->next;
+		object = object->next;
 	}
-
-	if (!output_html_file_write_plain("</body>") || !output_html_file_write_newline())
-		return false;
 
 	return true;
 }
@@ -201,12 +209,16 @@ static bool output_html_write_body(struct manual_data *manual)
  *
  * \param *chapter		The chapter to process.
  * \param level			The level to write the chapter at.
+ * \param *folder		The folder to write to, or NULL if inlined.
+ * \param in_line		True if the section is being written inline; otherwise False.
  * \return			True if successful; False on error.
  */
 
-static bool output_html_write_chapter(struct manual_data *chapter, int level)
+static bool output_html_write_chapter(struct manual_data *chapter, int level, struct filename *folder, bool in_line)
 {
 	struct manual_data *section;
+	struct filename *foldername = NULL, *filename = NULL;
+	bool self_contained = false;
 
 	if (chapter == NULL || chapter->first_child == NULL)
 		return true;
@@ -219,29 +231,93 @@ static bool output_html_write_chapter(struct manual_data *chapter, int level)
 		return false;
 	}
 
-	if (chapter->chapter.resources != NULL) {
-		filename_dump(chapter->chapter.resources->html.filename, "Filename");
-		filename_dump(chapter->chapter.resources->html.folder, "Foldername");
-	} else {
-		printf("*** NO NAME ***\n");
+	self_contained = output_html_find_folders(folder, chapter->chapter.resources, &foldername, &filename);
+
+	if ((self_contained && in_line) || (!self_contained && !in_line)) {
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return true;
 	}
 
-	if (!output_html_file_write_newline())
+	if (self_contained && !filename_mkdir(foldername, true)) {
+		filename_destroy(foldername);
+		filename_destroy(filename);
 		return false;
+	}
+
+	if (self_contained && !output_html_file_open(filename)) {
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	if (self_contained && !output_html_write_head(chapter)) {
+		output_html_file_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	if (!output_html_file_write_newline()) {
+		if (self_contained)
+			output_html_file_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
 
 	if (chapter->title != NULL) {
-		if (!output_html_write_heading(chapter, level))
+		if (!output_html_write_heading(chapter, level)) {
+			if (self_contained)
+				output_html_file_close();
+			filename_destroy(foldername);
+			filename_destroy(filename);
 			return false;
+		}
 	}
 
 	section = chapter->first_child;
 
 	while (section != NULL) {
-		if (!output_html_write_section(section, level + 1))
+		if (!output_html_write_section(section, level + 1, foldername, true)) {
+			if (self_contained)
+				output_html_file_close();
+			filename_destroy(foldername);
+			filename_destroy(filename);
 			return false;
+		}
 
 		section = section->next;
 	}
+
+	if (self_contained && !output_html_write_foot(chapter)) {
+		output_html_file_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	if (self_contained)
+		output_html_file_close();
+
+	/* Output the separate sections. */
+
+	section = chapter->first_child;
+
+	while (section != NULL) {
+		if (!output_html_write_section(section, output_html_base_level, foldername, false)) {
+			filename_destroy(foldername);
+			filename_destroy(filename);
+			return false;
+		}
+
+		section = section->next;
+	}
+
+	/* Free the filenames. */
+
+	filename_destroy(foldername);
+	filename_destroy(filename);
 
 	return true;
 }
@@ -251,12 +327,16 @@ static bool output_html_write_chapter(struct manual_data *chapter, int level)
  *
  * \param *section		The section to process.
  * \param level			The level to write the section at.
+ * \param *folder		The folder being written within.
+ * \param in_line		True if the section is being written inline; otherwise False.
  * \return			True if successful; False on error.
  */
 
-static bool output_html_write_section(struct manual_data *section, int level)
+static bool output_html_write_section(struct manual_data *section, int level, struct filename *folder, bool in_line)
 {
-	struct manual_data	*block;
+	struct manual_data *block;
+	struct filename *foldername = NULL, *filename = NULL;
+	bool self_contained = false;
 
 	if (section == NULL || section->first_child == NULL)
 		return true;
@@ -276,14 +356,61 @@ static bool output_html_write_section(struct manual_data *section, int level)
 		return false;
 	}
 
+	/* Check for an inlined or self-contained section. */
+
+	self_contained = output_html_find_folders(folder, section->chapter.resources, &foldername, &filename);
+
+	if ((self_contained && in_line) || (!self_contained && !in_line)) {
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return true;
+	}
+
+	if (self_contained && !filename_mkdir(foldername, true)) {
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	if (self_contained && !output_html_file_open(filename)) {
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	if (self_contained && !output_html_write_head(section)) {
+		output_html_file_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	if (!output_html_file_write_newline()) {
+		if (self_contained)
+			output_html_file_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
 	/* Write out the section heading. */
 
 	if (section->title != NULL) {
-		if (!output_html_file_write_newline())
+		if (!output_html_file_write_newline()) {
+			if (self_contained)
+				output_html_file_close();
+			filename_destroy(foldername);
+			filename_destroy(filename);
 			return false;
+		}
 
-		if (!output_html_write_heading(section, level))
+		if (!output_html_write_heading(section, level)) {
+			if (self_contained)
+				output_html_file_close();
+			filename_destroy(foldername);
+			filename_destroy(filename);
 			return false;
+		}
 	}
 
 	block = section->first_child;
@@ -291,21 +418,47 @@ static bool output_html_write_section(struct manual_data *section, int level)
 	while (block != NULL) {
 		switch (block->type) {
 		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			output_html_write_section(block, level + 1);
+			if (!output_html_write_section(block, level + 1, foldername, true)) {
+				if (self_contained)
+					output_html_file_close();
+				filename_destroy(foldername);
+				filename_destroy(filename);
+				return false;
+			}
 			break;
 
 		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
-			if (!output_html_file_write_newline())
+			if (!output_html_file_write_newline()) {
+				if (self_contained)
+					output_html_file_close();
+				filename_destroy(foldername);
+				filename_destroy(filename);
 				return false;
+			}
 
-			if (!output_html_file_write_plain("<p>"))
+			if (!output_html_file_write_plain("<p>")) {
+				if (self_contained)
+					output_html_file_close();
+				filename_destroy(foldername);
+				filename_destroy(filename);
 				return false;
+			}
 
-			if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block)) 
+			if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block)) {
+				if (self_contained)
+					output_html_file_close();
+				filename_destroy(foldername);
+				filename_destroy(filename);
 				return false;
+			}
 
-			if (!output_html_file_write_plain("</p>"))
+			if (!output_html_file_write_plain("</p>")) {
+				if (self_contained)
+					output_html_file_close();
+				filename_destroy(foldername);
+				filename_destroy(filename);
 				return false;
+			}
 			break;
 
 		default:
@@ -314,6 +467,100 @@ static bool output_html_write_section(struct manual_data *section, int level)
 		}
 
 		block = block->next;
+	}
+
+	if (self_contained && !output_html_write_foot(section)) {
+		output_html_file_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	if (self_contained)
+		output_html_file_close();
+
+	/* Output the separate sections. */
+
+	block = section->first_child;
+
+	while (block != NULL) {
+		switch (block->type) {
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			if (!output_html_write_section(block, output_html_base_level, foldername, false)) {
+				filename_destroy(foldername);
+				filename_destroy(filename);
+				return false;
+			}
+			break;
+
+		default:
+			break;
+		}
+
+		block = block->next;
+	}
+
+	/* Free the filenames. */
+
+	filename_destroy(foldername);
+	filename_destroy(filename);
+
+	return true;
+}
+
+/**
+ * Write an HTML file head block out. This starts with the doctype and
+ * continues until we've written the opening <body>.
+ *
+ * \param *manual	The manual to base the block on.
+ * \return		TRUE if successful, otherwise FALSE.
+ */
+
+static bool output_html_write_head(struct manual_data *manual)
+{
+	if (manual == NULL)
+		return false;
+
+	if (!output_html_file_write_plain("<!DOCTYPE html>") || !output_html_file_write_newline())
+		return false;
+
+	if (!output_html_file_write_plain("<html>") || !output_html_file_write_newline())
+		return false;
+
+	if (!output_html_file_write_plain("<head>") || !output_html_file_write_newline())
+		return false;
+
+	if (!output_html_write_heading(manual, 0))
+		return false;
+
+	if (!output_html_file_write_plain("</head>") || !output_html_file_write_newline())
+		return false;
+
+	if (!output_html_file_write_plain("<body>") || !output_html_file_write_newline())
+		return false;
+
+	return true;
+}
+
+/**
+ * Write an HTML file foot block out. This starts with the closing
+ * </body> and runs to the end of the file.
+ *
+ * \param *manual	The manual to base the block on.
+ * \return		TRUE if successful, otherwise FALSE.
+ */
+
+static bool output_html_write_foot(struct manual_data *manual)
+{
+	if (manual == NULL)
+		return false;
+
+	if (!output_html_file_write_plain("</body>") || !output_html_file_write_newline())
+		return false;
+
+	if (!output_html_file_write_plain("</html>") || !output_html_file_write_newline()) {
+		output_html_file_close();
+		return false;
 	}
 
 	return true;
@@ -470,64 +717,54 @@ static const char *output_html_convert_entity(enum manual_entity_type entity)
 }
 
 /**
- * Scan the document structure, identifying if any sections will be in
- * their own files and filling in any unspecified filenames.
- *
- * \param *data			Pointer to the node to scan from.
- * \param *single_file		Pointer to boolean, set to false if a
- *				single output file proves impossible.
- * \return			True if successful; False on error.
+ * Taking a base folder and an object reosurces, work out the object's
+ * base folder and filename.
+ * 
+ * \param *base		The base folder.
+ * \param *resources	The object's resources.
+ * \param **folder	Pointer to a filename pointer in which to return
+ *			the object's base folder.
+ * \param **file	Pointer to a filename pointer in which to return
+ *			the object's filename.
+ * \return		True if the object should be in a self-contained
+ *			file; False if it should appear inline in its parent.
  */
 
-static bool output_html_complete_filenames(struct manual_data *data, bool *single_file)
+static bool output_html_find_folders(struct filename *base, struct manual_data_resources *resources, struct filename **folder, struct filename **file)
 {
-	bool this_node, child_nodes;
+	if (folder != NULL)
+		*folder = NULL;
 
-	if (data == NULL || single_file == NULL)
+	if (file != NULL)
+		*file = NULL;
+
+	/* If there are no resources, then this must be an inline block. */
+
+	if (resources == NULL || (resources->html.filename == NULL && resources->html.folder == NULL)) {
+		if (base != NULL && folder != NULL)
+			*folder = filename_up(base, 0);
 		return false;
+	}
 
-	/* Don't scan beyond nodes which support new files. */
+	/* If there's no base filename, there's no point working out the folders. */
 
-	switch (data->type) {
-	case MANUAL_DATA_OBJECT_TYPE_MANUAL:
-	case MANUAL_DATA_OBJECT_TYPE_INDEX:
-	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
-	case MANUAL_DATA_OBJECT_TYPE_SECTION:
-		break;
-	default:
+	if (base == NULL)
 		return true;
+
+	/* Get the root folder. */
+
+	*folder = filename_join(base, resources->html.folder);
+
+	/* Work out the filename. */
+
+	if (file != NULL) {
+		if (resources->html.filename == NULL)
+			*file = filename_join(*folder, output_html_root_filename);
+		else
+			*file = filename_join(*folder, resources->html.filename);
 	}
 
-	while (data != NULL) {
-		this_node = true;	/**< Track whether this node is OK for single file.		*/
-		child_nodes = true;	/**< Track whether any child nodes are OK for single file.	*/
-
-		if (data->chapter.resources != NULL) {
-			if (data->chapter.resources->html.filename != NULL)
-				this_node = false;
-
-			if (data->chapter.resources->html.folder != NULL) {
-				this_node = false;
-
-				if (data->chapter.resources->html.filename == NULL)
-					data->chapter.resources->html.filename = filename_make((xmlChar *) output_html_root_filename,
-							FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
-			}
-		}
-
-		if (data->first_child != NULL && !output_html_complete_filenames(data->first_child, &child_nodes))
-			return false;
-
-		if (this_node == true && child_nodes == false && data->next != NULL) {
-			printf("Error: orphaned nodes.\n");
-		}
-
-		if (!this_node || !child_nodes)
-			*single_file = false;
-
-		data = data->next;
-	}
+	/* This is a self-contained file. */
 
 	return true;
 }
-

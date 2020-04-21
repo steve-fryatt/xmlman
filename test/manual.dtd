@@ -1,6 +1,6 @@
 <!-- XML Manual DTD.
    -
-   - Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+   - Copyright 2018-2020, Stephen Fryatt (info@stevefryatt.org.uk)
    -
    - This file is part of XmlMan:
    -
@@ -84,7 +84,7 @@
 
 <!-- Manual -->
 
-<!ELEMENT manual (title | breadcrumb | icons | resources | index | chapter)*>
+<!ELEMENT manual (title | breadcrumb | icons | resources | index | chapter | section)*>
 <!ATTLIST manual version CDATA #REQUIRED>
 
 
