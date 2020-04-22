@@ -68,8 +68,7 @@ static int output_html_base_level = 1;
 /* Static Function Prototypes. */
 
 static bool output_html_write_manual(struct manual_data *manual, struct filename *folder);
-static bool output_html_write_chapter(struct manual_data *chapter, int level, struct filename *folder, bool in_line);
-static bool output_html_write_section(struct manual_data *section, int level, struct filename *folder, bool in_line);
+static bool output_html_write_object(struct manual_data *section, int level, struct filename *folder, bool in_line);
 static bool output_html_write_head(struct manual_data *manual);
 static bool output_html_write_foot(struct manual_data *manual);
 static bool output_html_write_heading(struct manual_data *node, int level);
@@ -156,17 +155,13 @@ static bool output_html_write_manual(struct manual_data *manual, struct filename
 		switch (object->type) {
 		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 		case MANUAL_DATA_OBJECT_TYPE_INDEX:
-			if (!output_html_write_chapter(object, output_html_base_level, folder, true)) {
-				output_html_file_close();
-				return false;
-			}
-			break;
 		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_html_write_section(object, output_html_base_level, folder, true)) {
+			if (!output_html_write_object(object, output_html_base_level, folder, true)) {
 				output_html_file_close();
 				return false;
 			}
 			break;
+
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(object->type));
 			break;
@@ -190,7 +185,7 @@ static bool output_html_write_manual(struct manual_data *manual, struct filename
 		switch (object->type) {
 		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 		case MANUAL_DATA_OBJECT_TYPE_INDEX:
-			if (!output_html_write_chapter(object, output_html_base_level, folder, false))
+			if (!output_html_write_object(object, output_html_base_level, folder, false))
 				return false;
 			break;
 
@@ -205,125 +200,7 @@ static bool output_html_write_manual(struct manual_data *manual, struct filename
 }
 
 /**
- * Process the contents of a chapter block and write it out.
- *
- * \param *chapter		The chapter to process.
- * \param level			The level to write the chapter at.
- * \param *folder		The folder to write to, or NULL if inlined.
- * \param in_line		True if the section is being written inline; otherwise False.
- * \return			True if successful; False on error.
- */
-
-static bool output_html_write_chapter(struct manual_data *chapter, int level, struct filename *folder, bool in_line)
-{
-	struct manual_data *section;
-	struct filename *foldername = NULL, *filename = NULL;
-	bool self_contained = false;
-
-	if (chapter == NULL || chapter->first_child == NULL)
-		return true;
-
-	/* Confirm that this is a chapter. */
-
-	if (chapter->type != MANUAL_DATA_OBJECT_TYPE_CHAPTER && chapter->type != MANUAL_DATA_OBJECT_TYPE_INDEX) {
-		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_CHAPTER),
-				manual_data_find_object_name(chapter->type));
-		return false;
-	}
-
-	self_contained = output_html_find_folders(folder, chapter->chapter.resources, &foldername, &filename);
-
-	if ((self_contained && in_line) || (!self_contained && !in_line)) {
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return true;
-	}
-
-	if (self_contained && !filename_mkdir(foldername, true)) {
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
-	if (self_contained && !output_html_file_open(filename)) {
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
-	if (self_contained && !output_html_write_head(chapter)) {
-		output_html_file_close();
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
-	if (!output_html_file_write_newline()) {
-		if (self_contained)
-			output_html_file_close();
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
-	if (chapter->title != NULL) {
-		if (!output_html_write_heading(chapter, level)) {
-			if (self_contained)
-				output_html_file_close();
-			filename_destroy(foldername);
-			filename_destroy(filename);
-			return false;
-		}
-	}
-
-	section = chapter->first_child;
-
-	while (section != NULL) {
-		if (!output_html_write_section(section, level + 1, foldername, true)) {
-			if (self_contained)
-				output_html_file_close();
-			filename_destroy(foldername);
-			filename_destroy(filename);
-			return false;
-		}
-
-		section = section->next;
-	}
-
-	if (self_contained && !output_html_write_foot(chapter)) {
-		output_html_file_close();
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
-	if (self_contained)
-		output_html_file_close();
-
-	/* Output the separate sections. */
-
-	section = chapter->first_child;
-
-	while (section != NULL) {
-		if (!output_html_write_section(section, output_html_base_level, foldername, false)) {
-			filename_destroy(foldername);
-			filename_destroy(filename);
-			return false;
-		}
-
-		section = section->next;
-	}
-
-	/* Free the filenames. */
-
-	filename_destroy(foldername);
-	filename_destroy(filename);
-
-	return true;
-}
-
-/**
- * Process the contents of a section block and write it out.
+ * Process the contents of a index, chapter or section block and write it out.
  *
  * \param *section		The section to process.
  * \param level			The level to write the section at.
@@ -332,20 +209,20 @@ static bool output_html_write_chapter(struct manual_data *chapter, int level, st
  * \return			True if successful; False on error.
  */
 
-static bool output_html_write_section(struct manual_data *section, int level, struct filename *folder, bool in_line)
+static bool output_html_write_object(struct manual_data *object, int level, struct filename *folder, bool in_line)
 {
 	struct manual_data *block;
 	struct filename *foldername = NULL, *filename = NULL;
 	bool self_contained = false;
 
-	if (section == NULL || section->first_child == NULL)
+	if (object == NULL || object->first_child == NULL)
 		return true;
 
-	/* Confirm that this is a section. */
+	/* Confirm that this is an index, chapter or section. */
 
-	if (section->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+	if (object->type != MANUAL_DATA_OBJECT_TYPE_CHAPTER && object->type != MANUAL_DATA_OBJECT_TYPE_INDEX && object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
 		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_SECTION),
-				manual_data_find_object_name(section->type));
+				manual_data_find_object_name(object->type));
 		return false;
 	}
 
@@ -358,7 +235,7 @@ static bool output_html_write_section(struct manual_data *section, int level, st
 
 	/* Check for an inlined or self-contained section. */
 
-	self_contained = output_html_find_folders(folder, section->chapter.resources, &foldername, &filename);
+	self_contained = output_html_find_folders(folder, object->chapter.resources, &foldername, &filename);
 
 	if ((self_contained && in_line) || (!self_contained && !in_line)) {
 		filename_destroy(foldername);
@@ -378,7 +255,7 @@ static bool output_html_write_section(struct manual_data *section, int level, st
 		return false;
 	}
 
-	if (self_contained && !output_html_write_head(section)) {
+	if (self_contained && !output_html_write_head(object)) {
 		output_html_file_close();
 		filename_destroy(foldername);
 		filename_destroy(filename);
@@ -395,16 +272,14 @@ static bool output_html_write_section(struct manual_data *section, int level, st
 
 	/* Write out the section heading. */
 
-	if (section->title != NULL) {
-		if (!output_html_file_write_newline()) {
-			if (self_contained)
-				output_html_file_close();
+	if (object->title != NULL) {
+		if (!self_contained && !output_html_file_write_newline()) {
 			filename_destroy(foldername);
 			filename_destroy(filename);
 			return false;
 		}
 
-		if (!output_html_write_heading(section, level)) {
+		if (!output_html_write_heading(object, level)) {
 			if (self_contained)
 				output_html_file_close();
 			filename_destroy(foldername);
@@ -413,12 +288,14 @@ static bool output_html_write_section(struct manual_data *section, int level, st
 		}
 	}
 
-	block = section->first_child;
+	/* Output the objects within the section. */
+
+	block = object->first_child;
 
 	while (block != NULL) {
 		switch (block->type) {
 		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_html_write_section(block, level + 1, foldername, true)) {
+			if (!output_html_write_object(block, level + 1, foldername, true)) {
 				if (self_contained)
 					output_html_file_close();
 				filename_destroy(foldername);
@@ -428,6 +305,11 @@ static bool output_html_write_section(struct manual_data *section, int level, st
 			break;
 
 		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+			if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+				msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+				break;
+			}
+
 			if (!output_html_file_write_newline()) {
 				if (self_contained)
 					output_html_file_close();
@@ -469,7 +351,7 @@ static bool output_html_write_section(struct manual_data *section, int level, st
 		block = block->next;
 	}
 
-	if (self_contained && !output_html_write_foot(section)) {
+	if (self_contained && !output_html_write_foot(object)) {
 		output_html_file_close();
 		filename_destroy(foldername);
 		filename_destroy(filename);
@@ -479,14 +361,14 @@ static bool output_html_write_section(struct manual_data *section, int level, st
 	if (self_contained)
 		output_html_file_close();
 
-	/* Output the separate sections. */
+	/* Output the stand-alone sections in their own files. */
 
-	block = section->first_child;
+	block = object->first_child;
 
 	while (block != NULL) {
 		switch (block->type) {
 		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_html_write_section(block, output_html_base_level, foldername, false)) {
+			if (!output_html_write_object(block, output_html_base_level, foldername, false)) {
 				filename_destroy(foldername);
 				filename_destroy(filename);
 				return false;
