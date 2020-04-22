@@ -124,6 +124,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"No line ending selected",					false},
 
 
+	{MSG_ERROR,	"Failed to convert to Filecore name",				false},
 	{MSG_ERROR,	"Failed to create StrongHelp root structure",			false},
 	{MSG_ERROR,	"Failed to calculate StrongHelp directory sizes",		false},
 	{MSG_ERROR,	"Failed to create new object node block",			false},

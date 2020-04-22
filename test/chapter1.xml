@@ -12,6 +12,7 @@
 <chapter id="chap-start-basic">
 <resources>
  <mode type="strong">
+  <folder>[A-I]</folder>
   <filename>Introduction</filename>
  </mode>
  <mode type="html">

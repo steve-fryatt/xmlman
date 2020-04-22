@@ -89,7 +89,7 @@ static char filename_get_separator(enum filename_platform platform);
 /**
  * Convert a textual filename into a filename instance.
  *
- * \param *name			Pointer to the filename to convert.
+ * \param *name			Pointer to the filename to convert, or NULL for an empty name.
  * \param type			The type of filename.
  * \param platform		The platform for which the supplied name
  *				is formatted.
@@ -104,9 +104,6 @@ struct filename *filename_make(xmlChar *name, enum filename_type type, enum file
 	int			position = 0, length = 0;
 	char			separator;
 
-	if (name == NULL)
-		return NULL;
-
 	/* Claim memory for the root of the name. */
 
 	root = malloc(sizeof(struct filename));
@@ -115,6 +112,9 @@ struct filename *filename_make(xmlChar *name, enum filename_type type, enum file
 
 	root->type = type;
 	root->name = NULL;
+
+	if (name == NULL)
+		return root;
 
 	/* Break the name down into chunks. */
 

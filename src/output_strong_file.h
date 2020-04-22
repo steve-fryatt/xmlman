@@ -54,12 +54,12 @@ void output_strong_file_close(void);
 /**
  * Open a file within the current StrongHelp file, ready for writing.
  *
- * \param *filename	The internal filename, in Filecore format.
+ * \param *filename	The internal filename.
  * \param type		The RISC OS numeric filetype.
  * \return		True on success; False on failure.
  */
 
-bool output_strong_file_sub_open(char *filename, int type);
+bool output_strong_file_sub_open(struct filename *filename, int type);
 
 /**
  * Close the current file within the current StrongHelp output file.

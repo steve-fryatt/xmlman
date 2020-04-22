@@ -320,14 +320,15 @@ void output_strong_file_close(void)
 /**
  * Open a file within the current StrongHelp file, ready for writing.
  *
- * \param *filename	The internal filename, in Filecore format.
+ * \param *filename	The internal filename.
  * \param type		The RISC OS numeric filetype.
  * \return		True on success; False on failure.
  */
 
-bool output_strong_file_sub_open(char *filename, int type)
+bool output_strong_file_sub_open(struct filename *filename, int type)
 {
-	struct output_strong_file_data_block	data;
+	struct output_strong_file_data_block data;
+	char *filecore_name;
 
 	if (output_strong_file_handle == NULL) {
 		msg_report(MSG_WRITE_NO_FILE);
@@ -336,7 +337,15 @@ bool output_strong_file_sub_open(char *filename, int type)
 
 	/* Link the new file into our internal node structure. */
 
-	output_strong_file_current_block = output_strong_file_add_entry(output_strong_file_root, filename, type);
+	filecore_name = filename_convert(filename, FILENAME_PLATFORM_RISCOS, 0);
+	if (filecore_name == NULL) {
+		msg_report(MSG_STRONG_FCORE_FAIL);
+		return false;
+	}
+
+	output_strong_file_current_block = output_strong_file_add_entry(output_strong_file_root, filecore_name, type);
+	free(filecore_name);
+
 	if (output_strong_file_current_block == NULL) {
 		msg_report(MSG_STRONG_NEW_NODE_FAIL);
 		return false;

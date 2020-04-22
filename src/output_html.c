@@ -46,6 +46,12 @@
 /* Static constants. */
 
 /**
+ * The base level for section nesting.
+ */
+
+#define OUTPUT_HTML_BASE_LEVEL 1
+
+/**
  * The maximum depth that sections can be nested.
  */
 
@@ -57,13 +63,20 @@
 
 #define OUTPUT_HTML_TITLE_TAG_BLOCK_LEN 6
 
+/**
+ * The root filename used when writing into an empty folder.
+ */
+
+#define OUTPUT_HTML_ROOT_FILENAME "index.html"
+
 /* Global Variables. */
 
-static const char *output_html_root_filename_text = "index.html";
+/**
+ * The root filename used when writing into an empty folder.
+ */
 
 static struct filename *output_html_root_filename;
 
-static int output_html_base_level = 1;
 
 /* Static Function Prototypes. */
 
@@ -103,7 +116,7 @@ bool output_html(struct manual *document, struct filename *folder, enum encoding
 
 	/* Write the manual file content. */
 
-	output_html_root_filename = filename_make((xmlChar *) output_html_root_filename_text, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
+	output_html_root_filename = filename_make((xmlChar *) OUTPUT_HTML_ROOT_FILENAME, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
 
 	result = output_html_write_manual(document->manual, folder);
 
@@ -115,7 +128,7 @@ bool output_html(struct manual *document, struct filename *folder, enum encoding
 /**
  * Write an HTML manual body block out.
  *
- * \param *manual	The manual to base the block on.
+ * \param *manual	The manual to process.
  * \param *folder	The folder into which to write the manual.
  * \return		TRUE if successful, otherwise FALSE.
  */
@@ -156,7 +169,7 @@ static bool output_html_write_manual(struct manual_data *manual, struct filename
 		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 		case MANUAL_DATA_OBJECT_TYPE_INDEX:
 		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_html_write_object(object, output_html_base_level, folder, true)) {
+			if (!output_html_write_object(object, OUTPUT_HTML_BASE_LEVEL, folder, true)) {
 				output_html_file_close();
 				return false;
 			}
@@ -185,7 +198,7 @@ static bool output_html_write_manual(struct manual_data *manual, struct filename
 		switch (object->type) {
 		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 		case MANUAL_DATA_OBJECT_TYPE_INDEX:
-			if (!output_html_write_object(object, output_html_base_level, folder, false))
+			if (!output_html_write_object(object, OUTPUT_HTML_BASE_LEVEL, folder, false))
 				return false;
 			break;
 
@@ -200,9 +213,9 @@ static bool output_html_write_manual(struct manual_data *manual, struct filename
 }
 
 /**
- * Process the contents of a index, chapter or section block and write it out.
+ * Process the contents of an index, chapter or section block and write it out.
  *
- * \param *section		The section to process.
+ * \param *object		The object to process.
  * \param level			The level to write the section at.
  * \param *folder		The folder being written within.
  * \param in_line		True if the section is being written inline; otherwise False.
@@ -288,7 +301,7 @@ static bool output_html_write_object(struct manual_data *object, int level, stru
 		}
 	}
 
-	/* Output the objects within the section. */
+	/* Output the blocks within the object. */
 
 	block = object->first_child;
 
@@ -368,7 +381,7 @@ static bool output_html_write_object(struct manual_data *object, int level, stru
 	while (block != NULL) {
 		switch (block->type) {
 		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_html_write_object(block, output_html_base_level, foldername, false)) {
+			if (!output_html_write_object(block, OUTPUT_HTML_BASE_LEVEL, foldername, false)) {
 				filename_destroy(foldername);
 				filename_destroy(filename);
 				return false;
@@ -599,7 +612,7 @@ static const char *output_html_convert_entity(enum manual_entity_type entity)
 }
 
 /**
- * Taking a base folder and an object reosurces, work out the object's
+ * Taking a base folder and an object resources, work out the object's
  * base folder and filename.
  * 
  * \param *base		The base folder.

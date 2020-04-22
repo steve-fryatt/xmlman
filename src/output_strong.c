@@ -46,20 +46,47 @@
 /* Static constants. */
 
 /**
+ * The base level for section nesting.
+ */
+
+#define OUTPUT_STRONG_BASE_LEVEL 1
+
+/**
  * The maximum depth that sections can be nested.
  */
 
 #define OUTPUT_STRONG_MAX_NEST_DEPTH 6
 
+/**
+ * The root filename used when writing into an empty folder.
+ */
+
+#define OUTPUT_STRONG_ROOT_FILENAME "!Root"
+
+/**
+ * The filetype used for page files.
+ */
+
+#define OUTPUT_STRONG_PAGE_FILETYPE 0xfff
+
+/* Global Variables. */
+
+/**
+ * The root filename used when writing into an empty folder.
+ */
+
+static struct filename *output_strong_root_filename;
+
 /* Static Function Prototypes. */
 
+static bool output_strong_write_manual(struct manual_data *manual);
+static bool output_strong_write_object(struct manual_data *object, int level, struct filename *folder, bool in_line);
 static bool output_strong_write_head(struct manual_data *manual);
-static bool output_strong_write_body(struct manual_data *manual);
-static bool output_strong_write_chapter(struct manual_data *chapter, int level);
-static bool output_strong_write_section(struct manual_data *section, int level);
+static bool output_strong_write_foot(struct manual_data *manual);
 static bool output_strong_write_heading(struct manual_data *node, int level);
 static bool output_strong_write_text(enum manual_data_object_type type, struct manual_data *text);
 static const char *output_strong_convert_entity(enum manual_entity_type entity);
+static bool output_strong_find_folders(struct filename *base, struct manual_data_resources *resources, struct filename **folder, struct filename **file);
 
 /**
  * Output a manual in StrongHelp form.
@@ -73,6 +100,8 @@ static const char *output_strong_convert_entity(enum manual_entity_type entity);
 
 bool output_strong(struct manual *document, struct filename *filename, enum encoding_target encoding, enum encoding_line_end line_end)
 {
+	bool result;
+
 	if (document == NULL || document->manual == NULL)
 		return false;
 
@@ -89,168 +118,127 @@ bool output_strong(struct manual *document, struct filename *filename, enum enco
 	if (!output_strong_file_open(filename))
 		return false;
 
-	if (!output_strong_file_sub_open("!Root", 0xfff)) {
-		output_strong_file_close();
-		return false;
-	}
+	/* Write the manual content. */
 
-	if (!output_strong_file_write_plain("<!DOCTYPE html>") || !output_strong_file_write_newline()) {
-		output_strong_file_close();
-		return false;
-	}
+	output_strong_root_filename = filename_make((xmlChar *) OUTPUT_STRONG_ROOT_FILENAME, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
 
-	if (!output_strong_file_write_plain("<html>") || !output_strong_file_write_newline()) {
-		output_strong_file_close();
-		return false;
-	}
+	result = output_strong_write_manual(document->manual);
 
-	if (!output_strong_write_head(document->manual)) {
-		output_strong_file_close();
-		return false;
-	}
-
-	if (!output_strong_write_body(document->manual)) {
-		output_strong_file_close();
-		return false;
-	}
-
-	if (!output_strong_file_write_plain("</html>") || !output_strong_file_write_newline()) {
-		output_strong_file_close();
-		return false;
-	}
-
-	if (!output_strong_file_sub_close()) {
-		output_strong_file_close();
-		return false;
-	}
+	filename_destroy(output_strong_root_filename);
 
 	output_strong_file_close();
 
-	return true;
+	return result;
 }
 
 /**
- * Write an HTML file head block out.
+ * Write a StrongHelp manual body block out.
  *
- * \param *manual	The manual to base the block on.
- * \return		TRUE if successful, otherwise FALSE.
- */
-
-static bool output_strong_write_head(struct manual_data *manual)
-{
-	if (manual == NULL)
-		return false;
-
-	if (!output_strong_file_write_plain("<head>") || !output_strong_file_write_newline())
-		return false;
-
-	if (!output_strong_write_heading(manual, 0))
-		return false;
-
-	if (!output_strong_file_write_plain("</head>") || !output_strong_file_write_newline())
-		return false;
-
-	return true;
-}
-
-/**
- * Write an HTML file body block out.
- *
- * \param *manual	The manual to base the block on.
- * \return		TRUE if successful, otherwise FALSE.
- */
-
-static bool output_strong_write_body(struct manual_data *manual)
-{
-	struct manual_data *chapter;
-	int base_level = 1;
-
-	if (manual == NULL)
-		return false;
-
-	if (!output_strong_file_write_plain("<body>") || !output_strong_file_write_newline())
-		return false;
-
-	/* Output the chapter details. */
-
-	chapter = manual->first_child;
-
-	while (chapter != NULL) {
-		if (!output_strong_write_chapter(chapter, base_level))
-			return false;
-
-		chapter = chapter->next;
-	}
-
-	if (!output_strong_file_write_plain("</body>") || !output_strong_file_write_newline())
-		return false;
-
-	return true;
-}
-
-/**
- * Process the contents of a chapter block and write it out.
- *
- * \param *chapter		The chapter to process.
- * \param level			The level to write the chapter at.
+ * \param *manual		The manual to process.
  * \return			True if successful; False on error.
  */
 
-static bool output_strong_write_chapter(struct manual_data *chapter, int level)
+static bool output_strong_write_manual(struct manual_data *manual)
 {
-	struct manual_data *section;
+	struct manual_data *object;
+	struct filename *folder, *filename;
 
-	if (chapter == NULL || chapter->first_child == NULL)
-		return true;
-
-	/* Confirm that this is a chapter. */
-
-//	if (chapter->type != MANUAL_DATA_OBJECT_TYPE_CHAPTER) {
-//		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_CHAPTER),
-//				manual_data_find_object_name(chapter->type));
-//		return false;
-//	}
-
-	if (!output_strong_file_write_newline())
+	if (manual == NULL)
 		return false;
 
-	if (chapter->title != NULL) {
-		if (!output_strong_write_heading(chapter, level))
-			return false;
+	folder = filename_make(NULL, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_RISCOS);
+
+	filename = filename_join(folder, output_strong_root_filename);
+
+	if (!output_strong_file_sub_open(filename, OUTPUT_STRONG_PAGE_FILETYPE))
+		return false;
+
+	if (!output_strong_write_head(manual)) {
+		output_strong_file_sub_close();
+		return false;
 	}
 
-	section = chapter->first_child;
+	/* Output the inline details. */
 
-	while (section != NULL) {
-		if (!output_strong_write_section(section, level + 1))
-			return false;
+	object = manual->first_child;
 
-		section = section->next;
+	while (object != NULL) {
+		switch (object->type) {
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_INDEX:
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			if (!output_strong_write_object(object, OUTPUT_STRONG_BASE_LEVEL, folder, true)) {
+				output_strong_file_sub_close();
+				return false;
+			}
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(object->type));
+			break;
+		}
+
+		object = object->next;
+	}
+
+	if (!output_strong_write_foot(manual)) {
+		output_strong_file_sub_close();
+		return false;
+	}
+
+	if (!output_strong_file_sub_close())
+		return false;
+
+	/* Output the separate files. */
+
+	object = manual->first_child;
+
+	while (object != NULL) {
+		switch (object->type) {
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_INDEX:
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			if (!output_strong_write_object(object, OUTPUT_STRONG_BASE_LEVEL, folder, false)) {
+				output_strong_file_sub_close();
+				return false;
+			}
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(object->type));
+			break;
+		}
+
+		object = object->next;
 	}
 
 	return true;
 }
 
 /**
- * Process the contents of a section block and write it out.
+ * Process the contents of an index, chapter or section block and write it out.
  *
- * \param *section		The section to process.
+ * \param *object		The object to process.
  * \param level			The level to write the section at.
+ * \param *folder		The image file folder being written within.
+ * \param in_line		True if the section is being written inline; otherwise False.
  * \return			True if successful; False on error.
  */
 
-static bool output_strong_write_section(struct manual_data *section, int level)
+static bool output_strong_write_object(struct manual_data *object, int level, struct filename *folder, bool in_line)
 {
 	struct manual_data	*block;
+	struct filename *foldername = NULL, *filename = NULL;
+	bool self_contained = false;
 
-	if (section == NULL || section->first_child == NULL)
+	if (object == NULL || object->first_child == NULL)
 		return true;
 
-	/* Confirm that this is a section. */
+	/* Confirm that this is an index, chapter or section. */
 
-	if (section->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+	if (object->type != MANUAL_DATA_OBJECT_TYPE_CHAPTER && object->type != MANUAL_DATA_OBJECT_TYPE_INDEX && object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
 		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_SECTION),
-				manual_data_find_object_name(section->type));
+				manual_data_find_object_name(object->type));
 		return false;
 	}
 
@@ -261,36 +249,100 @@ static bool output_strong_write_section(struct manual_data *section, int level)
 		return false;
 	}
 
-	/* Write out the section heading. */
+	/* Check for an inlined or self-contained section. */
 
-	if (section->title != NULL) {
-		if (!output_strong_file_write_newline())
-			return false;
+	self_contained = output_strong_find_folders(folder, object->chapter.resources, &foldername, &filename);
 
-		if (!output_strong_write_heading(section, level))
-			return false;
+	if ((self_contained && in_line) || (!self_contained && !in_line)) {
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return true;
 	}
 
-	block = section->first_child;
+	if (self_contained && !output_strong_file_sub_open(filename, OUTPUT_STRONG_PAGE_FILETYPE)) {
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	if (self_contained && !output_strong_write_head(object)) {
+		output_strong_file_sub_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	if (!output_strong_file_write_newline()) {
+		if (self_contained)
+			output_strong_file_sub_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	/* Write out the section heading. */
+
+	if (object->title != NULL) {
+		if (!self_contained && !output_strong_file_write_newline()) {
+			filename_destroy(foldername);
+			filename_destroy(filename);
+			return false;
+		}
+
+		if (!output_strong_write_heading(object, level)) {
+			if (self_contained)
+				output_strong_file_sub_close();
+			filename_destroy(foldername);
+			filename_destroy(filename);
+			return false;
+		}
+	}
+
+	/* Output the blocks within the object. */
+
+	block = object->first_child;
 
 	while (block != NULL) {
 		switch (block->type) {
 		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			output_strong_write_section(block, level + 1);
+			if (!output_strong_write_object(block, level + 1, foldername, true)) {
+				if (self_contained)
+					output_strong_file_sub_close();
+				filename_destroy(foldername);
+				filename_destroy(filename);
+				return false;
+			}
 			break;
 
 		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
-			if (!output_strong_file_write_newline())
-				return false;
+			if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+				msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+				break;
+			}
 
-			if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block)) 
+			if (!output_strong_file_write_newline()) {
+				if (self_contained)
+					output_strong_file_sub_close();
+				filename_destroy(foldername);
+				filename_destroy(filename);
 				return false;
+			}
 
-	//		if (!output_strong_file_write_newline())
-	//			return false;
-
-			if ((block->next != NULL) && !output_strong_file_write_newline())
+			if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block)) {
+				if (self_contained)
+					output_strong_file_sub_close();
+				filename_destroy(foldername);
+				filename_destroy(filename);
 				return false;
+			}
+
+			if ((block->next != NULL) && !output_strong_file_write_newline()) {
+				if (self_contained)
+					output_strong_file_sub_close();
+				filename_destroy(foldername);
+				filename_destroy(filename);
+				return false;
+			}
 			break;
 
 		default:
@@ -300,6 +352,84 @@ static bool output_strong_write_section(struct manual_data *section, int level)
 
 		block = block->next;
 	}
+
+	if (self_contained && !output_strong_write_foot(object)) {
+		output_strong_file_sub_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	if (self_contained && !output_strong_file_sub_close()) {
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	/* Output the stand-alone sections in their own files. */
+
+	block = object->first_child;
+
+	while (block != NULL) {
+		switch (block->type) {
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			if (!output_strong_write_object(block, OUTPUT_STRONG_BASE_LEVEL, foldername, false)) {
+				filename_destroy(foldername);
+				filename_destroy(filename);
+				return false;
+			}
+			break;
+
+		default:
+			break;
+		}
+
+		block = block->next;
+	}
+
+	/* Free the filenames. */
+
+	filename_destroy(foldername);
+	filename_destroy(filename);
+
+	return true;
+}
+
+/**
+ * Write a StrongHelp file head block out.
+ *
+ * \param *manual	The manual to base the block on.
+ * \return		TRUE if successful, otherwise FALSE.
+ */
+
+static bool output_strong_write_head(struct manual_data *manual)
+{
+	if (manual == NULL)
+		return false;
+
+//	if (!output_strong_file_write_plain("<head>") || !output_strong_file_write_newline())
+//		return false;
+
+	if (!output_strong_write_heading(manual, 0))
+		return false;
+
+//	if (!output_strong_file_write_plain("</head>") || !output_strong_file_write_newline())
+//		return false;
+
+	return true;
+}
+
+/**
+ * Write a StrongHelp file foot block out.
+ *
+ * \param *manual	The manual to base the block on.
+ * \return		TRUE if successful, otherwise FALSE.
+ */
+
+static bool output_strong_write_foot(struct manual_data *manual)
+{
+	if (manual == NULL)
+		return false;
 
 	return true;
 }
@@ -446,3 +576,55 @@ static const char *output_strong_convert_entity(enum manual_entity_type entity)
 	}
 }
 
+/**
+ * Taking a base folder and an object resources, work out the object's
+ * base folder and filename.
+ * 
+ * \param *base		The base folder.
+ * \param *resources	The object's resources.
+ * \param **folder	Pointer to a filename pointer in which to return
+ *			the object's base folder.
+ * \param **file	Pointer to a filename pointer in which to return
+ *			the object's filename.
+ * \return		True if the object should be in a self-contained
+ *			file; False if it should appear inline in its parent.
+ */
+
+static bool output_strong_find_folders(struct filename *base, struct manual_data_resources *resources, struct filename **folder, struct filename **file)
+{
+	if (folder != NULL)
+		*folder = NULL;
+
+	if (file != NULL)
+		*file = NULL;
+
+	/* If there are no resources, then this must be an inline block. */
+
+	if (resources == NULL || (resources->strong.filename == NULL && resources->strong.folder == NULL)) {
+		if (base != NULL && folder != NULL)
+			*folder = filename_up(base, 0);
+		return false;
+	}
+
+	/* If there's no base filename, there's no point working out the folders. */
+
+	if (base == NULL)
+		return true;
+
+	/* Get the root folder. */
+
+	*folder = filename_join(base, resources->strong.folder);
+
+	/* Work out the filename. */
+
+	if (file != NULL) {
+		if (resources->strong.filename == NULL)
+			*file = filename_join(*folder, output_strong_root_filename);
+		else
+			*file = filename_join(*folder, resources->strong.filename);
+	}
+
+	/* This is a self-contained file. */
+
+	return true;
+}
