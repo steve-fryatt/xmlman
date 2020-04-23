@@ -1,4 +1,4 @@
-/* Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2020, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -58,6 +58,7 @@ enum parse_element_type {
 	PARSE_ELEMENT_RESOURCES,
 	PARSE_ELEMENT_SECTION,
 	PARSE_ELEMENT_STRONG,
+	PARSE_ELEMENT_SUMMARY,
 	PARSE_ELEMENT_TITLE,
 	PARSE_ELEMENT_WINDOW
 };

@@ -11,6 +11,10 @@
 
 <chapter id="chap-file-structure">
 <resources>
+ <mode type="text">
+  <folder>Files</folder>
+  <filename>FileStrucure.txt</filename>
+ </mode>
  <mode type="strong">
   <filename>FileStructure</filename>
  </mode>
@@ -21,7 +25,7 @@
 
 <title>Document File Structure</title>
 
-<summary>For those familiar with BBC&nbsp;BASIC, we start by getting a simple application up and running using this language.</summary>
+<summary>This is very definitely a placeholder summary, as we attempt to test out the functionality of this system. What can it all mean? Document File Structure? What on earth is that!</summary>
 
 <section>
 <p>If you&rsquo;re familiar with writing single-tasking software &ndash; on any platform &ndash; then writing an application to work under the RISC&nbsp;OS Wimp can be a confusing experience. Conventional software is linear: execution starts at the top and runs through to the end. The code will follow any functions, subroutines or &ndash; perhaps &ndash; gotos that it meets, but this is all under the control of the software developer.</p>

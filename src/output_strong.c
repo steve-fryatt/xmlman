@@ -84,6 +84,7 @@ static bool output_strong_write_object(struct manual_data *object, int level, st
 static bool output_strong_write_head(struct manual_data *manual);
 static bool output_strong_write_foot(struct manual_data *manual);
 static bool output_strong_write_heading(struct manual_data *node, int level);
+static bool output_strong_write_paragraph(struct manual_data *object);
 static bool output_strong_write_text(enum manual_data_object_type type, struct manual_data *text);
 static const char *output_strong_convert_entity(enum manual_entity_type entity);
 static bool output_strong_find_folders(struct filename *base, struct manual_data_resources *resources, struct filename **folder, struct filename **file);
@@ -145,6 +146,16 @@ static bool output_strong_write_manual(struct manual_data *manual)
 
 	if (manual == NULL)
 		return false;
+
+	/* Confirm that this is a manual. */
+
+	if (manual->type != MANUAL_DATA_OBJECT_TYPE_MANUAL) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_MANUAL),
+				manual_data_find_object_name(manual->type));
+		return false;
+	}
+
+	/* Prepare the root filename. */
 
 	folder = filename_make(NULL, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_RISCOS);
 
@@ -254,6 +265,23 @@ static bool output_strong_write_object(struct manual_data *object, int level, st
 	self_contained = output_strong_find_folders(folder, object->chapter.resources, &foldername, &filename);
 
 	if ((self_contained && in_line) || (!self_contained && !in_line)) {
+		if (in_line) {
+			if (!output_strong_file_write_newline() || !output_strong_write_heading(object, level)) {
+				filename_destroy(foldername);
+				filename_destroy(filename);
+				return false;
+			}
+
+			if (object->chapter.resources != NULL && object->chapter.resources->summary != NULL &&
+					!output_strong_write_paragraph(object->chapter.resources->summary)) {
+				filename_destroy(foldername);
+				filename_destroy(filename);
+				return false;
+			}
+
+			output_strong_file_write_plain("\nThis is a link to an external file...\n");
+		}
+
 		filename_destroy(foldername);
 		filename_destroy(filename);
 		return true;
@@ -320,23 +348,7 @@ static bool output_strong_write_object(struct manual_data *object, int level, st
 				break;
 			}
 
-			if (!output_strong_file_write_newline()) {
-				if (self_contained)
-					output_strong_file_sub_close();
-				filename_destroy(foldername);
-				filename_destroy(filename);
-				return false;
-			}
-
-			if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block)) {
-				if (self_contained)
-					output_strong_file_sub_close();
-				filename_destroy(foldername);
-				filename_destroy(filename);
-				return false;
-			}
-
-			if ((block->next != NULL) && !output_strong_file_write_newline()) {
+			if (!output_strong_write_paragraph(block)) {
 				if (self_contained)
 					output_strong_file_sub_close();
 				filename_destroy(foldername);
@@ -480,6 +492,40 @@ static bool output_strong_write_heading(struct manual_data *node, int level)
 		return false;
 
 	if (!output_strong_file_write_newline())
+		return false;
+
+	return true;
+}
+
+/**
+ * Write a paragraph block to the output.
+ *
+ * \param *object		The object to be written.
+ * \return			True if successful; False on failure.
+ */
+
+static bool output_strong_write_paragraph(struct manual_data *object)
+{
+	if (object == NULL)
+		return false;
+
+	/* Confirm that this is an index, chapter or section. */
+
+	if (object->type != MANUAL_DATA_OBJECT_TYPE_PARAGRAPH && object->type != MANUAL_DATA_OBJECT_TYPE_SUMMARY) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Output the paragraph. */
+
+	if (!output_strong_file_write_newline())
+		return false;
+
+	if (!output_strong_write_text(object->type, object))
+				return false;
+
+	if ((object->next != NULL) && !output_strong_file_write_newline())
 		return false;
 
 	return true;

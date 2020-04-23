@@ -1,4 +1,4 @@
-/* Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2020, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -329,6 +329,9 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 			case PARSE_ELEMENT_TITLE:
 				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_TITLE, element);
 				break;
+			case PARSE_ELEMENT_SUMMARY:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_SUMMARY, element);
+				break;
 			case PARSE_ELEMENT_SECTION:
 				parse_process_add_section(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_SECTION, element);
 				break;
@@ -345,6 +348,9 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 			switch (element) {
 			case PARSE_ELEMENT_TITLE:
 				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_TITLE, element);
+				break;
+			case PARSE_ELEMENT_SUMMARY:
+				parse_process_add_block(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_SUMMARY, element);
 				break;
 			case PARSE_ELEMENT_SECTION:
 				parse_process_add_section(reader, old_stack, MANUAL_DATA_OBJECT_TYPE_SECTION, element);
@@ -874,6 +880,7 @@ static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_
 		enum manual_data_object_type type, enum parse_element_type element)
 {
 	struct manual_data		*new_block;
+	struct manual_data_resources	*resources = NULL;
 
 	new_block = parse_create_new_stacked_object(PARSE_STACK_CONTENT_BLOCK, element, type, NULL);
 	if (new_block == NULL)
@@ -897,6 +904,12 @@ static bool parse_process_add_block(xmlTextReaderPtr reader, struct parse_stack_
 		break;
 	case MANUAL_DATA_OBJECT_TYPE_TITLE:
 		old_stack->object->title = new_block;
+		break;
+	case MANUAL_DATA_OBJECT_TYPE_SUMMARY:
+		resources = manual_data_get_resources(old_stack->object);
+		if (resources == NULL)
+			return false;
+		resources->summary = new_block;
 		break;
 	case MANUAL_DATA_OBJECT_TYPE_RESOURCE_IMAGE:
 	case MANUAL_DATA_OBJECT_TYPE_RESOURCE_DOWNLOAD:

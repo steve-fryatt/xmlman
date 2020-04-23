@@ -1,4 +1,4 @@
-/* Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2020, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -68,6 +68,7 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_CHAPTER,		"Chapter"},
 	{MANUAL_DATA_OBJECT_TYPE_SECTION,		"Section"},
 	{MANUAL_DATA_OBJECT_TYPE_TITLE,			"Title"},
+	{MANUAL_DATA_OBJECT_TYPE_SUMMARY,		"Summary"},
 	{MANUAL_DATA_OBJECT_TYPE_PARAGRAPH,		"Paragraph"},
 	{MANUAL_DATA_OBJECT_TYPE_CITATION,		"Citation"},
 	{MANUAL_DATA_OBJECT_TYPE_CODE,			"Code"},
@@ -181,6 +182,7 @@ struct manual_data_resources *manual_data_get_resources(struct manual_data *obje
 
 		object->chapter.resources->images = NULL;
 		object->chapter.resources->downloads = NULL;
+		object->chapter.resources->summary = NULL;
 
 		manual_data_initialise_mode_resources(&(object->chapter.resources->text));
 		manual_data_initialise_mode_resources(&(object->chapter.resources->html));

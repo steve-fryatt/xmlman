@@ -1,4 +1,4 @@
-/* Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2020, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -71,6 +71,7 @@ static struct parse_element_definition parse_element_tags[] = {
 	{PARSE_ELEMENT_FOLDER,		"folder"},
 	{PARSE_ELEMENT_IMAGES,		"images"},
 	{PARSE_ELEMENT_DOWNLOADS,	"downloads"},
+	{PARSE_ELEMENT_SUMMARY,		"summary"},
 	{PARSE_ELEMENT_CHAPTER,		"chapter"},
 	{PARSE_ELEMENT_INDEX,		"index"},
 	{PARSE_ELEMENT_MANUAL,		"manual"},

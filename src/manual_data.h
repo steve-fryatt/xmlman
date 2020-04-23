@@ -1,4 +1,4 @@
-/* Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2020, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -46,6 +46,7 @@ enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_CHAPTER,
 	MANUAL_DATA_OBJECT_TYPE_SECTION,
 	MANUAL_DATA_OBJECT_TYPE_TITLE,
+	MANUAL_DATA_OBJECT_TYPE_SUMMARY,
 	MANUAL_DATA_OBJECT_TYPE_PARAGRAPH,
 	MANUAL_DATA_OBJECT_TYPE_CITATION,
 	MANUAL_DATA_OBJECT_TYPE_CODE,
@@ -112,6 +113,11 @@ struct manual_data_resources {
 	 * The relative path to the download source folder.
 	 */
 	struct filename				*downloads;
+
+	/**
+	 * The object summary, or NULL.
+	 */
+	struct manual_data			*summary;
 };
 
 /**

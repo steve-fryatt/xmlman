@@ -85,6 +85,7 @@ static bool output_html_write_object(struct manual_data *section, int level, str
 static bool output_html_write_head(struct manual_data *manual);
 static bool output_html_write_foot(struct manual_data *manual);
 static bool output_html_write_heading(struct manual_data *node, int level);
+static bool output_html_write_paragraph(struct manual_data *object);
 static bool output_html_write_text(enum manual_data_object_type type, struct manual_data *text);
 static const char *output_html_convert_entity(enum manual_entity_type entity);
 static bool output_html_find_folders(struct filename *base, struct manual_data_resources *resources, struct filename **folder, struct filename **file);
@@ -140,6 +141,14 @@ static bool output_html_write_manual(struct manual_data *manual, struct filename
 
 	if (manual == NULL || folder == NULL)
 		return false;
+
+	/* Confirm that this is a manual. */
+
+	if (manual->type != MANUAL_DATA_OBJECT_TYPE_MANUAL) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_MANUAL),
+				manual_data_find_object_name(manual->type));
+		return false;
+	}
 
 	/* Open the index file. */
 
@@ -251,6 +260,23 @@ static bool output_html_write_object(struct manual_data *object, int level, stru
 	self_contained = output_html_find_folders(folder, object->chapter.resources, &foldername, &filename);
 
 	if ((self_contained && in_line) || (!self_contained && !in_line)) {
+		if (in_line) {
+			if (!output_html_write_heading(object, level)) {
+				filename_destroy(foldername);
+				filename_destroy(filename);
+				return false;
+			}
+
+			if (object->chapter.resources != NULL && object->chapter.resources->summary != NULL &&
+					!output_html_write_paragraph(object->chapter.resources->summary)) {
+				filename_destroy(foldername);
+				filename_destroy(filename);
+				return false;
+			}
+
+			output_html_file_write_plain("<p>This is a link to an external file...</p>\n");
+		}
+
 		filename_destroy(foldername);
 		filename_destroy(filename);
 		return true;
@@ -323,31 +349,7 @@ static bool output_html_write_object(struct manual_data *object, int level, stru
 				break;
 			}
 
-			if (!output_html_file_write_newline()) {
-				if (self_contained)
-					output_html_file_close();
-				filename_destroy(foldername);
-				filename_destroy(filename);
-				return false;
-			}
-
-			if (!output_html_file_write_plain("<p>")) {
-				if (self_contained)
-					output_html_file_close();
-				filename_destroy(foldername);
-				filename_destroy(filename);
-				return false;
-			}
-
-			if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block)) {
-				if (self_contained)
-					output_html_file_close();
-				filename_destroy(foldername);
-				filename_destroy(filename);
-				return false;
-			}
-
-			if (!output_html_file_write_plain("</p>")) {
+			if (!output_html_write_paragraph(block)) {
 				if (self_contained)
 					output_html_file_close();
 				filename_destroy(foldername);
@@ -515,6 +517,43 @@ static bool output_html_write_heading(struct manual_data *node, int level)
 		return false;
 
 	if (!output_html_file_write_newline())
+		return false;
+
+	return true;
+}
+
+/**
+ * Write a paragraph block to the output.
+ *
+ * \param *object		The object to be written.
+ * \return			True if successful; False on failure.
+ */
+
+static bool output_html_write_paragraph(struct manual_data *object)
+{
+	if (object == NULL)
+		return false;
+
+	/* Confirm that this is an index, chapter or section. */
+
+	if (object->type != MANUAL_DATA_OBJECT_TYPE_PARAGRAPH && object->type != MANUAL_DATA_OBJECT_TYPE_SUMMARY) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Output the paragraph. */
+
+	if (!output_html_file_write_newline())
+		return false;
+
+	if (!output_html_file_write_plain("<p>"))
+		return false;
+
+	if (!output_html_write_text(object->type, object))
+				return false;
+
+	if (!output_html_file_write_plain("</p>"))
 		return false;
 
 	return true;
