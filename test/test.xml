@@ -39,6 +39,8 @@ handle large, variable amounts of data or   multiple documents.</p>
 
 <p>Many thanks to all those on the <link href="https://www.riscosopen.org/forum/">ROOL Forums</link> who have answered my questions about the DDE and offered suggestions while I&rsquo;ve worked on this guide.</p>
 
+<p>Let&rsquo;s include a link to an anonymous chapter <ref id="chap-start-basic" />, as well as <ref id="sect-start-basic-reg">a link to a chapter</ref> by some custom text.</p>
+
 <section>
 <title>Nested to Level 2</title>
 
