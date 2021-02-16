@@ -33,8 +33,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <libxml/xmlstring.h>
-
 #include "output_text_line.h"
 
 #include "encoding.h"
@@ -64,7 +62,7 @@ struct output_text_line_column {
 	/**
 	 * The column's text buffer.
 	 */
-	xmlChar				*text;
+	char				*text;
 
 	/**
 	 * The size of the column's text buffer.
@@ -75,7 +73,7 @@ struct output_text_line_column {
 	 * Pointer to the current position in the text during the
 	 * write-out operation, or NULL on completion.
 	 */
-	xmlChar				*write_ptr;
+	char				*write_ptr;
 
 	/**
 	 * The current maximum written width, in charaters.
@@ -116,7 +114,7 @@ static FILE *output_text_line_handle = NULL;
 
 /* Static Function Prototypes. */
 
-static bool output_text_line_add_column_text(struct output_text_line_column *column, xmlChar *text);
+static bool output_text_line_add_column_text(struct output_text_line_column *column, char *text);
 static bool output_text_line_update_column_memory(struct output_text_line_column *column);
 static struct output_text_line_column* output_text_line_find_column(struct output_text_line *line, int column);
 static bool output_text_line_write_line(struct output_text_line *line, bool underline);
@@ -310,7 +308,7 @@ bool output_text_line_reset(struct output_text_line *line)
  * \return		True on success; False on error.
  */
 
-bool output_text_line_add_text(struct output_text_line *line, int column, xmlChar *text)
+bool output_text_line_add_text(struct output_text_line *line, int column, char *text)
 {
 	struct output_text_line_column	*col = NULL;
 
@@ -334,7 +332,7 @@ bool output_text_line_add_text(struct output_text_line *line, int column, xmlCha
  * \return		True on success; False on error.
  */
 
-static bool output_text_line_add_column_text(struct output_text_line_column *column, xmlChar *text)
+static bool output_text_line_add_column_text(struct output_text_line_column *column, char *text)
 {
 	int	write_ptr;
 
@@ -398,7 +396,7 @@ static bool output_text_line_add_column_text(struct output_text_line_column *col
 
 static bool output_text_line_update_column_memory(struct output_text_line_column *column)
 {
-	xmlChar *new;
+	char *new;
 
 	if (column == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_COL_REF);
@@ -537,7 +535,7 @@ static bool output_text_line_write_line(struct output_text_line *line, bool unde
 static bool output_text_line_write_column(struct output_text_line_column *column)
 {
 	int		width, breakpoint, c;
-	xmlChar		*scan_ptr;
+	char		*scan_ptr;
 	bool		hyphenate = false, complete = false;
 
 	if (column == NULL) {

@@ -34,8 +34,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include <libxml/xmlstring.h>
-
 #include "output_html_file.h"
 
 #include "encoding.h"
@@ -94,7 +92,7 @@ void output_html_file_close(void)
  * \return		True if successful; False on error.
  */
 
-bool output_html_file_write_text(xmlChar *text)
+bool output_html_file_write_text(char *text)
 {
 	int c;
 

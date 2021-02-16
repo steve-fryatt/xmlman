@@ -33,8 +33,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <libxml/xmlstring.h>
-
 #include "output_debug.h"
 
 #include "encoding.h"
@@ -44,7 +42,7 @@
 /* Static Function Prototypes. */
 
 static void output_debug_write_text(enum manual_data_object_type type, struct manual_data *text);
-static char *output_debug_get_text(xmlChar *text);
+static char *output_debug_get_text(char *text);
 
 /**
  * Output a manual in debug form.
@@ -163,12 +161,12 @@ static void output_debug_write_text(enum manual_data_object_type type, struct ma
 
 
 
-static char *output_debug_get_text(xmlChar *text)
+static char *output_debug_get_text(char *text)
 {
 	/* \TODO -- This needs to de-UTF8-ify the text! */
 
 	if (text == NULL)
 		return "<none>";
 
-	return (char *)text;
+	return text;
 }

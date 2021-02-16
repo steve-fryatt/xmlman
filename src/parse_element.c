@@ -32,8 +32,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <libxml/xmlreader.h>
-
 #include "parse_element.h"
 
 #include "msg.h"
@@ -82,23 +80,21 @@ static struct parse_element_definition parse_element_tags[] = {
 /**
  * Given a node containing an element, return the element type.
  *
- * \param reader	The reader to take the node from.
+ * \param *name		Pointer to the name of the element to decode.
  * \return		The element type, or PARSE_ELEMENT_NONE if unknown.
  */
 
-enum parse_element_type parse_element_find_type(xmlTextReaderPtr reader)
+enum parse_element_type parse_element_find_type(char *name)
 {
-	const xmlChar	*name;
 	int		i;
 
-	name = xmlTextReaderConstName(reader);
 	if (name == NULL)
 		return PARSE_ELEMENT_NONE;
 
-	for (i = 0; parse_element_tags[i].type != PARSE_ELEMENT_NONE && xmlStrcmp((const xmlChar *) parse_element_tags[i].tag, name) != 0; i++);
+	for (i = 0; parse_element_tags[i].type != PARSE_ELEMENT_NONE && strcmp(parse_element_tags[i].tag, name) != 0; i++);
 
 	if (parse_element_tags[i].type == PARSE_ELEMENT_NONE)
-		msg_report(MSG_UNKNOWN_ELEMENT, (char *) name);
+		msg_report(MSG_UNKNOWN_ELEMENT, name);
 
 	return parse_element_tags[i].type;
 }

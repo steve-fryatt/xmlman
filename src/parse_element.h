@@ -30,8 +30,6 @@
 #ifndef XMLMAN_PARSE_ELEMENT_H
 #define XMLMAN_PARSE_ELEMENT_H
 
-#include <libxml/xmlreader.h>
-
 /**
  * A list of element types known to the parser.
  */
@@ -66,11 +64,11 @@ enum parse_element_type {
 /**
  * Given a node containing an element, return the element type.
  *
- * \param reader	The reader to take the node from.
+ * \param *name		Pointer to the name of the element to decode.
  * \return		The element type, or PARSE_ELEMENT_NONE if unknown.
  */
 
-enum parse_element_type parse_element_find_type(xmlTextReaderPtr reader);
+enum parse_element_type parse_element_find_type(char *name);
 
 /**
  * Given an element type, return the textual node tag.

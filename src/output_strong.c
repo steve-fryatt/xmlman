@@ -33,8 +33,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <libxml/xmlstring.h>
-
 #include "output_strong.h"
 
 #include "encoding.h"
@@ -121,7 +119,7 @@ bool output_strong(struct manual *document, struct filename *filename, enum enco
 
 	/* Write the manual content. */
 
-	output_strong_root_filename = filename_make((xmlChar *) OUTPUT_STRONG_ROOT_FILENAME, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
+	output_strong_root_filename = filename_make(OUTPUT_STRONG_ROOT_FILENAME, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
 
 	result = output_strong_write_manual(document->manual);
 
@@ -456,7 +454,7 @@ static bool output_strong_write_foot(struct manual_data *manual)
 
 static bool output_strong_write_heading(struct manual_data *node, int level)
 {
-	xmlChar *number;
+	char *number;
 
 	if (node == NULL || node->title == NULL)
 		return true;
@@ -477,7 +475,7 @@ static bool output_strong_write_heading(struct manual_data *node, int level)
 			return false;
 		}
 
-		if (!output_strong_file_write_text((xmlChar *) " ")) {
+		if (!output_strong_file_write_text(" ")) {
 			free(number);
 			return false;
 		}
@@ -571,7 +569,7 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 			output_strong_file_write_text(chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			output_strong_file_write_text((xmlChar *) output_strong_convert_entity(chunk->chunk.entity));
+			output_strong_file_write_text(output_strong_convert_entity(chunk->chunk.entity));
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(chunk->type));

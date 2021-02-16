@@ -233,7 +233,7 @@ static bool xmlman_process_mode(char *file, struct manual *document, enum encodi
 	if (file == NULL)
 		return true;
 
-	filename = filename_make((xmlChar *) file, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
+	filename = filename_make(file, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
 	if (filename == NULL)
 		return false;
 

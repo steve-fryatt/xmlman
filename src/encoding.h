@@ -30,8 +30,6 @@
 #ifndef XMLMAN_ENCODING_H
 #define XMLMAN_ENCODING_H
 
-#include <libxml/xmlreader.h>
-
 /**
  * The size of a character output buffer. This needs to hold a full
  * UTF8 character, and shouldn't require adjustment.
@@ -175,7 +173,7 @@ bool encoding_select_line_end(enum encoding_line_end type);
  * \return			The next character in the text.
  */
 
-int encoding_parse_utf8_string(xmlChar **text);
+int encoding_parse_utf8_string(char **text);
 
 /**
  * Write a unicode character to a buffer in the current encoding.
@@ -204,7 +202,7 @@ const char *encoding_get_newline(void);
  * \param *text			The text to be flattened.
  */
 
-void encoding_flatten_whitespace(xmlChar *text);
+void encoding_flatten_whitespace(char *text);
 
 #endif
 

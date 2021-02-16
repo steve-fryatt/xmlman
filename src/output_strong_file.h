@@ -32,8 +32,6 @@
 
 #include <stdbool.h>
 
-#include <libxml/xmlstring.h>
-
 #include "filename.h"
 
 /**
@@ -77,7 +75,7 @@ bool output_strong_file_sub_close(void);
  * \return		True if successful; False on error.
  */
 
-bool output_strong_file_write_text(xmlChar *text);
+bool output_strong_file_write_text(char *text);
 
 /**
  * Write an ASCII string to the output.

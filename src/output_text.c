@@ -33,8 +33,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <libxml/xmlstring.h>
-
 #include "output_text.h"
 
 #include "encoding.h"
@@ -122,7 +120,7 @@ bool output_text(struct manual *document, struct filename *filename, enum encodi
 
 	/* Write the manual file content. */
 
-	output_text_root_filename = filename_make((xmlChar *) OUTPUT_TEXT_ROOT_FILENAME, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
+	output_text_root_filename = filename_make(OUTPUT_TEXT_ROOT_FILENAME, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
 
 	result = output_text_write_manual(document->manual, filename);
 
@@ -502,7 +500,7 @@ static bool output_text_write_foot(struct manual_data *manual)
 static bool output_text_write_heading(struct manual_data *node, int indent)
 {
 	struct output_text_line	*line;
-	xmlChar			*number;
+	char			*number;
 
 	if (node == NULL || node->title == NULL)
 		return true;
@@ -529,7 +527,7 @@ static bool output_text_write_heading(struct manual_data *node, int indent)
 			return false;
 		}
 
-		if (!output_text_line_add_text(line, 0, (xmlChar *) " ")) {
+		if (!output_text_line_add_text(line, 0, " ")) {
 			output_text_line_destroy(line);
 			return false;
 		}
@@ -619,20 +617,20 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 	while (chunk != NULL) {
 		switch (chunk->type) {
 		case MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS:
-			output_text_line_add_text(line, column, (xmlChar *) "/");
+			output_text_line_add_text(line, column, "/");
 			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, chunk);
-			output_text_line_add_text(line, column, (xmlChar *) "/");
+			output_text_line_add_text(line, column, "/");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
-			output_text_line_add_text(line, column, (xmlChar *) "*");
+			output_text_line_add_text(line, column, "*");
 			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, chunk);
-			output_text_line_add_text(line, column, (xmlChar *) "*");
+			output_text_line_add_text(line, column, "*");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
 			output_text_line_add_text(line, column, chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			output_text_line_add_text(line, column, (xmlChar *) output_text_convert_entity(chunk->chunk.entity));
+			output_text_line_add_text(line, column, output_text_convert_entity(chunk->chunk.entity));
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(chunk->type));

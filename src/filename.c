@@ -33,8 +33,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <libxml/xmlstring.h>
-
 #ifdef LINUX
 #include <errno.h>
 #include <sys/stat.h>
@@ -54,7 +52,7 @@ struct filename_node {
 	/**
 	 * The filename component.
 	 */
-	xmlChar			*name;
+	char			*name;
 
 	/**
 	 * Pointer to the next node in the name, or NULL.
@@ -82,7 +80,7 @@ struct filename {
 /* Static Function Prototypes */
 
 static size_t filename_get_storage_size(struct filename *name);
-static bool filename_copy_to_buffer(struct filename *name, xmlChar *buffer, size_t length, enum filename_platform platform, int levels);
+static bool filename_copy_to_buffer(struct filename *name, char *buffer, size_t length, enum filename_platform platform, int levels);
 static int filename_count_nodes(struct filename *name);
 static char filename_get_separator(enum filename_platform platform);
 
@@ -96,11 +94,11 @@ static char filename_get_separator(enum filename_platform platform);
  * \return			The new filename instance, or NULL.
  */
 
-struct filename *filename_make(xmlChar *name, enum filename_type type, enum filename_platform platform)
+struct filename *filename_make(char *name, enum filename_type type, enum filename_platform platform)
 {
 	struct filename		*root = NULL;
 	struct filename_node	*current_node = NULL, *previous_node = NULL;
-	xmlChar			*part = NULL;
+	char			*part = NULL;
 	int			position = 0, length = 0;
 	char			separator;
 
@@ -249,7 +247,7 @@ FILE *filename_fopen(struct filename *name, const char *mode)
 bool filename_mkdir(struct filename *name, bool intermediate)
 {
 	size_t		length = 0;
-	xmlChar		*filename = NULL;
+	char		*filename = NULL;
 	int		levels, nodes = 0;
 
 	nodes = filename_count_nodes(name);
@@ -271,7 +269,7 @@ bool filename_mkdir(struct filename *name, bool intermediate)
 		}
 
 #ifdef LINUX
-		if ((mkdir((char *) filename, 0755) != 0) && (errno != EEXIST)) {
+		if ((mkdir(filename, 0755) != 0) && (errno != EEXIST)) {
 			msg_report(MSG_WRITE_CDIR_FAIL, filename);
 			free(filename);
 			return false;
@@ -391,7 +389,7 @@ struct filename *filename_up(struct filename *name, int up)
 bool filename_add(struct filename *name, struct filename *add, int levels)
 {
 	struct filename_node	*node = NULL, *new_node = NULL, *previous_node = NULL;
-	xmlChar			*new_part = NULL;
+	char			*new_part = NULL;
 	int			count = 0;
 
 	if (name == NULL || add == NULL)
@@ -412,7 +410,7 @@ bool filename_add(struct filename *name, struct filename *add, int levels)
 
 	while (node != NULL && ((levels == 0) || (count++ < levels))) {
 		new_node = malloc(sizeof(struct filename_node));
-		new_part = xmlStrdup(node->name);
+		new_part = strdup(node->name);
 
 		/* Tidy up the loose nodes in the event of a memory error. */
 
@@ -500,7 +498,7 @@ struct filename *filename_join(struct filename *first, struct filename *second)
 char *filename_convert(struct filename *name, enum filename_platform platform, int levels)
 {
 	size_t			length = 0;
-	xmlChar			*filename = NULL;
+	char			*filename = NULL;
 
 	if (name == NULL)
 		return NULL;
@@ -525,7 +523,7 @@ char *filename_convert(struct filename *name, enum filename_platform platform, i
 		return NULL;
 	}
 
-	return (char *) filename;
+	return filename;
 }
 
 /**
@@ -538,7 +536,7 @@ char *filename_convert(struct filename *name, enum filename_platform platform, i
 static size_t filename_get_storage_size(struct filename *name)
 {
 	size_t			length = 0;
-	xmlChar			*c = NULL;
+	char			*c = NULL;
 	struct filename_node	*node = NULL;
 
 	node = name->name;
@@ -572,11 +570,11 @@ static size_t filename_get_storage_size(struct filename *name)
  * \return			True if successful; false on error.
  */
 
-static bool filename_copy_to_buffer(struct filename *name, xmlChar *buffer, size_t length, enum filename_platform platform, int levels)
+static bool filename_copy_to_buffer(struct filename *name, char *buffer, size_t length, enum filename_platform platform, int levels)
 {
 	struct filename_node	*node = NULL;
 	int			ptr = 0;
-	xmlChar			*c = NULL; 
+	char			*c = NULL; 
 	char			separator;
 
 	if (buffer == NULL || length == 0)

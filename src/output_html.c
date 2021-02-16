@@ -33,8 +33,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <libxml/xmlstring.h>
-
 #include "output_html.h"
 
 #include "encoding.h"
@@ -117,7 +115,7 @@ bool output_html(struct manual *document, struct filename *folder, enum encoding
 
 	/* Write the manual file content. */
 
-	output_html_root_filename = filename_make((xmlChar *) OUTPUT_HTML_ROOT_FILENAME, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
+	output_html_root_filename = filename_make(OUTPUT_HTML_ROOT_FILENAME, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
 
 	result = output_html_write_manual(document->manual, folder);
 
@@ -474,7 +472,7 @@ static bool output_html_write_foot(struct manual_data *manual)
 static bool output_html_write_heading(struct manual_data *node, int level)
 {
 	char	buffer[OUTPUT_HTML_TITLE_TAG_BLOCK_LEN];
-	xmlChar	*number;
+	char	*number;
 
 	if (node == NULL || node->title == NULL)
 		return true;
@@ -502,7 +500,7 @@ static bool output_html_write_heading(struct manual_data *node, int level)
 			return false;
 		}
 
-		if (!output_html_file_write_text((xmlChar *) " ")) {
+		if (!output_html_file_write_text(" ")) {
 			free(number);
 			return false;
 		}
@@ -599,7 +597,7 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 			output_html_file_write_text(chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			output_html_file_write_text((xmlChar *) output_html_convert_entity(chunk->chunk.entity));
+			output_html_file_write_text(output_html_convert_entity(chunk->chunk.entity));
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(chunk->type));

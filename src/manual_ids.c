@@ -31,8 +31,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include <libxml/xmlstring.h>
-
 #include "manual_data.h"
 #include "manual_ids.h"
 
@@ -52,7 +50,7 @@ struct manual_ids_entry {
 	 * data held by the node itself.
 	 */
 
-	xmlChar			*id;
+	char			*id;
 
 	/**
 	 * The node relating to the tag.
@@ -81,7 +79,7 @@ struct manual_ids {
 
 /* Static Function Prototypes. */
 
-static int manual_ids_get_hash(xmlChar *id);
+static int manual_ids_get_hash(char *id);
 
 /**
  * Create a new manual IDs index instance.
@@ -171,7 +169,7 @@ bool manual_ids_add_node(struct manual_ids *instance, struct manual_data *node)
  * \return		The calculated hash value.
  */
 
-static int manual_ids_get_hash(xmlChar *id)
+static int manual_ids_get_hash(char *id)
 {
 	int hash = 0;
 

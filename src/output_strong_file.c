@@ -35,8 +35,6 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include <libxml/xmlstring.h>
-
 #include "output_strong_file.h"
 
 #include "encoding.h"
@@ -743,7 +741,7 @@ static bool output_strong_file_write_catalogue(struct output_strong_file_object 
  * \return		True if successful; False on error.
  */
 
-bool output_strong_file_write_text(xmlChar *text)
+bool output_strong_file_write_text(char *text)
 {
 	int c;
 

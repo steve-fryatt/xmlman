@@ -232,7 +232,7 @@ const char *manual_data_find_object_name(enum manual_data_object_type type)
  * \return		Pointer to the display number, or NULL.
  */
 
-xmlChar *manual_data_get_node_number(struct manual_data *node)
+char *manual_data_get_node_number(struct manual_data *node)
 {
 	struct manual_data	*nodes[MANUAL_DATA_MAX_NUMBER_DEPTH], *last = NULL;
 	char			*text;
@@ -292,6 +292,6 @@ xmlChar *manual_data_get_node_number(struct manual_data *node)
 
 	text[MANUAL_DATA_MAX_NUMBER_BUFFER_LEN - 1] = '\0';
 
-	return (xmlChar *) text;
+	return text;
 }
 

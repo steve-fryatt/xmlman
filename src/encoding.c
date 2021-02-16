@@ -32,8 +32,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <libxml/xmlreader.h>
-
 #include "encoding.h"
 
 #include "msg.h"
@@ -511,7 +509,7 @@ bool encoding_select_line_end(enum encoding_line_end type)
  * \return			The next character in the text.
  */
 
-int encoding_parse_utf8_string(xmlChar **text)
+int encoding_parse_utf8_string(char **text)
 {
 	int	current_char = 0, bytes_remaining = 0;
 
@@ -680,7 +678,7 @@ const char *encoding_get_newline(void)
  * \param *text			The text to be flattened.
  */
 
-void encoding_flatten_whitespace(xmlChar *text)
+void encoding_flatten_whitespace(char *text)
 {
 	unsigned char	*head, *tail;
 	bool		space = false, whitespace = false;

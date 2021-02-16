@@ -30,8 +30,6 @@
 #ifndef XMLMAN_MANUAL_ENTITY_H
 #define XMLMAN_MANUAL_ENTITY_H
 
-#include <libxml/xmlreader.h>
-
 /**
  * A list of entities known to the parser.
  */
@@ -54,11 +52,11 @@ enum manual_entity_type {
 /**
  * Given a node containing an entity, return the entity type.
  *
- * \param reader	The reader to take the node from.
+ * \param *name		Pointer to the textual entity name.
  * \return		The entity type, or MANUAL_ENTITY_NONE if unknown.
  */
 
-enum manual_entity_type manual_entity_find_type(xmlTextReaderPtr reader);
+enum manual_entity_type manual_entity_find_type(char *name);
 
 /**
  * Given an entity type, return the textual entity name.

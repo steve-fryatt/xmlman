@@ -31,8 +31,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include <libxml/xmlreader.h>
-
 #include "encoding.h"
 #include "filename.h"
 #include "manual.h"
@@ -46,6 +44,7 @@
 /* Static Function Prototypes. */
 
 static bool parse_file(struct filename *filename, struct manual_data **manual, struct manual_data **chapter);
+#if 0
 static void parse_process_node(xmlTextReaderPtr reader, struct manual_data **manual, struct manual_data **chapter);
 static void parse_process_outer_node(xmlTextReaderPtr reader, struct manual_data **manual);
 static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data **chapter);
@@ -65,6 +64,7 @@ static struct manual_data *parse_create_new_stacked_object(enum parse_stack_cont
 		struct manual_data *object);
 static void parse_link_to_chain(struct parse_stack_entry *parent, struct manual_data *object);
 static void parse_error_handler(void *arg, const char *msg, xmlParserSeverities severity, xmlTextReaderLocatorPtr locator);
+#endif
 
 /**
  * Parse an XML file and its descendents.
@@ -79,7 +79,7 @@ struct manual *parse_document(char *filename)
 	struct manual_data	*manual = NULL, *chapter = NULL;
 	struct filename		*document_root = NULL, *document_base = NULL;
 
-	document_base = filename_make((xmlChar *) filename, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
+	document_base = filename_make(filename, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
 	if (document_base == NULL)
 		return NULL;
 
@@ -154,7 +154,7 @@ struct manual *parse_document(char *filename)
 
 static bool parse_file(struct filename *filename, struct manual_data **manual, struct manual_data **chapter)
 {
-	xmlTextReaderPtr	reader;
+//	xmlTextReaderPtr	reader;
 	char			*file = NULL;
 	int			ret;
 
@@ -167,35 +167,35 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 
 	parse_stack_reset();
 
-	reader = xmlReaderForFile(file, NULL, XML_PARSE_DTDATTR | XML_PARSE_DTDVALID);
+//	reader = xmlReaderForFile(file, NULL, XML_PARSE_DTDATTR | XML_PARSE_DTDVALID);
 
-	if (reader == NULL) {
-		msg_report(MSG_OPEN_FAIL, file);
-		free(file);
-		return false;
-	}
+//	if (reader == NULL) {
+//		msg_report(MSG_OPEN_FAIL, file);
+//		free(file);
+//		return false;
+//	}
 
-	xmlTextReaderSetErrorHandler(reader, parse_error_handler, NULL);
+//	xmlTextReaderSetErrorHandler(reader, parse_error_handler, NULL);
 
-	ret = xmlTextReaderRead(reader);
-	while (ret == 1) {
-		parse_process_node(reader, manual, chapter);
-		ret = xmlTextReaderRead(reader);
-	}
+//	ret = xmlTextReaderRead(reader);
+//	while (ret == 1) {
+//		parse_process_node(reader, manual, chapter);
+//		ret = xmlTextReaderRead(reader);
+//	}
 
-	if (xmlTextReaderIsValid(reader) != 1)
-		msg_report(MSG_INVALID, file);
+//	if (xmlTextReaderIsValid(reader) != 1)
+//		msg_report(MSG_INVALID, file);
 
-	if (ret != 0)
-		msg_report(MSG_XML_FAIL, file);
+//	if (ret != 0)
+//		msg_report(MSG_XML_FAIL, file);
 
-	xmlFreeTextReader(reader);
+//	xmlFreeTextReader(reader);
 	free(file);
 
 	return true;
 }
 
-
+#if 0
 /**
  * Process an XML node, passing it on to an appropriate part of the
  * parser based on the current position in the tree.
@@ -535,7 +535,7 @@ static void parse_process_inner_node(xmlTextReaderPtr reader, struct manual_data
 static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struct parse_stack_entry *old_stack, enum manual_data_object_type type)
 {
 	struct manual_data	*new_chapter;
-	xmlChar*		filename = NULL;
+	char*		filename = NULL;
 
 	/* Create a new chapter structure. */
 
@@ -545,7 +545,7 @@ static bool parse_process_add_placeholder_chapter(xmlTextReaderPtr reader, struc
 
 	/* Process any entities which are found. */
 
-	filename = xmlTextReaderGetAttribute(reader, (const xmlChar *) "file");
+	filename = xmlTextReaderGetAttribute(reader, (const char *) "file");
 
 	new_chapter->chapter.filename = filename_make(filename, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
 
@@ -587,7 +587,7 @@ static bool parse_process_add_chapter(xmlTextReaderPtr reader, struct parse_stac
 
 	/* Process any entities which are found. */
 
-	new_chapter->id = xmlTextReaderGetAttribute(reader, (const xmlChar *) "id");
+	new_chapter->id = xmlTextReaderGetAttribute(reader, (const char *) "id");
 
 	/* If this isn't a pre-existing chapter, link the new item in to
 	 * the document structure.
@@ -621,7 +621,7 @@ static bool parse_process_add_section(xmlTextReaderPtr reader, struct parse_stac
 
 	/* Process any entities which are found. */
 
-	new_section->id = xmlTextReaderGetAttribute(reader, (const xmlChar *) "id");
+	new_section->id = xmlTextReaderGetAttribute(reader, (const char *) "id");
 
 	/* Link the new item in to the document structure. */
 
@@ -644,27 +644,27 @@ static bool parse_process_add_resources(xmlTextReaderPtr reader, struct parse_st
 		enum parse_element_type element)
 {
 	enum parse_stack_content	content = PARSE_STACK_CONTENT_NONE;
-	xmlChar				*type;
+	char				*type;
 
 	switch (element) {
 	case PARSE_ELEMENT_RESOURCES:
 		content = PARSE_STACK_CONTENT_RESOURCES;
 		break;
 	case PARSE_ELEMENT_MODE:
-		type = xmlTextReaderGetAttribute(reader, (const xmlChar *) "type");
+		type = xmlTextReaderGetAttribute(reader, (const char *) "type");
 		if (type == NULL) {
 			msg_report(MSG_MISSING_ATTRIBUTE, "type");
 			return false;
 		}
 
-		if (xmlStrcmp((const xmlChar *) "text", type) == 0) {
+		if (xmlStrcmp((const char *) "text", type) == 0) {
 			content = PARSE_STACK_CONTENT_MODE_TEXT;
-		} else if (xmlStrcmp((const xmlChar *) "html", type) == 0) {
+		} else if (xmlStrcmp((const char *) "html", type) == 0) {
 			content = PARSE_STACK_CONTENT_MODE_HTML;
-		} else if (xmlStrcmp((const xmlChar *) "strong", type) == 0) {
+		} else if (xmlStrcmp((const char *) "strong", type) == 0) {
 			content = PARSE_STACK_CONTENT_MODE_STRONG;
 		} else {
-			msg_report(MSG_UNKNOWN_MODE, (char *) type);
+			msg_report(MSG_UNKNOWN_MODE, type);
 		}
 
 		free(type);
@@ -700,7 +700,7 @@ static bool parse_process_collect_resources(struct parse_stack_entry *old_stack,
 {
 	struct parse_stack_entry	*parent_stack;
 	struct manual_data		*object, *chunk, *previous;
-	xmlChar				*c, *resource, *r;
+	char				*c, *resource, *r;
 	size_t				length = 0;
 	struct manual_data_resources	*resources = NULL;
 
@@ -936,7 +936,7 @@ static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stac
 {
 	struct manual_data		*new_object;
 	enum manual_data_object_type	object_type;
-	const xmlChar			*value;
+	const char			*value;
 	xmlReaderTypes			node_type;
 
 	/* Content can only be stored within block objects. */
@@ -981,7 +981,7 @@ static bool parse_process_add_content(xmlTextReaderPtr reader, struct parse_stac
 	case XML_READER_TYPE_SIGNIFICANT_WHITESPACE:
 		value = xmlTextReaderConstValue(reader);
 		if (value != NULL) {
-			new_object->chunk.text = xmlStrdup(value);
+			new_object->chunk.text = strdup(value);
 			encoding_flatten_whitespace(new_object->chunk.text);
 		}
 		break;
@@ -1084,4 +1084,4 @@ static void parse_error_handler(void *arg, const char *msg, xmlParserSeverities 
 
 	printf("Error at line %d: %s", line, msg);
 }
-
+#endif

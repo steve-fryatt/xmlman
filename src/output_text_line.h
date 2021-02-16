@@ -31,9 +31,6 @@
 #define XMLMAN_OUTPUT_TEXT_LINE_H
 
 #include <stdbool.h>
-
-#include <libxml/xmlstring.h>
-
 #include "filename.h"
 
 struct output_text_line;
@@ -98,7 +95,7 @@ bool output_text_line_reset(struct output_text_line *line);
  * \return		True on success; False on error.
  */
 
-bool output_text_line_add_text(struct output_text_line *line, int column, xmlChar *text);
+bool output_text_line_add_text(struct output_text_line *line, int column, char *text);
 
 /**
  * Write a block to the output.

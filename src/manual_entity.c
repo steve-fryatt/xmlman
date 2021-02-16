@@ -32,8 +32,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <libxml/xmlreader.h>
-
 #include "manual_entity.h"
 
 /**
@@ -68,20 +66,18 @@ static struct manual_entity_definition manual_entity_names[] = {
 /**
  * Given a node containing an entity, return the entity type.
  *
- * \param reader	The reader to take the node from.
+ * \param *name		Pointer to the textual entity name.
  * \return		The entity type, or MANUAL_ENTITY_NONE if unknown.
  */
 
-enum manual_entity_type manual_entity_find_type(xmlTextReaderPtr reader)
+enum manual_entity_type manual_entity_find_type(char *name)
 {
-	const xmlChar	*name;
-	int		i;
+	int i;
 
-	name = xmlTextReaderConstName(reader);
 	if (name == NULL)
 		return MANUAL_ENTITY_NONE;
 
-	for (i = 0; manual_entity_names[i].type != MANUAL_ENTITY_NONE && xmlStrcmp(BAD_CAST manual_entity_names[i].name, name) != 0; i++);
+	for (i = 0; manual_entity_names[i].type != MANUAL_ENTITY_NONE && strcmp(manual_entity_names[i].name, name) != 0; i++);
 
 	return manual_entity_names[i].type;
 }
@@ -96,7 +92,7 @@ enum manual_entity_type manual_entity_find_type(xmlTextReaderPtr reader)
 
 const char *manual_entity_find_name(enum manual_entity_type type)
 {
-	int		i;
+	int i;
 
 	for (i = 0; manual_entity_names[i].type != MANUAL_ENTITY_NONE && manual_entity_names[i].type != type; i++);
 

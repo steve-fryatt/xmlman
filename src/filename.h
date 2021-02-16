@@ -31,6 +31,7 @@
 #define XMLMAN_FILENAME_H
 
 #include <stdbool.h>
+#include <stdio.h>
 
 /**
  * A filename instance.
@@ -90,7 +91,7 @@ enum filename_platform {
  * \return			The new filename instance, or NULL.
  */
 
-struct filename *filename_make(xmlChar *name, enum filename_type type, enum filename_platform platform);
+struct filename *filename_make(char *name, enum filename_type type, enum filename_platform platform);
 
 /**
  * Destroy a filename instance and free its memory.

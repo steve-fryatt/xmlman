@@ -30,8 +30,6 @@
 #ifndef XMLMAN_MANUAL_DATA_H
 #define XMLMAN_MANUAL_DATA_H
 
-#include <libxml/xmlstring.h>
-
 #include "manual_entity.h"
 #include "filename.h"
 
@@ -129,7 +127,7 @@ struct manual_data_chunk {
 		/**
 		 * Pointer to the chunk text.
 		 */
-		xmlChar				*text;
+		char				*text;
 
 		/**
 		 * The chunk entity type.
@@ -180,7 +178,7 @@ struct manual_data {
 	 * Pointer to the object's ID, or NULL if none has been set.
 	 */
 
-	xmlChar					*id;
+	char					*id;
 
 	/**
 	 * The index number of the node, or zero.
@@ -265,7 +263,7 @@ const char *manual_data_find_object_name(enum manual_data_object_type type);
  * \return		Pointer to the display number, or NULL.
  */
 
-xmlChar *manual_data_get_node_number(struct manual_data *node);
+char *manual_data_get_node_number(struct manual_data *node);
 
 #endif
 
