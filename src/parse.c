@@ -38,6 +38,7 @@
 #include "parse_element.h"
 #include "parse_link.h"
 #include "parse_stack.h"
+#include "parse_xml.h"
 
 
 
@@ -154,7 +155,6 @@ struct manual *parse_document(char *filename)
 
 static bool parse_file(struct filename *filename, struct manual_data **manual, struct manual_data **chapter)
 {
-//	xmlTextReaderPtr	reader;
 	char			*file = NULL;
 	int			ret;
 
@@ -167,15 +167,13 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 
 	parse_stack_reset();
 
-//	reader = xmlReaderForFile(file, NULL, XML_PARSE_DTDATTR | XML_PARSE_DTDVALID);
+	if (!parse_xml_open_file(file)) {
+		msg_report(MSG_OPEN_FAIL, file);
+		free(file);
+		return false;
+	}
 
-//	if (reader == NULL) {
-//		msg_report(MSG_OPEN_FAIL, file);
-//		free(file);
-//		return false;
-//	}
-
-//	xmlTextReaderSetErrorHandler(reader, parse_error_handler, NULL);
+	while (parse_xml_read_next_chunk());
 
 //	ret = xmlTextReaderRead(reader);
 //	while (ret == 1) {
@@ -189,7 +187,8 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 //	if (ret != 0)
 //		msg_report(MSG_XML_FAIL, file);
 
-//	xmlFreeTextReader(reader);
+	parse_xml_close_file();
+
 	free(file);
 
 	return true;

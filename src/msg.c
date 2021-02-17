@@ -81,6 +81,9 @@ struct msg_data {
 
 static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Unknown error",						true},
+
+	{MSG_ERROR,	"A file is already being parsed.",				false},
+
 	{MSG_ERROR,	"Failed to parse manual",					false},
 	{MSG_ERROR,	"Missing source file",						false},
 	{MSG_ERROR,	"Failed to open source document '%s'",				false},

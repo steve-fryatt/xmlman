@@ -1,4 +1,4 @@
-# Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+# Copyright 2018-2021, Stephen Fryatt (info@stevefryatt.org.uk)
 #
 # This file is part of XmlMan:
 #
@@ -51,6 +51,7 @@ OBJS := args.o			\
 	parse_element.o		\
 	parse_link.o		\
 	parse_stack.o		\
+	parse_xml.o		\
 	string.o		\
 	xmlman.o
 
