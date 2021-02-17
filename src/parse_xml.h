@@ -33,6 +33,20 @@
 #include <stdbool.h>
 
 /**
+ * The range of possible results from calling the chunk parser.
+ */
+
+enum parse_xml_result {
+	PARSE_XML_RESULT_ERROR,
+	PARSE_XML_RESULT_EOF,
+	PARSE_XML_RESULT_TAG_OPEN,
+	PARSE_XML_RESULT_TAG_SELF,
+	PARSE_XML_RESULT_TAG_CLOSE,
+	PARSE_XML_RESULT_TAG_ENTITY,
+	PARSE_XML_RESULT_TEXT,
+};
+
+/**
  * Open a new file in the XML parser.
  *
  * \param *filename	The name of the file to open.
@@ -50,7 +64,7 @@ bool parse_xml_open_file(char *filename);
 
 void parse_xml_close_file(void);
 
-bool parse_xml_read_next_chunk(void);
+enum parse_xml_result parse_xml_read_next_chunk(void);
 
 #endif
 

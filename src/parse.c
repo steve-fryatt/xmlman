@@ -155,6 +155,7 @@ struct manual *parse_document(char *filename)
 
 static bool parse_file(struct filename *filename, struct manual_data **manual, struct manual_data **chapter)
 {
+	enum parse_xml_result	result;
 	char			*file = NULL;
 	int			ret;
 
@@ -173,7 +174,9 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 		return false;
 	}
 
-	while (parse_xml_read_next_chunk());
+	do {
+		result = parse_xml_read_next_chunk();
+	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF);
 
 //	ret = xmlTextReaderRead(reader);
 //	while (ret == 1) {

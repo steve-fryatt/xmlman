@@ -94,18 +94,18 @@ void parse_xml_close_file(void)
 	parse_xml_handle = NULL;
 }
 
-bool parse_xml_read_next_chunk(void)
+enum parse_xml_result parse_xml_read_next_chunk(void)
 {
 	int c;
 
 	if (parse_xml_handle == NULL || feof(parse_xml_handle))
-		return false;
+		return PARSE_XML_RESULT_ERROR;
 
 	c = fgetc(parse_xml_handle);
 
 	switch (c) {
 	case EOF:
-		return false;
+		return PARSE_XML_RESULT_EOF;
 
 	case '<':
 		printf("Tag: %c", c);
@@ -115,11 +115,18 @@ bool parse_xml_read_next_chunk(void)
 			if (c != EOF)
 				printf("%c", c);
 		} while (c != '>' && c != EOF);
-		break;
+
+		printf("\n");
+
+		return PARSE_XML_RESULT_TAG_SELF;
 
 	case '&':
-		parse_xml_read_entity(c);
-		break;
+		if (!parse_xml_read_entity(c))
+			return PARSE_XML_RESULT_ERROR;
+
+		printf("\n");
+
+		return PARSE_XML_RESULT_TAG_ENTITY;
 
 	default:
 		printf("Text: ");
@@ -131,12 +138,13 @@ bool parse_xml_read_next_chunk(void)
 
 		if (c != EOF)
 			fseek(parse_xml_handle, -1, SEEK_CUR);
-		break;
+
+		printf("\n");
+
+		return PARSE_XML_RESULT_TEXT;
 	}
 
-	printf("\n");
-
-	return true;
+	return PARSE_XML_RESULT_ERROR;
 }
 
 static bool parse_xml_read_tag(char c)
