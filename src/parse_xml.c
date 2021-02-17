@@ -36,10 +36,26 @@
 #include "parse_xml.h"
 
 /**
+ * The maximum tag or entity name length. */
+
+#define PARSE_XML_MAX_NAME_LEN 64
+
+/**
  * The handle of the curren file, or NULL.
  */
 
 static FILE *parse_xml_handle = NULL;
+
+/**
+ * Buffer to hold the name of the current tag or entity.
+ */
+
+static char parse_xml_object_name[PARSE_XML_MAX_NAME_LEN];
+
+/* Static Function Prototypes. */
+
+static bool parse_xml_read_tag(char c);
+static bool parse_xml_read_entity(char c);
 
 /**
  * Open a new file in the XML parser.
@@ -102,13 +118,7 @@ bool parse_xml_read_next_chunk(void)
 		break;
 
 	case '&':
-		printf("Entity: %c", c);
-		do {
-			c = fgetc(parse_xml_handle);
-
-			if (c != EOF)
-				printf("%c", c);
-		} while (c != ';' && c != EOF);
+		parse_xml_read_entity(c);
 		break;
 
 	default:
@@ -125,6 +135,42 @@ bool parse_xml_read_next_chunk(void)
 	}
 
 	printf("\n");
+
+	return true;
+}
+
+static bool parse_xml_read_tag(char c)
+{
+
+}
+
+static bool parse_xml_read_entity(char c)
+{
+	int len = 0;
+
+	if (c != '&' || parse_xml_handle == NULL)
+		return false;
+
+	while (c != ';' && c != EOF) {
+		c = fgetc(parse_xml_handle);
+
+		if (c != ';' && c != EOF && len < PARSE_XML_MAX_NAME_LEN)
+			parse_xml_object_name[len++] = c;
+	}
+
+	if (c != ';') {
+		// Not Terminated.
+		return false;
+	}
+
+	if (len >= PARSE_XML_MAX_NAME_LEN) {
+		// Too Long!
+		return false;
+	}
+
+	parse_xml_object_name[len] = '\0';
+
+	printf("Found entity: %s\n", parse_xml_object_name);
 
 	return true;
 }
