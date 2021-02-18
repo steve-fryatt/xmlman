@@ -116,7 +116,7 @@ struct manual *parse_document(char *filename)
 			if (!chapter->chapter.processed) {
 				document_base = filename_up(document_root, 0);
 
-				if (filename_add(document_base, chapter->chapter.filename, 0)); {
+				if (filename_add(document_base, chapter->chapter.filename, 0)) {
 					filename_destroy(chapter->chapter.filename);
 					chapter->chapter.filename = NULL;
 
