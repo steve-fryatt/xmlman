@@ -176,6 +176,12 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 
 	do {
 		result = parse_xml_read_next_chunk();
+
+		switch (result) {
+		case PARSE_XML_RESULT_COMMENT:
+			printf("*** A COMMENT! ***\n");
+			break;
+		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF);
 
 //	ret = xmlTextReaderRead(reader);
@@ -187,8 +193,8 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 //	if (xmlTextReaderIsValid(reader) != 1)
 //		msg_report(MSG_INVALID, file);
 
-//	if (ret != 0)
-//		msg_report(MSG_XML_FAIL, file);
+	if (result == PARSE_XML_RESULT_ERROR)
+		msg_report(MSG_XML_FAIL, file);
 
 	parse_xml_close_file();
 

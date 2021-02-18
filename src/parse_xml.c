@@ -60,8 +60,9 @@ static char parse_xml_object_name[PARSE_XML_MAX_NAME_LEN];
 
 /* Static Function Prototypes. */
 
-static void parse_xml_read_tag(char c);
+static void parse_xml_read_markup(char c);
 static void parse_xml_read_comment(void);
+static void parse_xml_read_tag(char c);
 static void parse_xml_read_entity(char c);
 static bool parse_xml_match_ahead(const char *text);
 
@@ -104,6 +105,13 @@ void parse_xml_close_file(void)
 	parse_xml_handle = NULL;
 }
 
+
+/**
+ * Parse the next chunk from the current file.
+ * 
+ * \return		Details of the chunk.
+ */
+
 enum parse_xml_result parse_xml_read_next_chunk(void)
 {
 	int c;
@@ -119,7 +127,7 @@ enum parse_xml_result parse_xml_read_next_chunk(void)
 		break;
 
 	case '<':
-		parse_xml_read_tag(c);
+		parse_xml_read_markup(c);
 		break;
 
 	case '&':
@@ -146,11 +154,15 @@ enum parse_xml_result parse_xml_read_next_chunk(void)
 	return parse_xml_current_mode;
 }
 
-static void parse_xml_read_tag(char c)
-{
-	int len = 0;
-	bool previous_was_slash = false;
 
+/**
+ * Process a markup block from the file.
+ * 
+ * \param c		The first character of the markup sequence.
+ */
+
+static void parse_xml_read_markup(char c)
+{
 	/* Tags must start with a <; we shouldn't be here otherwise. */
 
 	if (c != '<' || parse_xml_handle == NULL) {
@@ -169,21 +181,36 @@ static void parse_xml_read_tag(char c)
 		if (parse_xml_match_ahead("--")) {
 			parse_xml_read_comment();
 			return;
+		} else {
+			/* TODO CDATA, DOCTYPE, etc. */
+
+			parse_xml_current_mode = PARSE_XML_RESULT_OTHER;
 		}
-
-		/* TODO CDATA, DOCTYPE, etc. */
-
-		parse_xml_current_mode = PARSE_XML_RESULT_OTHER;
-		return;
 	} else if (c == '?') {
 		/* TODO ?? */
 		parse_xml_current_mode = PARSE_XML_RESULT_OTHER;
-		return;
+	} else {
+		parse_xml_read_tag(c);
 	}
+}
 
-	/* For now, assume an opening tag, then test for a closing one. */
+
+/**
+ * Process a tag block from the file.
+ * 
+ * \param c		The first character of the tag sequence.
+ */
+
+static void parse_xml_read_tag(char c)
+{
+	int len = 0;
+	bool previous_was_slash = false;
+
+	/* Assume an opening tag until we learn otherwise. */
 
 	parse_xml_current_mode = PARSE_XML_RESULT_TAG_OPEN;
+
+	/* If the tag starts with a /, it's a closing tag. */
 
 	if (c == '/') {
 		parse_xml_current_mode = PARSE_XML_RESULT_TAG_CLOSE;
@@ -251,6 +278,11 @@ static void parse_xml_read_tag(char c)
 	printf("Found tag: %s\n", parse_xml_object_name);
 }
 
+
+/**
+ * Process a comment sequence from the file.
+ */
+
 static void parse_xml_read_comment(void)
 {
 	int c, dashes = 0;
@@ -272,10 +304,15 @@ static void parse_xml_read_comment(void)
 		return;
 	}
 
-	printf ("*** COMMENT! ***\n");
-
 	parse_xml_current_mode = PARSE_XML_RESULT_COMMENT;
 }
+
+
+/**
+ * Process an entity from the file.
+ * 
+ * \param c		The first character of the entity sequence.
+ */
 
 static void parse_xml_read_entity(char c)
 {
@@ -324,6 +361,15 @@ static void parse_xml_read_entity(char c)
 	parse_xml_current_mode = PARSE_XML_RESULT_TAG_ENTITY;
 }
 
+
+/**
+ * Test the next data in the file against a string. Leave the file
+ * pointer after a match, or reset it if one isn't found.
+ * 
+ * \param *text		Pointer to the string to match.
+ * \return		True if the string matches; else false.
+ */
+
 static bool parse_xml_match_ahead(const char *text)
 {
 	int c;
@@ -332,22 +378,27 @@ static bool parse_xml_match_ahead(const char *text)
 	if (text == NULL || parse_xml_handle == NULL)
 		return false;
 
+	/* Remember where we started. */
+
 	start = ftell(parse_xml_handle);
 
-	do {
+	/* Match through the required string. */
+
+	while (*text != '\0') {
 		c = fgetc(parse_xml_handle);
-	} while (c != EOF && *text != '\0' && c == *text++);
 
-	if (*text != '\0') {
-		fseek(parse_xml_handle, start, SEEK_SET);
-		return false;
+		if (c == EOF || c != *text)
+			break;
+
+		text++;
 	}
-	
-	/* Leave the final character for the next test. */
 
-	fseek(parse_xml_handle, -1, SEEK_CUR);
+	/* If there wasn't a match, reset the file pointer. */
 
-	return true;
+	if (*text != '\0')
+		fseek(parse_xml_handle, start, SEEK_SET);
+
+	return (*text == '\0') ? true : false;
 }
 
 /* When parsing text (& attribute values), store start ptr and length. Then use
