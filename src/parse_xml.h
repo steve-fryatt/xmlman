@@ -40,9 +40,9 @@
 enum parse_xml_result {
 	PARSE_XML_RESULT_ERROR,		/**< An error occurred.				*/
 	PARSE_XML_RESULT_EOF,		/**< The end of the file has been reached.	*/
-	PARSE_XML_RESULT_TAG_OPEN,	/**< An opening tag.				*/
-	PARSE_XML_RESULT_TAG_SELF,	/**< A self-closing tag.			*/
-	PARSE_XML_RESULT_TAG_CLOSE,	/**< A closing tag.				*/
+	PARSE_XML_RESULT_TAG_START,	/**< An opening tag.				*/
+	PARSE_XML_RESULT_TAG_END,	/**< A closing tag.				*/
+	PARSE_XML_RESULT_TAG_EMPTY,	/**< An empty element tag.			*/
 	PARSE_XML_RESULT_TAG_ENTITY,	/**< A character element.			*/
 	PARSE_XML_RESULT_TEXT,		/**< A block of text.				*/
 	PARSE_XML_RESULT_WHITESPACE,	/**< A block of white space.			*/

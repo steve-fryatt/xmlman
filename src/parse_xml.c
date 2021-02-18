@@ -166,9 +166,9 @@ enum parse_xml_result parse_xml_read_next_chunk(void)
 
 enum parse_element_type parse_xml_get_element(void)
 {
-	if (parse_xml_current_mode != PARSE_XML_RESULT_TAG_OPEN &&
-			parse_xml_current_mode != PARSE_XML_RESULT_TAG_SELF &&
-			parse_xml_current_mode != PARSE_XML_RESULT_TAG_CLOSE)
+	if (parse_xml_current_mode != PARSE_XML_RESULT_TAG_START &&
+			parse_xml_current_mode != PARSE_XML_RESULT_TAG_EMPTY &&
+			parse_xml_current_mode != PARSE_XML_RESULT_TAG_END)
 		return PARSE_ELEMENT_NONE;
 	
 	return parse_element_find_type(parse_xml_object_name);
@@ -223,7 +223,7 @@ static void parse_xml_read_markup(char c)
 			parse_xml_current_mode = PARSE_XML_RESULT_OTHER;
 		}
 	} else if (c == '?') {
-		/* TODO ?? */
+		/* TODO Processing Instruction */
 		parse_xml_current_mode = PARSE_XML_RESULT_OTHER;
 	} else {
 		parse_xml_read_element(c);
@@ -244,12 +244,12 @@ static void parse_xml_read_element(char c)
 
 	/* Assume an opening tag until we learn otherwise. */
 
-	parse_xml_current_mode = PARSE_XML_RESULT_TAG_OPEN;
+	parse_xml_current_mode = PARSE_XML_RESULT_TAG_START;
 
 	/* If the tag starts with a /, it's a closing tag. */
 
 	if (c == '/') {
-		parse_xml_current_mode = PARSE_XML_RESULT_TAG_CLOSE;
+		parse_xml_current_mode = PARSE_XML_RESULT_TAG_END;
 		c = fgetc(parse_xml_handle);
 	}
 
@@ -305,8 +305,8 @@ static void parse_xml_read_element(char c)
 	/* If the tag ended with a /, it was a self-closing tag. */
 
 	if (previous_was_slash) {
-		if (parse_xml_current_mode == PARSE_XML_RESULT_TAG_OPEN) {
-			parse_xml_current_mode = PARSE_XML_RESULT_TAG_SELF;
+		if (parse_xml_current_mode == PARSE_XML_RESULT_TAG_START) {
+			parse_xml_current_mode = PARSE_XML_RESULT_TAG_EMPTY;
 		} else {
 			parse_xml_current_mode = PARSE_XML_RESULT_ERROR;
 			msg_report(MSG_PARSE_TAG_CLOSE_CONFLICT, parse_xml_object_name);

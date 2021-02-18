@@ -179,13 +179,13 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 		result = parse_xml_read_next_chunk();
 
 		switch (result) {
-		case PARSE_XML_RESULT_TAG_OPEN:
+		case PARSE_XML_RESULT_TAG_START:
 			printf("Found Opening Tag: %s\n", parse_element_find_tag(parse_xml_get_element()));
 			break;
-		case PARSE_XML_RESULT_TAG_SELF:
+		case PARSE_XML_RESULT_TAG_EMPTY:
 			printf("Found Self-Closing Tag: %s\n", parse_element_find_tag(parse_xml_get_element()));
 			break;
-		case PARSE_XML_RESULT_TAG_CLOSE:
+		case PARSE_XML_RESULT_TAG_END:
 			printf("Found Closing Tag: %s\n", parse_element_find_tag(parse_xml_get_element()));
 			break;
 		case PARSE_XML_RESULT_TAG_ENTITY:
