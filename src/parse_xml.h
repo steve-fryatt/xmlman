@@ -31,21 +31,23 @@
 #define XMLMAN_PARSE_XML_H
 
 #include <stdbool.h>
+#include "manual_entity.h"
 
 /**
  * The range of possible results from calling the chunk parser.
  */
 
 enum parse_xml_result {
-	PARSE_XML_RESULT_ERROR,
-	PARSE_XML_RESULT_EOF,
-	PARSE_XML_RESULT_TAG_OPEN,
-	PARSE_XML_RESULT_TAG_SELF,
-	PARSE_XML_RESULT_TAG_CLOSE,
-	PARSE_XML_RESULT_TAG_ENTITY,
-	PARSE_XML_RESULT_TEXT,
-	PARSE_XML_RESULT_COMMENT,
-	PARSE_XML_RESULT_OTHER
+	PARSE_XML_RESULT_ERROR,		/**< An error occurred.				*/
+	PARSE_XML_RESULT_EOF,		/**< The end of the file has been reached.	*/
+	PARSE_XML_RESULT_TAG_OPEN,	/**< An opening tag.				*/
+	PARSE_XML_RESULT_TAG_SELF,	/**< A self-closing tag.			*/
+	PARSE_XML_RESULT_TAG_CLOSE,	/**< A closing tag.				*/
+	PARSE_XML_RESULT_TAG_ENTITY,	/**< A character element.			*/
+	PARSE_XML_RESULT_TEXT,		/**< A block of text.				*/
+	PARSE_XML_RESULT_WHITESPACE,	/**< A block of white space.			*/
+	PARSE_XML_RESULT_COMMENT,	/**< A comment.					*/
+	PARSE_XML_RESULT_OTHER		/**< Another element, which wasn't recognised.	*/
 };
 
 /**
@@ -66,7 +68,23 @@ bool parse_xml_open_file(char *filename);
 
 void parse_xml_close_file(void);
 
+/**
+ * Parse the next chunk from the current file.
+ * 
+ * \return		Details of the chunk.
+ */
+
 enum parse_xml_result parse_xml_read_next_chunk(void);
 
-#endif
+/**
+ * Read the details of the current element parsed from
+ * the file.
+ * 
+ * \return		The element token, or PARSE_ELEMENT_NONE.
+ */
 
+enum parse_element_type parse_xml_get_element(void);
+
+enum manual_entity_type parse_xml_get_entity(void);
+
+#endif

@@ -32,7 +32,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "manual_entity.h"
 #include "msg.h"
+#include "parse_element.h"
 #include "parse_xml.h"
 
 /**
@@ -62,7 +64,7 @@ static char parse_xml_object_name[PARSE_XML_MAX_NAME_LEN];
 
 static void parse_xml_read_markup(char c);
 static void parse_xml_read_comment(void);
-static void parse_xml_read_tag(char c);
+static void parse_xml_read_element(char c);
 static void parse_xml_read_entity(char c);
 static bool parse_xml_match_ahead(const char *text);
 
@@ -156,6 +158,40 @@ enum parse_xml_result parse_xml_read_next_chunk(void)
 
 
 /**
+ * Read the details of the current element parsed from
+ * the file.
+ * 
+ * \return		The element token, or PARSE_ELEMENT_NONE.
+ */
+
+enum parse_element_type parse_xml_get_element(void)
+{
+	if (parse_xml_current_mode != PARSE_XML_RESULT_TAG_OPEN &&
+			parse_xml_current_mode != PARSE_XML_RESULT_TAG_SELF &&
+			parse_xml_current_mode != PARSE_XML_RESULT_TAG_CLOSE)
+		return PARSE_ELEMENT_NONE;
+	
+	return parse_element_find_type(parse_xml_object_name);
+}
+
+
+/**
+ * Read the details of the current entity parsed from
+ * the file.
+ * 
+ * \return		The entity token, or MANUAL_ENTITY_NONE.
+ */
+
+enum manual_entity_type parse_xml_get_entity(void)
+{
+	if (parse_xml_current_mode != PARSE_XML_RESULT_TAG_ENTITY)
+		return MANUAL_ENTITY_NONE;
+	
+	return manual_entity_find_type(parse_xml_object_name);
+}
+
+
+/**
  * Process a markup block from the file.
  * 
  * \param c		The first character of the markup sequence.
@@ -190,18 +226,18 @@ static void parse_xml_read_markup(char c)
 		/* TODO ?? */
 		parse_xml_current_mode = PARSE_XML_RESULT_OTHER;
 	} else {
-		parse_xml_read_tag(c);
+		parse_xml_read_element(c);
 	}
 }
 
 
 /**
- * Process a tag block from the file.
+ * Process an element block from the file.
  * 
  * \param c		The first character of the tag sequence.
  */
 
-static void parse_xml_read_tag(char c)
+static void parse_xml_read_element(char c)
 {
 	int len = 0;
 	bool previous_was_slash = false;
@@ -266,6 +302,8 @@ static void parse_xml_read_tag(char c)
 		return;
 	}
 
+	/* If the tag ended with a /, it was a self-closing tag. */
+
 	if (previous_was_slash) {
 		if (parse_xml_current_mode == PARSE_XML_RESULT_TAG_OPEN) {
 			parse_xml_current_mode = PARSE_XML_RESULT_TAG_SELF;
@@ -274,8 +312,6 @@ static void parse_xml_read_tag(char c)
 			msg_report(MSG_PARSE_TAG_CLOSE_CONFLICT, parse_xml_object_name);
 		}
 	}
-
-	printf("Found tag: %s\n", parse_xml_object_name);
 }
 
 
@@ -356,8 +392,6 @@ static void parse_xml_read_entity(char c)
 
 	parse_xml_object_name[len] = '\0';
 
-	printf("Found entity: %s\n", parse_xml_object_name);
-
 	parse_xml_current_mode = PARSE_XML_RESULT_TAG_ENTITY;
 }
 
@@ -407,7 +441,7 @@ static bool parse_xml_match_ahead(const char *text)
  * tag and entity names can go into a fixed buffer, as we know in advance how long
  * the longest is. Look up, and return enum.
  * 
- * Return open, close, complete tag, entity, text, eof, error codes
+ * Return open, close, complete tag, entity, text, whitespace, eof, error codes
  * 
  * Parsting tags, we know how many entities there may be, so pre-process into
  * a fixed, static array and allow each to be called up and flagged as used. The

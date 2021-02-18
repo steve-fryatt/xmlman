@@ -34,6 +34,7 @@
 #include "encoding.h"
 #include "filename.h"
 #include "manual.h"
+#include "manual_entity.h"
 #include "msg.h"
 #include "parse_element.h"
 #include "parse_link.h"
@@ -178,6 +179,18 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 		result = parse_xml_read_next_chunk();
 
 		switch (result) {
+		case PARSE_XML_RESULT_TAG_OPEN:
+			printf("Found Opening Tag: %s\n", parse_element_find_tag(parse_xml_get_element()));
+			break;
+		case PARSE_XML_RESULT_TAG_SELF:
+			printf("Found Self-Closing Tag: %s\n", parse_element_find_tag(parse_xml_get_element()));
+			break;
+		case PARSE_XML_RESULT_TAG_CLOSE:
+			printf("Found Closing Tag: %s\n", parse_element_find_tag(parse_xml_get_element()));
+			break;
+		case PARSE_XML_RESULT_TAG_ENTITY:
+			printf("Found Entity: %s\n", manual_entity_find_name(parse_xml_get_entity()));
+			break;
 		case PARSE_XML_RESULT_COMMENT:
 			printf("*** A COMMENT! ***\n");
 			break;
