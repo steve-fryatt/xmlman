@@ -83,6 +83,13 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Unknown error",						true},
 
 	{MSG_ERROR,	"A file is already being parsed.",				false},
+	{MSG_ERROR,	"Unterminated entity &%s.",					true},
+	{MSG_ERROR,	"Entity name &%s... too long.",					true},
+	{MSG_ERROR,	"Unterminated tag <%s.",					true},
+	{MSG_ERROR,	"Tag name <%s... too long.",					true},
+	{MSG_ERROR,	"<%s> tag is opening and closing in one.",			true},
+	{MSG_ERROR,	"Unterminated comment.",					true},
+
 
 	{MSG_ERROR,	"Failed to parse manual",					false},
 	{MSG_ERROR,	"Missing source file",						false},
