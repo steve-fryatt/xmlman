@@ -81,6 +81,9 @@ struct manual *parse_document(char *filename)
 	struct manual_data	*manual = NULL, *chapter = NULL;
 	struct filename		*document_root = NULL, *document_base = NULL;
 
+	if (!parse_xml_initialise())
+		return NULL;
+
 	document_base = filename_make(filename, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
 	if (document_base == NULL)
 		return NULL;

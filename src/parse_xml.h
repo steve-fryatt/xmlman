@@ -51,6 +51,12 @@ enum parse_xml_result {
 };
 
 /**
+ * Initialise the file parser for use.
+ */
+
+bool parse_xml_initialise(void);
+
+/**
  * Open a new file in the XML parser.
  *
  * \param *filename	The name of the file to open.
