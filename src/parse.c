@@ -197,6 +197,12 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 		case PARSE_XML_RESULT_COMMENT:
 			printf("*** A COMMENT! ***\n");
 			break;
+		case PARSE_XML_RESULT_TEXT:
+			printf("Found Text: '%s'\n", parse_xml_get_text(false));
+			break;
+		case PARSE_XML_RESULT_WHITESPACE:
+			printf("Found Whitespace\n");
+			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF);
 

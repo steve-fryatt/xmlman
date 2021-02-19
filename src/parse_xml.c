@@ -75,9 +75,24 @@ struct parse_xml_block {
 	enum parse_xml_result current_mode;
 
 	/**
+	 * The current file pointer.
+	 */
+	long file_pointer;
+
+	/**
 	 * Buffer for the current element or entity name.
 	 */
 	char object_name[PARSE_XML_MAX_NAME_LEN];
+
+	/**
+	 * File pointer to the start of the current text block.
+	 */
+	long text_block_start;
+
+	/**
+	 * Size of the current text block.
+	 */
+	size_t text_block_length;
 
 	/**
 	 * The number of attributes in the current element.
@@ -97,6 +112,7 @@ static struct parse_xml_block *parse_xml_instance = NULL;
 
 /* Static Function Prototypes. */
 
+static void parse_xml_read_text(struct parse_xml_block *instance, char c);
 static void parse_xml_read_markup(struct parse_xml_block *instance, char c);
 static void parse_xml_read_comment(struct parse_xml_block *instance);
 static void parse_xml_read_element(struct parse_xml_block *instance, char c);
@@ -106,6 +122,7 @@ static bool parse_xml_match_ahead(struct parse_xml_block *instance, const char *
 
 /* Type tests. */
 
+#define parse_xml_isspace(x) ((x) == '\t' || (x) == '\n' || (x) == '\r' || (x) == ' ')
 #define parse_xml_isname_start(x) ((x) == ':' || (x) == '_' || ((x) >= 'A' && (x) <= 'Z') || ((x) >= 'a' && (x) <= 'z'))
 #define parse_xml_isname(x) (parse_xml_isname_start(x) || (x) == '-' || (x) == '.' || ((x) >= '0' && (x) <= '9'))
 
@@ -120,6 +137,12 @@ bool parse_xml_initialise(void)
 		return false;
 
 	parse_xml_instance->current_mode = PARSE_XML_RESULT_ERROR;
+
+	parse_xml_instance->file_pointer = 0;
+
+	parse_xml_instance->text_block_start = 0;
+	parse_xml_instance->text_block_length = 0;
+
 	parse_xml_instance->attribute_count = 0;
 	parse_xml_instance->file = NULL;
 
@@ -211,23 +234,60 @@ enum parse_xml_result parse_xml_read_next_chunk(void)
 		break;
 
 	default:
-		printf("Text: ");
-		do {
-			printf("%c", c);
-
-			c = fgetc(parse_xml_instance->file);
-		} while (c != '<' && c != '&' && c != EOF);
-
-		if (c != EOF)
-			fseek(parse_xml_instance->file, -1, SEEK_CUR);
-
-		printf("\n");
-
-		parse_xml_instance->current_mode = PARSE_XML_RESULT_TEXT;
+		parse_xml_read_text(parse_xml_instance, c);
 		break;
 	}
 
+	parse_xml_instance->file_pointer = ftell(parse_xml_instance->file);
+
 	return parse_xml_instance->current_mode;
+}
+
+
+/**
+ * Return a copy of the current text block parsed from
+ * the file.
+ * 
+ * \param retain_whitespace	True to retain all whitespace characters.
+ * \return			Pointer to a copy of the block, or NULL.
+ */
+
+char *parse_xml_get_text(bool retain_whitespace)
+{
+	char *text;
+	int c;
+	long i = 0;
+
+	if (parse_xml_instance == NULL)
+		return NULL;
+
+	if (parse_xml_instance->current_mode != PARSE_XML_RESULT_TEXT &&
+			parse_xml_instance->current_mode != PARSE_XML_RESULT_WHITESPACE)
+		return NULL;
+
+	text = malloc(parse_xml_instance->text_block_length + 1);
+	if (text == NULL)
+		return NULL;
+
+	fseek(parse_xml_instance->file, parse_xml_instance->text_block_start, SEEK_SET);
+
+	for (i = 0; i < parse_xml_instance->text_block_length; i++) {
+		c = fgetc(parse_xml_instance->file);
+
+		if (c == EOF)
+			break;
+		
+		if (!retain_whitespace && parse_xml_isspace(c))
+			c = ' ';
+
+		text[i] = c;
+	}
+
+	text[i] = '\0';
+
+	fseek(parse_xml_instance->file, parse_xml_instance->file_pointer, SEEK_SET);
+
+	return text;
 }
 
 
@@ -241,7 +301,7 @@ enum parse_xml_result parse_xml_read_next_chunk(void)
 enum parse_element_type parse_xml_get_element(void)
 {
 	if (parse_xml_instance == NULL)
-		return PARSE_XML_RESULT_ERROR;
+		return PARSE_ELEMENT_NONE;
 
 	if (parse_xml_instance->current_mode != PARSE_XML_RESULT_TAG_START &&
 			parse_xml_instance->current_mode != PARSE_XML_RESULT_TAG_EMPTY &&
@@ -262,12 +322,50 @@ enum parse_element_type parse_xml_get_element(void)
 enum manual_entity_type parse_xml_get_entity(void)
 {
 	if (parse_xml_instance == NULL)
-		return PARSE_XML_RESULT_ERROR;
+		return MANUAL_ENTITY_NONE;
 
 	if (parse_xml_instance->current_mode != PARSE_XML_RESULT_TAG_ENTITY)
 		return MANUAL_ENTITY_NONE;
 	
 	return manual_entity_find_type(parse_xml_instance->object_name);
+}
+
+
+/**
+ * Process a text block from the file.
+ *
+ * \param *instance	The parser instance to use.
+ * \param c		The first character of the markup sequence.
+ */
+
+static void parse_xml_read_text(struct parse_xml_block *instance, char c)
+{
+	bool whitespace = true;
+
+	if (instance == NULL || instance->file == NULL) {
+		instance->current_mode = PARSE_XML_RESULT_ERROR;
+		return;
+	}
+
+	/* Count the size of the text block. */
+
+	instance->text_block_start = ftell(instance->file) - 1;
+	instance->text_block_length = 0;
+
+	while (c != EOF && c != '<' && c != '&') {
+		instance->text_block_length++;
+		if (!parse_xml_isspace(c))
+			whitespace = false;
+
+		c = fgetc(instance->file);
+	}
+
+	/* Return the last character to the file. */
+
+	if (c != EOF)
+		fseek(parse_xml_instance->file, -1, SEEK_CUR);
+
+	instance->current_mode = (whitespace == true) ? PARSE_XML_RESULT_WHITESPACE : PARSE_XML_RESULT_TEXT;
 }
 
 

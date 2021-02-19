@@ -83,6 +83,16 @@ void parse_xml_close_file(void);
 enum parse_xml_result parse_xml_read_next_chunk(void);
 
 /**
+ * Return a copy of the current text block parsed from
+ * the file.
+ * 
+ * \param retain_whitespace	True to retain all whitespace characters.
+ * \return			Pointer to a copy of the block, or NULL.
+ */
+
+char *parse_xml_get_text(bool retain_whitespace);
+
+/**
  * Read the details of the current element parsed from
  * the file.
  * 
