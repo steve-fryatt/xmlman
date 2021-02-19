@@ -1,4 +1,4 @@
-/* Copyright 2014-2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2014-2021, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -49,6 +49,7 @@ enum msg_type {
 	MSG_PARSE_UNTERMINATED_TAG,
 	MSG_PARSE_TAG_TOO_LONG,
 	MSG_PARSE_TAG_CLOSE_CONFLICT,
+	MSG_PARSE_TAG_END_NOT_FOUND,
 	MSG_PARSE_ATTRIBUTE_TOO_LONG,
 	MSG_PARSE_UNTERMINATED_ATTRIBUTE,
 	MSG_PARSE_TOO_MANY_ATTRIBUTES,

@@ -1,4 +1,4 @@
-/* Copyright 2014-2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2014-2021, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -88,6 +88,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Unterminated tag <%s.",					true},
 	{MSG_ERROR,	"Tag name <%s... too long.",					true},
 	{MSG_ERROR,	"<%s> tag is opening and closing in one.",			true},
+	{MSG_ERROR,	"Found %c instead of closing > in <%s... tag.",			true},
 	{MSG_ERROR,	"Attribute name %s... too long.",				true},
 	{MSG_ERROR,	"Unterminated attribute value for %s.",				true},
 	{MSG_ERROR,	"Too many attributes.",						true},

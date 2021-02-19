@@ -100,7 +100,7 @@ static struct parse_xml_block *parse_xml_instance = NULL;
 static void parse_xml_read_markup(struct parse_xml_block *instance, char c);
 static void parse_xml_read_comment(struct parse_xml_block *instance);
 static void parse_xml_read_element(struct parse_xml_block *instance, char c);
-static bool parse_xml_read_element_attributes(struct parse_xml_block *instance, char c);
+static void parse_xml_read_element_attributes(struct parse_xml_block *instance, char c);
 static void parse_xml_read_entity(struct parse_xml_block *instance, char c);
 static bool parse_xml_match_ahead(struct parse_xml_block *instance, const char *text);
 
@@ -247,7 +247,7 @@ enum parse_element_type parse_xml_get_element(void)
 			parse_xml_instance->current_mode != PARSE_XML_RESULT_TAG_EMPTY &&
 			parse_xml_instance->current_mode != PARSE_XML_RESULT_TAG_END)
 		return PARSE_ELEMENT_NONE;
-	
+
 	return parse_element_find_type(parse_xml_instance->object_name);
 }
 
@@ -322,7 +322,6 @@ static void parse_xml_read_markup(struct parse_xml_block *instance, char c)
 static void parse_xml_read_element(struct parse_xml_block *instance, char c)
 {
 	int len = 0;
-	bool previous_was_slash = false;
 
 	if (instance == NULL || instance->file == NULL) {
 		instance->current_mode = PARSE_XML_RESULT_ERROR;
@@ -379,7 +378,7 @@ static void parse_xml_read_element(struct parse_xml_block *instance, char c)
 
 	/* Read the attributes. */
 
-	previous_was_slash = parse_xml_read_element_attributes(instance, c);
+	parse_xml_read_element_attributes(instance, c);
 	if (instance->current_mode == PARSE_XML_RESULT_ERROR)
 		return;
 
@@ -393,13 +392,26 @@ static void parse_xml_read_element(struct parse_xml_block *instance, char c)
 
 	/* If the tag ended with a /, it was a self-closing tag. */
 
-	if (previous_was_slash) {
+	fseek(instance->file, -2, SEEK_CUR);
+	c = fgetc(instance->file);
+
+	if (c == '/') {
 		if (instance->current_mode == PARSE_XML_RESULT_TAG_START) {
 			instance->current_mode = PARSE_XML_RESULT_TAG_EMPTY;
 		} else {
 			instance->current_mode = PARSE_XML_RESULT_ERROR;
 			msg_report(MSG_PARSE_TAG_CLOSE_CONFLICT, instance->object_name);
 		}
+	}
+
+	/* We should be looking at a > now. */
+
+	c = fgetc(instance->file);
+
+	if (c != '>') {
+		instance->current_mode = PARSE_XML_RESULT_ERROR;
+		msg_report(MSG_PARSE_TAG_END_NOT_FOUND, c, instance->object_name);
+		return;
 	}
 }
 
@@ -409,22 +421,18 @@ static void parse_xml_read_element(struct parse_xml_block *instance, char c)
  *
  * \param *instance	The parser instance to use.
  * \param c		The first character of the tag sequence.
- * \return		True if the final character before the closing > was a /.
  */
 
-static bool parse_xml_read_element_attributes(struct parse_xml_block *instance, char c)
+static void parse_xml_read_element_attributes(struct parse_xml_block *instance, char c)
 {
 	int len = 0;
 	long start = -1, length = 0;
-	bool previous_was_slash = false;
 	char name[PARSE_XML_MAX_NAME_LEN], quote;
 
 	if (instance == NULL || instance->file == NULL) {
 		instance->current_mode = PARSE_XML_RESULT_ERROR;
 		return;
 	}
-
-	previous_was_slash = (c == '/') ? true : false;
 
 	/* Process the file until we reach the closing > or EOF. */
 
@@ -433,14 +441,10 @@ static bool parse_xml_read_element_attributes(struct parse_xml_block *instance, 
 
 		/* Look for the start of an attribute name. */
 
-		while (c != EOF && !parse_xml_isname_start(c)) {
+		while (c != EOF && c != '>' && !parse_xml_isname_start(c))
 			c = fgetc(instance->file);
 
-			if (c != '>')
-				previous_was_slash = (c == '/') ? true : false;
-		}
-
-		if (c == EOF)
+		if (c == EOF || c == '>')
 			continue;
 
 		/* We've found an attribute name, so copy it into the temp buffer. */
@@ -463,19 +467,15 @@ static bool parse_xml_read_element_attributes(struct parse_xml_block *instance, 
 		if (len >= PARSE_XML_MAX_NAME_LEN) {
 			instance->current_mode = PARSE_XML_RESULT_ERROR;
 			msg_report(MSG_PARSE_ATTRIBUTE_TOO_LONG, name);
-			return previous_was_slash;
+			return;
 		}
 
 		name[len] = '\0';
 
 		/* Skip any whitespace after the name. */
 
-		while (c != EOF && isspace(c)) {
+		while (c != EOF && isspace(c))
 			c = fgetc(instance->file);
-
-			if (c != '>')
-				previous_was_slash = (c == '/') ? true : false;
-		}
 
 		/* There's a value with the attribute. */
 
@@ -484,12 +484,8 @@ static bool parse_xml_read_element_attributes(struct parse_xml_block *instance, 
 
 			/* Skip any whitespace after the = sign. */
 
-			while (c != EOF && isspace(c)) {
+			while (c != EOF && isspace(c))
 				c = fgetc(instance->file);
-
-				if (c != '>')
-					previous_was_slash = (c == '/') ? true : false;
-			}
 
 			/* What follows must be quoted in " or '. */
 
@@ -509,13 +505,10 @@ static bool parse_xml_read_element_attributes(struct parse_xml_block *instance, 
 				if (c != quote) {
 					instance->current_mode = PARSE_XML_RESULT_ERROR;
 					msg_report(MSG_PARSE_UNTERMINATED_ATTRIBUTE, name);
-					return previous_was_slash;
+					return;
 				}
 
 				c = fgetc(instance->file);
-
-				if (c != '>')
-					previous_was_slash = (c == '/') ? true : false;
 			}
 		} else {
 			start = -1;
@@ -527,7 +520,7 @@ static bool parse_xml_read_element_attributes(struct parse_xml_block *instance, 
 		if (instance->attribute_count > PARSE_XML_MAX_ATTRIBUTES) {
 			instance->current_mode = PARSE_XML_RESULT_ERROR;
 			msg_report(MSG_PARSE_TOO_MANY_ATTRIBUTES);
-			return previous_was_slash;
+			return;
 		}
 
 		strncpy(instance->attributes[instance->attribute_count].name, name, PARSE_XML_MAX_NAME_LEN);
@@ -535,11 +528,9 @@ static bool parse_xml_read_element_attributes(struct parse_xml_block *instance, 
 		instance->attributes[instance->attribute_count].length = length;
 
 		instance->attribute_count++;
-
-		printf("Found attribute %d: %s, offset %ld, length %ld\n", instance->attribute_count, name, start, length);
 	}
 
-	return previous_was_slash;
+	return;
 }
 
 /**
