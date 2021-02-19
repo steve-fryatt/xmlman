@@ -543,6 +543,8 @@ static void parse_xml_read_entity(char c)
 		return;
 	}
 
+	c = fgetc(parse_xml_handle);
+
 	/* Copy the entity name until it's terminated or there's whitespace. */
 
 	if (c != EOF && parse_xml_isname_start(c)) {
