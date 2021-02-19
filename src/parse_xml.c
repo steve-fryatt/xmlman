@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "manual_entity.h"
 #include "msg.h"
@@ -41,6 +42,22 @@
  * The maximum tag or entity name length. */
 
 #define PARSE_XML_MAX_NAME_LEN 64
+
+/**
+ * The maximum number of attributes allowed in a tag.
+ */
+
+#define PARSE_XML_MAX_ATTRIBUTES 10
+
+/**
+ * Structure to hold details of an attribute.
+ */
+
+struct parse_xml_attribute {
+	char name[PARSE_XML_MAX_NAME_LEN];
+	long start;
+	long length;
+};
 
 /**
  * The handle of the curren file, or NULL.
@@ -60,13 +77,31 @@ static enum parse_xml_result parse_xml_current_mode = PARSE_XML_RESULT_ERROR;
 
 static char parse_xml_object_name[PARSE_XML_MAX_NAME_LEN];
 
+/**
+ * The number of attributes in the current element.
+ */
+
+static int parse_xml_attribute_count = 0;
+
+/**
+ * Array of attribute data for the current element.
+ */
+
+static struct parse_xml_attribute parse_xml_attributes[PARSE_XML_MAX_ATTRIBUTES];
+
 /* Static Function Prototypes. */
 
 static void parse_xml_read_markup(char c);
 static void parse_xml_read_comment(void);
 static void parse_xml_read_element(char c);
+static bool parse_xml_read_element_attributes(char c);
 static void parse_xml_read_entity(char c);
 static bool parse_xml_match_ahead(const char *text);
+
+/* Type tests. */
+
+#define parse_xml_isname_start(x) ((x) == ':' || (x) == '_' || ((x) >= 'A' && (x) <= 'Z') || ((x) >= 'a' && (x) <= 'z'))
+#define parse_xml_isname(x) (parse_xml_isname_start(x) || (x) == '-' || (x) == '.' || ((x) >= '0' && (x) <= '9'))
 
 /**
  * Open a new file in the XML parser.
@@ -83,6 +118,7 @@ bool parse_xml_open_file(char *filename)
 	}
 
 	parse_xml_current_mode = PARSE_XML_RESULT_ERROR;
+	parse_xml_attribute_count = 0;
 
 	parse_xml_handle = fopen(filename, "rb");
 	if (parse_xml_handle == NULL)
@@ -118,8 +154,20 @@ enum parse_xml_result parse_xml_read_next_chunk(void)
 {
 	int c;
 
-	if (parse_xml_handle == NULL || feof(parse_xml_handle))
+	/* Start with the presumption of failure. */
+
+	parse_xml_current_mode = PARSE_XML_RESULT_ERROR;
+	parse_xml_attribute_count = 0;
+
+	/* Exit on error or EOF. */
+
+	if (parse_xml_handle == NULL)
 		return PARSE_XML_RESULT_ERROR;
+
+	if (feof(parse_xml_handle))
+		return PARSE_XML_RESULT_EOF;
+
+	/* Decide what to do based on the next character in the file. */
 
 	c = fgetc(parse_xml_handle);
 
@@ -255,12 +303,18 @@ static void parse_xml_read_element(char c)
 
 	/* Copy the tag name until there's whitespace or a /. */
 
-	do {
-		if (c != EOF && c!= '>' && c != '/' && !isspace(c) && len < PARSE_XML_MAX_NAME_LEN)
-			parse_xml_object_name[len++] = c;
+	if (c != EOF && parse_xml_isname_start(c)) {
+		parse_xml_object_name[len++] = c;
 
 		c = fgetc(parse_xml_handle);
-	} while (c != EOF && c != '>' && c != '/' && !isspace(c));
+
+		while (c != EOF && parse_xml_isname(c)) {
+			if (c != EOF && parse_xml_isname(c) && len < PARSE_XML_MAX_NAME_LEN)
+				parse_xml_object_name[len++] = c;
+
+			c = fgetc(parse_xml_handle);
+		}
+	}
 
 	parse_xml_object_name[PARSE_XML_MAX_NAME_LEN - 1] = '\0';
 
@@ -284,15 +338,11 @@ static void parse_xml_read_element(char c)
 
 	parse_xml_object_name[len] = '\0';
 
-	previous_was_slash = (c == '/') ? true : false;
+	/* Read the attributes. */
 
-	/* TODO Run off the attributes! */
-
-	while (c != EOF && c != '>') {
-		c = fgetc(parse_xml_handle);
-		if (c != '>')
-			previous_was_slash = (c == '/') ? true : false;
-	}
+	previous_was_slash = parse_xml_read_element_attributes(c);
+	if (parse_xml_current_mode == PARSE_XML_RESULT_ERROR)
+		return;
 
 	/* The tag wasn't terminated. */
 
@@ -314,6 +364,138 @@ static void parse_xml_read_element(char c)
 	}
 }
 
+
+/**
+ * Process any attributes attached to the current elememt.
+ *
+ * \param c		The first character of the tag sequence.
+ * \return		True if the final character before the closing > was a /.
+ */
+
+static bool parse_xml_read_element_attributes(char c)
+{
+	int len = 0;
+	long start = -1, length = 0;
+	bool previous_was_slash = false;
+	char name[PARSE_XML_MAX_NAME_LEN], quote;
+
+	previous_was_slash = (c == '/') ? true : false;
+
+	/* Process the file until we reach the closing > or EOF. */
+
+	while (c != EOF && c != '>') {
+		len = 0;
+
+		/* Look for the start of an attribute name. */
+
+		while (c != EOF && !parse_xml_isname_start(c)) {
+			c = fgetc(parse_xml_handle);
+
+			if (c != '>')
+				previous_was_slash = (c == '/') ? true : false;
+		}
+
+		if (c == EOF)
+			continue;
+
+		/* We've found an attribute name, so copy it into the temp buffer. */
+
+		name[len++] = c;
+
+		c = fgetc(parse_xml_handle);
+
+		do {
+			if (c != EOF && parse_xml_isname(c) && len < PARSE_XML_MAX_NAME_LEN)
+				name[len++] = c;
+
+			c = fgetc(parse_xml_handle);
+		} while (c != EOF && parse_xml_isname(c));
+
+		name[PARSE_XML_MAX_NAME_LEN - 1] = '\0';
+
+		/* The name is too long. */
+
+		if (len >= PARSE_XML_MAX_NAME_LEN) {
+			parse_xml_current_mode = PARSE_XML_RESULT_ERROR;
+			msg_report(MSG_PARSE_ATTRIBUTE_TOO_LONG, name);
+			return previous_was_slash;
+		}
+
+		name[len] = '\0';
+
+		/* Skip any whitespace after the name. */
+
+		while (c != EOF && isspace(c)) {
+			c = fgetc(parse_xml_handle);
+
+			if (c != '>')
+				previous_was_slash = (c == '/') ? true : false;
+		}
+
+		/* There's a value with the attribute. */
+
+		if (c == '=') {
+			c = fgetc(parse_xml_handle);
+
+			/* Skip any whitespace after the = sign. */
+
+			while (c != EOF && isspace(c)) {
+				c = fgetc(parse_xml_handle);
+
+				if (c != '>')
+					previous_was_slash = (c == '/') ? true : false;
+			}
+
+			/* What follows must be quoted in " or '. */
+
+			if (c == '\'' || c == '"') {
+				quote = c;
+				start = ftell(parse_xml_handle);
+
+				/* Step through the data, and find the length. */
+
+				c = fgetc(parse_xml_handle);
+
+				while (c != EOF && c != quote)
+					c = fgetc(parse_xml_handle);
+
+				length = ftell(parse_xml_handle) - (start + 1);
+
+				if (c != quote) {
+					parse_xml_current_mode = PARSE_XML_RESULT_ERROR;
+					msg_report(MSG_PARSE_UNTERMINATED_ATTRIBUTE, name);
+					return previous_was_slash;
+				}
+
+				c = fgetc(parse_xml_handle);
+
+				if (c != '>')
+					previous_was_slash = (c == '/') ? true : false;
+			}
+		} else {
+			start = -1;
+			length = 0;
+		}
+
+		/* Check that there's room for the attribute. */
+
+		if (parse_xml_attribute_count > PARSE_XML_MAX_ATTRIBUTES) {
+			parse_xml_current_mode = PARSE_XML_RESULT_ERROR;
+			msg_report(MSG_PARSE_TOO_MANY_ATTRIBUTES);
+			return previous_was_slash;
+		}
+
+		strncpy(parse_xml_attributes[parse_xml_attribute_count].name, name, PARSE_XML_MAX_NAME_LEN);
+		parse_xml_attributes[parse_xml_attribute_count].start = start;
+		parse_xml_attributes[parse_xml_attribute_count].length = length;
+
+		parse_xml_attribute_count++;
+
+		printf("Found attribute %d: %s, offset %ld, length %ld\n", parse_xml_attribute_count, name, start, length);
+	}
+
+	return previous_was_slash;
+}
 
 /**
  * Process a comment sequence from the file.
@@ -363,11 +545,17 @@ static void parse_xml_read_entity(char c)
 
 	/* Copy the entity name until it's terminated or there's whitespace. */
 
-	while (c != EOF && c != ';' && !isspace(c)) {
+	if (c != EOF && parse_xml_isname_start(c)) {
+		parse_xml_object_name[len++] = c;
+
 		c = fgetc(parse_xml_handle);
 
-		if (c != EOF && c != ';' && !isspace(c) && len < PARSE_XML_MAX_NAME_LEN)
-			parse_xml_object_name[len++] = c;
+		while (c != EOF && parse_xml_isname(c)) {
+			if (c != EOF && parse_xml_isname(c) && len < PARSE_XML_MAX_NAME_LEN)
+				parse_xml_object_name[len++] = c;
+
+			c = fgetc(parse_xml_handle);
+		}
 	}
 
 	parse_xml_object_name[PARSE_XML_MAX_NAME_LEN - 1] = '\0';
