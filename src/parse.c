@@ -181,52 +181,8 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 	do {
 		result = parse_xml_read_next_chunk(parser);
 
-		switch (result) {
-		case PARSE_XML_RESULT_TAG_START:
-			printf("Found Opening Tag: %s\n", parse_element_find_tag(parse_xml_get_element(parser)));
-			break;
-		case PARSE_XML_RESULT_TAG_EMPTY:
-			printf("Found Self-Closing Tag: %s\n", parse_element_find_tag(parse_xml_get_element(parser)));
-			if (parse_xml_get_element(parser) == PARSE_ELEMENT_CHAPTER) {
-				struct parse_xml_block *aparser;
-				enum parse_xml_result aresult;
-
-				aparser = parse_xml_get_attribute_parser(parser, "file");
-				if (aparser != NULL) {
-					do {
-						aresult = parse_xml_read_next_chunk(aparser);
-
-						switch (aresult) {
-						case PARSE_XML_RESULT_TAG_ENTITY:
-							printf("Found Attribute Entity: %s\n", manual_entity_find_name(parse_xml_get_entity(aparser)));
-							break;
-						case PARSE_XML_RESULT_TEXT:
-							printf("Found Attribute Text: '%s'\n", parse_xml_get_text(aparser, false));
-							break;
-						case PARSE_XML_RESULT_WHITESPACE:
-							printf("Found Attribute Whitespace\n");
-							break;
-						}
-					} while (aresult != PARSE_XML_RESULT_ERROR && aresult != PARSE_XML_RESULT_EOF);
-				}
-			}
-			break;
-		case PARSE_XML_RESULT_TAG_END:
-			printf("Found Closing Tag: %s\n", parse_element_find_tag(parse_xml_get_element(parser)));
-			break;
-		case PARSE_XML_RESULT_TAG_ENTITY:
-			printf("Found Entity: %s\n", manual_entity_find_name(parse_xml_get_entity(parser)));
-			break;
-		case PARSE_XML_RESULT_COMMENT:
-			printf("*** A COMMENT! ***\n");
-			break;
-		case PARSE_XML_RESULT_TEXT:
-			printf("Found Text: '%s'\n", parse_xml_get_text(parser, false));
-			break;
-		case PARSE_XML_RESULT_WHITESPACE:
-			printf("Found Whitespace\n");
-			break;
-		}
+//		switch (result) {
+//		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF);
 
 //	ret = xmlTextReaderRead(reader);
