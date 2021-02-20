@@ -51,56 +51,67 @@ enum parse_xml_result {
 };
 
 /**
- * Initialise the file parser for use.
+ * Structure holding an instance of the parser.
  */
 
-bool parse_xml_initialise(void);
+struct parse_xml_block;
 
 /**
  * Open a new file in the XML parser.
  *
  * \param *filename	The name of the file to open.
- * \return		True if successful; else False.
+ * \return		Pointer to the new instance, or NULL on failure.
  */
 
-bool parse_xml_open_file(char *filename);
+struct parse_xml_block *parse_xml_open_file(char *filename);
 
 /**
  * Close a file in the XML parser.
  *
- * \param *filename	The name of the file to open.
+ * \param *instance	Pointer to the instance to be closed.
  * \return		True if successful; else False.
  */
 
-void parse_xml_close_file(void);
+void parse_xml_close_file(struct parse_xml_block *instance);
 
 /**
- * Parse the next chunk from the current file.
+ * Parse the next chunk from the specified file.
  * 
+ * \param *instance	Pointer to the instance to be read.
  * \return		Details of the chunk.
  */
 
-enum parse_xml_result parse_xml_read_next_chunk(void);
+enum parse_xml_result parse_xml_read_next_chunk(struct parse_xml_block *instance);
 
 /**
  * Return a copy of the current text block parsed from
  * the file.
  * 
+ * \param *instance		Pointer to the instance to be used.
  * \param retain_whitespace	True to retain all whitespace characters.
  * \return			Pointer to a copy of the block, or NULL.
  */
 
-char *parse_xml_get_text(bool retain_whitespace);
+char *parse_xml_get_text(struct parse_xml_block *instance, bool retain_whitespace);
 
 /**
  * Read the details of the current element parsed from
  * the file.
  * 
+ * \param *instance	Pointer to the instance to be used.
  * \return		The element token, or PARSE_ELEMENT_NONE.
  */
 
-enum parse_element_type parse_xml_get_element(void);
+enum parse_element_type parse_xml_get_element(struct parse_xml_block *instance);
 
-enum manual_entity_type parse_xml_get_entity(void);
+/**
+ * Read the details of the current entity parsed from
+ * the file.
+ * 
+ * \param *instance	Pointer to the instance to be used.
+ * \return		The entity token, or MANUAL_ENTITY_NONE.
+ */
+
+enum manual_entity_type parse_xml_get_entity(struct parse_xml_block *instance);
 
 #endif

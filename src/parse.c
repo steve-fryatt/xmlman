@@ -81,9 +81,6 @@ struct manual *parse_document(char *filename)
 	struct manual_data	*manual = NULL, *chapter = NULL;
 	struct filename		*document_root = NULL, *document_base = NULL;
 
-	if (!parse_xml_initialise())
-		return NULL;
-
 	document_base = filename_make(filename, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
 	if (document_base == NULL)
 		return NULL;
@@ -159,6 +156,7 @@ struct manual *parse_document(char *filename)
 
 static bool parse_file(struct filename *filename, struct manual_data **manual, struct manual_data **chapter)
 {
+	struct parse_xml_block	*parser;
 	enum parse_xml_result	result;
 	char			*file = NULL;
 	int			ret;
@@ -172,33 +170,35 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 
 	parse_stack_reset();
 
-	if (!parse_xml_open_file(file)) {
+	parser = parse_xml_open_file(file);
+
+	if (parser == NULL) {
 		msg_report(MSG_OPEN_FAIL, file);
 		free(file);
 		return false;
 	}
 
 	do {
-		result = parse_xml_read_next_chunk();
+		result = parse_xml_read_next_chunk(parser);
 
 		switch (result) {
 		case PARSE_XML_RESULT_TAG_START:
-			printf("Found Opening Tag: %s\n", parse_element_find_tag(parse_xml_get_element()));
+			printf("Found Opening Tag: %s\n", parse_element_find_tag(parse_xml_get_element(parser)));
 			break;
 		case PARSE_XML_RESULT_TAG_EMPTY:
-			printf("Found Self-Closing Tag: %s\n", parse_element_find_tag(parse_xml_get_element()));
+			printf("Found Self-Closing Tag: %s\n", parse_element_find_tag(parse_xml_get_element(parser)));
 			break;
 		case PARSE_XML_RESULT_TAG_END:
-			printf("Found Closing Tag: %s\n", parse_element_find_tag(parse_xml_get_element()));
+			printf("Found Closing Tag: %s\n", parse_element_find_tag(parse_xml_get_element(parser)));
 			break;
 		case PARSE_XML_RESULT_TAG_ENTITY:
-			printf("Found Entity: %s\n", manual_entity_find_name(parse_xml_get_entity()));
+			printf("Found Entity: %s\n", manual_entity_find_name(parse_xml_get_entity(parser)));
 			break;
 		case PARSE_XML_RESULT_COMMENT:
 			printf("*** A COMMENT! ***\n");
 			break;
 		case PARSE_XML_RESULT_TEXT:
-			printf("Found Text: '%s'\n", parse_xml_get_text(false));
+			printf("Found Text: '%s'\n", parse_xml_get_text(parser, false));
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 			printf("Found Whitespace\n");
@@ -218,7 +218,7 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 	if (result == PARSE_XML_RESULT_ERROR)
 		msg_report(MSG_XML_FAIL, file);
 
-	parse_xml_close_file();
+	parse_xml_close_file(parser);
 
 	free(file);
 
