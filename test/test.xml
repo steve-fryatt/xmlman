@@ -74,7 +74,7 @@ handle large, variable amounts of data or   multiple documents.</p>
 <p>This comes before chapter 1.</p>
 </section>
 
-<chapter file="chapter1.xml"/>
+<chapter file="chapter1.xml&amp;some&amp;"/>
 
 <section>
 <p>This comes between chapters 1 and 2.</p>

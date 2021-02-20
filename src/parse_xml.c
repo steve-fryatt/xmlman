@@ -246,6 +246,8 @@ enum parse_xml_result parse_xml_read_next_chunk(struct parse_xml_block *instance
 	if (instance->file == NULL)
 		return PARSE_XML_RESULT_ERROR;
 
+	fseek(instance->file, instance->file_pointer, SEEK_SET);
+
 	if (feof(instance->file))
 		return PARSE_XML_RESULT_EOF;
 
@@ -253,22 +255,22 @@ enum parse_xml_result parse_xml_read_next_chunk(struct parse_xml_block *instance
 
 	c = fgetc(instance->file);
 
-	switch (c) {
-	case EOF:
+	if (c == EOF || c == instance->eof) {
 		instance->current_mode = PARSE_XML_RESULT_EOF;
-		break;
+	} else {
+		switch (c) {
+		case '<':
+			parse_xml_read_markup(instance, c);
+			break;
 
-	case '<':
-		parse_xml_read_markup(instance, c);
-		break;
+		case '&':
+			parse_xml_read_entity(instance, c);
+			break;
 
-	case '&':
-		parse_xml_read_entity(instance, c);
-		break;
-
-	default:
-		parse_xml_read_text(instance, c);
-		break;
+		default:
+			parse_xml_read_text(instance, c);
+			break;
+		}
 	}
 
 	instance->file_pointer = ftell(instance->file);
@@ -348,6 +350,36 @@ enum parse_element_type parse_xml_get_element(struct parse_xml_block *instance)
 
 
 /**
+ * Read the details of the current element parsed from
+ * the file.
+ * 
+ * \param *instance	Pointer to the instance to be used.
+ * \param *name		The name of the attribute to be matched.
+ * \return		A parser for the attribute value, or NULL.
+ */
+
+struct parse_xml_block *parse_xml_get_attribute_parser(struct parse_xml_block *instance, const char *name)
+{
+	int i;
+
+	if (instance == NULL)
+		return NULL;
+
+	if (instance->current_mode != PARSE_XML_RESULT_TAG_START &&
+			instance->current_mode != PARSE_XML_RESULT_TAG_EMPTY)
+		return NULL;
+
+	for (i = 0; i < instance->attribute_count; i++) {
+		printf("Compare '%s' to '%s'\n", instance->attributes[i].name, name);
+		if (strcmp(instance->attributes[i].name, name) == 0)
+			return instance->attributes[i].parser;
+	}
+
+	return NULL;
+}
+
+
+/**
  * Read the details of the current entity parsed from
  * the file.
  * 
@@ -398,7 +430,7 @@ static void parse_xml_read_text(struct parse_xml_block *instance, char c)
 
 	/* Return the last character to the file. */
 
-	if (c != instance->eof)
+	if (c != EOF)
 		fseek(instance->file, -1, SEEK_CUR);
 
 	instance->current_mode = (whitespace == true) ? PARSE_XML_RESULT_WHITESPACE : PARSE_XML_RESULT_TEXT;
@@ -660,6 +692,8 @@ static void parse_xml_read_element_attributes(struct parse_xml_block *instance, 
 		strncpy(instance->attributes[instance->attribute_count].name, name, PARSE_XML_MAX_NAME_LEN);
 		instance->attributes[instance->attribute_count].start = start;
 		instance->attributes[instance->attribute_count].length = length;
+		instance->attributes[instance->attribute_count].parser->file_pointer = start;
+		instance->attributes[instance->attribute_count].parser->eof = quote;
 
 		instance->attribute_count++;
 	}
