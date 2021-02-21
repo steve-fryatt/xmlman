@@ -235,7 +235,7 @@ enum parse_xml_result parse_xml_read_next_chunk(struct parse_xml_block *instance
 {
 	int c;
 
-	if (instance == NULL)
+	if (instance == NULL || instance->current_mode == PARSE_XML_RESULT_ERROR)
 		return PARSE_XML_RESULT_ERROR;
 
 	/* Start with the presumption of failure. */
