@@ -38,6 +38,7 @@
  */
 
 enum parse_xml_result {
+	PARSE_XML_RESULT_START,		/**< The parser hasn't started yet.		*/
 	PARSE_XML_RESULT_ERROR,		/**< An error occurred.				*/
 	PARSE_XML_RESULT_EOF,		/**< The end of the file has been reached.	*/
 	PARSE_XML_RESULT_TAG_START,	/**< An opening tag.				*/
@@ -73,6 +74,15 @@ struct parse_xml_block *parse_xml_open_file(char *filename);
  */
 
 void parse_xml_close_file(struct parse_xml_block *instance);
+
+/**
+ * Set the parser state to error.
+ *
+ * \param *instance	Pointer to the instance to update.
+ * \return		An error state.
+ */
+
+enum parse_xml_result parse_xml_set_error(struct parse_xml_block *instance);
 
 /**
  * Parse the next chunk from the specified file.

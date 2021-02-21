@@ -190,6 +190,8 @@ struct parse_xml_block *parse_xml_open_file(char *filename)
 		instance->attributes[i].parser = parser;
 	}
 
+	instance->current_mode = PARSE_XML_RESULT_START;
+
 	return instance;
 }
 
@@ -221,6 +223,24 @@ void parse_xml_close_file(struct parse_xml_block *instance)
 	}
 
 	free(instance);
+}
+
+
+/**
+ * Set the parser state to error.
+ *
+ * \param *instance	Pointer to the instance to update.
+ * \return		An error state.
+ */
+
+enum parse_xml_result parse_xml_set_error(struct parse_xml_block *instance)
+{
+	if (instance != NULL)
+		instance->current_mode = PARSE_XML_RESULT_ERROR;
+
+	printf("# Set Error!\n");
+
+	return PARSE_XML_RESULT_ERROR;
 }
 
 
