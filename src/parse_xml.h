@@ -126,6 +126,19 @@ enum parse_element_type parse_xml_get_element(struct parse_xml_block *instance);
 struct parse_xml_block *parse_xml_get_attribute_parser(struct parse_xml_block *instance, const char *name);
 
 /**
+ * Copy the text from an attribute into a buffer, without
+ * considering the validity of any characters within.
+ * 
+ * \param *instance	Pointer to the instance to be used.
+ * \param *name		The name of the attribute to be matched.
+ * \param *buffer	Pointer to a buffer to hold the value.
+ * \param length	The size of the supplied buffer.
+ * \return		True if successful; otherwise false.
+ */
+
+bool parse_xml_get_attribute_text(struct parse_xml_block *instance, const char *name, char *buffer, size_t length);
+
+/**
  * Read the details of the current entity parsed from
  * the file.
  * 

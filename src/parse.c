@@ -42,17 +42,23 @@
 #include "parse_stack.h"
 #include "parse_xml.h"
 
+/**
+ * The maximum length of a file leafname.
+ */
 
+#define PARSE_MAX_LEAFNAME 128
 
 /* Static Function Prototypes. */
 
 static bool parse_file(struct filename *filename, struct manual_data **manual, struct manual_data **chapter);
 
 static void parse_manual(struct parse_xml_block *parser, struct manual_data **manual, struct manual_data **chapter);
+static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *parser, struct manual_data *parent);
+static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct manual_data *parent, struct manual_data *chapter);
 static struct manual_data *parse_block_object(struct parse_xml_block *parser, struct manual_data *parent);
 
 static void parse_unknown(struct parse_xml_block *parser);
-
+static void parse_link_item(struct manual_data **previous, struct manual_data *parent, struct manual_data *item);
 
 /**
  * Parse an XML file and its descendents.
@@ -226,7 +232,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 	bool done = false;
 	enum parse_xml_result result;
 	enum parse_element_type element;
-
+	struct manual_data *tail = NULL, *item = NULL;
 	/* Create a new manual if this is the root file. */
 
 	if (*manual == NULL)
@@ -250,6 +256,21 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 			case PARSE_ELEMENT_TITLE:
 				(*manual)->title = parse_block_object(parser, *manual);
 				break;
+			case PARSE_ELEMENT_CHAPTER:
+			case PARSE_ELEMENT_INDEX:
+				item = parse_chapter(parser, *manual, *chapter);
+
+				if (item != NULL) {
+					item->previous = tail;
+
+					if (tail != NULL)
+						tail->next = item;
+					else
+						(*manual)->first_child = item;
+					
+					tail = item;
+				}
+				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Manual");
 				parse_unknown(parser);
@@ -257,6 +278,27 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 			}
 			break;
 		case PARSE_XML_RESULT_TAG_EMPTY:
+			element = parse_xml_get_element(parser);
+
+			switch (element) {
+			case PARSE_ELEMENT_CHAPTER:
+			case PARSE_ELEMENT_INDEX:
+				item = parse_placeholder_chapter(parser, *manual);
+				if (item != NULL) {
+					item->previous = tail;
+
+					if (tail != NULL)
+						tail->next = item;
+					else
+						(*manual)->first_child = item;
+					
+					tail = item;
+				}
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Manual");
+				break;
+			}
 			break;
 		case PARSE_XML_RESULT_TAG_END:
 			element = parse_xml_get_element(parser);
@@ -279,6 +321,165 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 }
 
 
+
+/**
+ * Process a placeholder chapter object (CHAPTER, INDEX), returning a pointer
+ * to the the new data structure.
+ *
+ * \param *parser	Pointer to the parser to use.
+ * \param *parent	Pointer to the parent data structure.
+ * \return		Pointer to the new data structure.
+ */
+
+static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *parser, struct manual_data *parent)
+{
+	bool done = false;
+	struct parse_xml_block *attribute;
+	enum parse_xml_result result;
+	enum parse_element_type type, element;
+	char filename[PARSE_MAX_LEAFNAME];
+	struct manual_data *new_chapter = NULL, *tail = NULL, *text = NULL;
+
+	type = parse_xml_get_element(parser);
+
+	printf("$ Create Placeholder Chapter Object (%s)\n", parse_element_find_tag(type));
+
+	/* Read the supplied filename. */
+
+	if (!parse_xml_get_attribute_text(parser, "file", filename, PARSE_MAX_LEAFNAME)) {
+		msg_report(MSG_MISSING_ATTRIBUTE, "file");
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	/* Create the new chapter object. */
+
+	switch (type) {
+	case PARSE_ELEMENT_CHAPTER:
+		new_chapter = manual_data_create(MANUAL_DATA_OBJECT_TYPE_CHAPTER);
+		break;
+	case PARSE_ELEMENT_INDEX:
+		new_chapter = manual_data_create(MANUAL_DATA_OBJECT_TYPE_INDEX);
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type));
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	if (new_chapter == NULL) {
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	/* Link the chapter object to its parent. */
+
+	new_chapter->parent = parent;
+	new_chapter->chapter.filename = filename_make(filename, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
+
+	return new_chapter;
+}
+
+
+/**
+ * Process a chapter object (CHAPTER, INDEX), returning a pointer to the root
+ * of the new data structure.
+ *
+ * \param *parser	Pointer to the parser to use.
+ * \param *parent	Pointer to the parent data structure.
+ * \param *chapter	Pointer to a placeholder chapter to use, or NULL to
+ *			create a new one.
+ * \return		Pointer to the new data structure.
+ */
+
+static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct manual_data *parent, struct manual_data *chapter)
+{
+	bool done = false;
+	struct parse_xml_block *attribute;
+	enum parse_xml_result result;
+	enum parse_element_type type, element;
+	char filename[PARSE_MAX_LEAFNAME];
+	struct manual_data *new_chapter = NULL, *tail = NULL, *text = NULL;
+
+	type = parse_xml_get_element(parser);
+
+	printf("$ Push Chapter Object (%s)\n", parse_element_find_tag(type));
+
+	/* Read the chapter id. */
+
+//	if (!parse_xml_get_attribute_text(parser, "file", filename, PARSE_MAX_LEAFNAME)) {
+//		msg_report(MSG_MISSING_ATTRIBUTE, "file");
+//		parse_xml_set_error(parser);
+//		return NULL;
+//	}
+
+	/* Create the new chapter object. */
+
+	if (chapter == NULL) {
+		switch (type) {
+		case PARSE_ELEMENT_CHAPTER:
+			new_chapter = manual_data_create(MANUAL_DATA_OBJECT_TYPE_CHAPTER);
+			break;
+		case PARSE_ELEMENT_INDEX:
+			new_chapter = manual_data_create(MANUAL_DATA_OBJECT_TYPE_INDEX);
+			break;
+		default:
+			msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type));
+			parse_xml_set_error(parser);
+			return NULL;
+		}
+	} else {
+		new_chapter = chapter;
+	}
+
+	if (new_chapter == NULL) {
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	/* Link the chapter object to its parent, if it is newly allocated. */
+
+	if (chapter == NULL)
+		new_chapter->parent = parent;
+
+	/* We've now processed the actual chapter data. */
+
+	new_chapter->chapter.processed = true;
+
+	/* Parse the chapter contents. */
+
+	do {
+		result = parse_xml_read_next_chunk(parser);
+
+		switch (result) {
+		case PARSE_XML_RESULT_TAG_START:
+			element = parse_xml_get_element(parser);
+
+			switch (element) {
+			case PARSE_ELEMENT_TITLE:
+				new_chapter->title = parse_block_object(parser, new_chapter);
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Chapter");
+				parse_unknown(parser);
+				break;
+			}
+			break;
+		case PARSE_XML_RESULT_WHITESPACE:
+		case PARSE_XML_RESULT_COMMENT:
+			break;
+		default:
+			msg_report(MSG_UNEXPECTED_XML, result, "Chapter");
+			break;
+		}
+	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF);
+
+	printf("$ Pop Chapter Object (%s)\n", parse_element_find_tag(type));
+
+	return new_chapter;
+}
+
+
 /**
  * Process a block object (P, TITLE, SUMMARY), returning a pointer to the root
  * of the new data structure.
@@ -293,47 +494,47 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 	bool done = false;
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
-	struct manual_data *object = NULL, *tail = NULL, *text = NULL;
+	struct manual_data *new_block = NULL, *tail = NULL, *text = NULL;
 
 	type = parse_xml_get_element(parser);
 
 	printf("$ Push Block Object (%s)\n", parse_element_find_tag(type));
 
-	/* Create the root object. */
+	/* Create the block object. */
 
 	switch (type) {
 	case PARSE_ELEMENT_TITLE:
-		object = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TITLE);
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TITLE);
 		break;
 	case PARSE_ELEMENT_CITE:
-		object = manual_data_create(MANUAL_DATA_OBJECT_TYPE_CITATION);
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_CITATION);
 		break;
 	case PARSE_ELEMENT_CODE:
-		object = manual_data_create(MANUAL_DATA_OBJECT_TYPE_CODE);
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_CODE);
 		break;
 	case PARSE_ELEMENT_ENTRY:
-		object = manual_data_create(MANUAL_DATA_OBJECT_TYPE_USER_ENTRY);
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_USER_ENTRY);
 		break;
 	case PARSE_ELEMENT_EMPHASIS:
-		object = manual_data_create(MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS);
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS);
 		break;
 	case PARSE_ELEMENT_FILE:
-		object = manual_data_create(MANUAL_DATA_OBJECT_TYPE_FILENAME);
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_FILENAME);
 		break;
 	case PARSE_ELEMENT_ICON:
-		object = manual_data_create(MANUAL_DATA_OBJECT_TYPE_ICON);
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_ICON);
 		break;
 	case PARSE_ELEMENT_KEY:
-		object = manual_data_create(MANUAL_DATA_OBJECT_TYPE_KEY);
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_KEY);
 		break;
 	case PARSE_ELEMENT_MOUSE:
-		object = manual_data_create(MANUAL_DATA_OBJECT_TYPE_MOUSE);
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_MOUSE);
 		break;
 	case PARSE_ELEMENT_STRONG:
-		object = manual_data_create(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS);
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS);
 		break;
 	case PARSE_ELEMENT_WINDOW:
-		object = manual_data_create(MANUAL_DATA_OBJECT_TYPE_WINDOW);
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_WINDOW);
 		break;
 	default:
 		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type));
@@ -341,14 +542,14 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 		return NULL;
 	}
 
-	if (object == NULL) {
+	if (new_block == NULL) {
 		parse_xml_set_error(parser);
 		return NULL;
 	}
 
-	/* Link the root object to its parent. */
+	/* Link the block object to its parent. */
 
-	object->parent = parent;
+	new_block->parent = parent;
 
 	/* Process the content within the new object. */
 
@@ -361,16 +562,18 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 			text = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TEXT);
 			if (text == NULL) {
 				result = parse_xml_set_error(parser);
+				msg_report(MSG_DATA_MALLOC_FAIL);
 				continue;
 			}
-			text->parent = object;
+			text->chunk.text = parse_xml_get_text(parser, false);
+			text->parent = new_block;
 			text->previous = tail;
 			text->chunk.text = parse_xml_get_text(parser, false);
 
 			if (tail != NULL)
 				tail->next = text;
 			else
-				object->first_child = text;
+				new_block->first_child = text;
 			
 			tail = text;
 			break;
@@ -389,7 +592,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 			case PARSE_ELEMENT_MOUSE:
 			case PARSE_ELEMENT_STRONG:
 			case PARSE_ELEMENT_WINDOW:
-				object->first_child = parse_block_object(parser, object);
+				new_block->first_child = parse_block_object(parser, new_block);
 				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Outer");
@@ -398,8 +601,10 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 			}
 
 			break;
+
 		case PARSE_XML_RESULT_TAG_EMPTY:
 			break;
+
 		case PARSE_XML_RESULT_TAG_END:
 			element = parse_xml_get_element(parser);
 
@@ -408,8 +613,10 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 			else
 				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
 			break;
+
 		case PARSE_XML_RESULT_COMMENT:
 			break;
+
 		default:
 			msg_report(MSG_UNEXPECTED_XML, result, parse_element_find_tag(type));
 			break;
@@ -418,7 +625,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 	
 	printf("$ Pop Block Object (%s)\n", parse_element_find_tag(type));
 
-	return object;
+	return new_block;
 }
 
 
@@ -465,6 +672,24 @@ static void parse_unknown(struct parse_xml_block *parser)
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
 	
 	printf("$ Pop Unknown Object (%s)\n", parse_element_find_tag(type));
+}
+
+
+static void parse_link_item(struct manual_data **previous, struct manual_data *parent, struct manual_data *item)
+{
+	if (item == NULL);
+		return;
+
+	item->previous = *previous;
+	item->parent = parent;
+
+	if (previous != NULL && *previous == NULL)
+		(*previous)->next = item;
+	else if (parent != NULL)
+		parent->first_child = item;
+
+	if (previous != NULL)
+		*previous = item;
 }
 
 #if 0

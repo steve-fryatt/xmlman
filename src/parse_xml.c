@@ -116,6 +116,7 @@ struct parse_xml_block {
 /* Static Function Prototypes. */
 
 static struct parse_xml_block *parse_xml_initialise(void);
+static struct parse_xml_attribute *parse_xml_find_attribute(struct parse_xml_block *instance, const char *name);
 static void parse_xml_read_text(struct parse_xml_block *instance, char c);
 static void parse_xml_read_markup(struct parse_xml_block *instance, char c);
 static void parse_xml_read_comment(struct parse_xml_block *instance);
@@ -316,7 +317,7 @@ char *parse_xml_get_text(struct parse_xml_block *instance, bool retain_whitespac
 	int c;
 	long i = 0;
 
-	if (instance == NULL)
+	if (instance == NULL || instance->file == NULL)
 		return NULL;
 
 	if (instance->current_mode != PARSE_XML_RESULT_TEXT &&
@@ -382,6 +383,67 @@ enum parse_element_type parse_xml_get_element(struct parse_xml_block *instance)
 
 struct parse_xml_block *parse_xml_get_attribute_parser(struct parse_xml_block *instance, const char *name)
 {
+	struct parse_xml_attribute *attribute;
+
+	attribute = parse_xml_find_attribute(instance, name);
+	if (attribute == NULL)
+		return NULL;
+
+	return attribute->parser;
+}
+
+
+/**
+ * Copy the text from an attribute into a buffer, without
+ * considering the validity of any characters within.
+ * 
+ * \param *instance	Pointer to the instance to be used.
+ * \param *name		The name of the attribute to be matched.
+ * \param *buffer	Pointer to a buffer to hold the value.
+ * \param length	The size of the supplied buffer.
+ * \return		True if successful; otherwise false.
+ */
+
+bool parse_xml_get_attribute_text(struct parse_xml_block *instance, const char *name, char *buffer, size_t length)
+{
+	struct parse_xml_attribute *attribute;
+	int i;
+
+	/* Check that there's a return buffer. */
+
+	if (buffer == NULL || length == 0)
+		return false;
+
+	buffer[0] = '\0';
+
+	if (instance == NULL || instance->file == NULL)
+		return false;
+
+	attribute = parse_xml_find_attribute(instance, name);
+	if (attribute == NULL)
+		return false;
+
+	fseek(instance->file, attribute->start, SEEK_SET);
+
+	for (i = 0; i < (length - 1) && i < attribute->length; i++)
+		buffer[i] = fgetc(instance->file);
+
+	buffer[i] = '\0';
+
+	return true;
+}
+
+
+/**
+ * Locate an attribute for the current entity.
+ * 
+ * \param *instance	Pointer to the instance to be used.
+ * \param *name		The name of the required entity.
+ * \return		Pointer to the attribute block, or NULL.
+ */
+
+static struct parse_xml_attribute *parse_xml_find_attribute(struct parse_xml_block *instance, const char *name)
+{
 	int i;
 
 	if (instance == NULL)
@@ -394,7 +456,7 @@ struct parse_xml_block *parse_xml_get_attribute_parser(struct parse_xml_block *i
 	for (i = 0; i < instance->attribute_count; i++) {
 		printf("Compare '%s' to '%s'\n", instance->attributes[i].name, name);
 		if (strcmp(instance->attributes[i].name, name) == 0)
-			return instance->attributes[i].parser;
+			return instance->attributes + i;
 	}
 
 	return NULL;
