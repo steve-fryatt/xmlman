@@ -231,7 +231,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 {
 	bool done = false;
 	enum parse_xml_result result;
-	enum parse_element_type element;
+	enum parse_element_type type, element;
 	struct manual_data *tail = NULL, *item = NULL;
 	/* Create a new manual if this is the root file. */
 
@@ -243,7 +243,9 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 		return;
 	}
 
-	printf("$ Push Manual\n");
+	type = parse_xml_get_element(parser);
+
+	printf("$ Push Manual (%s)\n", parse_element_find_tag(type));
 
 	do {
 		result = parse_xml_read_next_chunk(parser);
@@ -254,7 +256,12 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 
 			switch (element) {
 			case PARSE_ELEMENT_TITLE:
-				(*manual)->title = parse_block_object(parser, *manual);
+				if ((*manual)->title != NULL) {
+					msg_report(MSG_DUPLICATE_TAG, "title", "manual");
+					parse_xml_set_error(parser);
+				} else {
+					(*manual)->title = parse_block_object(parser, *manual);
+				}
 				break;
 			case PARSE_ELEMENT_CHAPTER:
 			case PARSE_ELEMENT_INDEX:
@@ -296,7 +303,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 				}
 				break;
 			default:
-				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Manual");
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
 				break;
 			}
 			break;
@@ -312,12 +319,12 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 		case PARSE_XML_RESULT_COMMENT:
 			break;
 		default:
-			msg_report(MSG_UNEXPECTED_XML, result, "Manual");
+			msg_report(MSG_UNEXPECTED_XML, result, parse_element_find_tag(type));
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
 	
-	printf("$ Pop Manual\n");
+	printf("$ Pop Manual (%s)\n", parse_element_find_tag(type));
 }
 
 
@@ -456,10 +463,15 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 
 			switch (element) {
 			case PARSE_ELEMENT_TITLE:
-				new_chapter->title = parse_block_object(parser, new_chapter);
+				if (new_chapter->title != NULL) {
+					msg_report(MSG_DUPLICATE_TAG, "title", parse_element_find_tag(type));
+					parse_xml_set_error(parser);
+				} else {
+					new_chapter->title = parse_block_object(parser, new_chapter);
+				}
 				break;
 			default:
-				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Chapter");
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
 				parse_unknown(parser);
 				break;
 			}
@@ -468,7 +480,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 		case PARSE_XML_RESULT_COMMENT:
 			break;
 		default:
-			msg_report(MSG_UNEXPECTED_XML, result, "Chapter");
+			msg_report(MSG_UNEXPECTED_XML, result, parse_element_find_tag(type));
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF);
@@ -594,7 +606,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 				new_block->first_child = parse_block_object(parser, new_block);
 				break;
 			default:
-				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Outer");
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
 				parse_unknown(parser);
 				break;
 			}

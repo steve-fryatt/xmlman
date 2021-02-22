@@ -106,6 +106,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_WARNING,	"Attempt to add unexpected block of type %s",			false},
 	{MSG_ERROR,	"Attempt to push incorrect %s block on to stack (expected %s)",	false},
 	{MSG_ERROR,	"Missing '%s' attribute",					false},
+	{MSG_ERROR,	"Duplicate <%s> tag in <%s>",					true},
 	{MSG_ERROR,	"Unknown '%s' mode",						false},
 	{MSG_ERROR,	"Attempt to read resources from unexpected block",		false},
 
