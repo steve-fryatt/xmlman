@@ -50,9 +50,9 @@
 
 /* Static Function Prototypes. */
 
-static bool parse_file(struct filename *filename, struct manual_data **manual, struct manual_data **chapter);
+static bool parse_file(struct filename *filename, struct manual_data **manual, struct manual_data *chapter);
 
-static void parse_manual(struct parse_xml_block *parser, struct manual_data **manual, struct manual_data **chapter);
+static void parse_manual(struct parse_xml_block *parser, struct manual_data **manual, struct manual_data *chapter);
 static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *parser, struct manual_data *parent);
 static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct manual_data *parent, struct manual_data *chapter);
 static struct manual_data *parse_block_object(struct parse_xml_block *parser, struct manual_data *parent);
@@ -83,7 +83,7 @@ struct manual *parse_document(char *filename)
 
 	/* Parse the root file. */
 
-	parse_file(document_base, &manual, &chapter);
+	parse_file(document_base, &manual, chapter);
 	filename_destroy(document_base);
 
 	if (manual == NULL)
@@ -112,7 +112,7 @@ struct manual *parse_document(char *filename)
 					filename_destroy(chapter->chapter.filename);
 					chapter->chapter.filename = NULL;
 
-					parse_file(document_base, &manual, &chapter);
+					parse_file(document_base, &manual, chapter);
 				}
 
 				filename_destroy(document_base);
@@ -141,12 +141,11 @@ struct manual *parse_document(char *filename)
  * \param **manual	Pointer to a pointer to the current manual. The
  *			manual pointer can be NULL if this is the root
  *			file.
- * \param **chapter	Pointer a pointer to the current chapter. The
- *			chapter pointer can be  NULL if this is the root
- *			file.
+ * \param **chapter	Pointer to the current chapter. The chapter pointer
+ * 			can be NULL if this is the root file.
  */
 
-static bool parse_file(struct filename *filename, struct manual_data **manual, struct manual_data **chapter)
+static bool parse_file(struct filename *filename, struct manual_data **manual, struct manual_data *chapter)
 {
 	struct parse_xml_block	*parser;
 	enum parse_xml_result	result;
@@ -222,12 +221,11 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
  * \param **manual	Pointer to a pointer to the current manual. The
  *			manual pointer can be NULL if this is the root
  *			file.
- * \param **chapter	Pointer a pointer to the current chapter. The
- *			chapter pointer can be  NULL if this is the root
- *			file.
+ * \param *chapter	Pointer the current chapter. The chapter pointer can be
+ * 			NULL if this is the root file.
  */
 
-static void parse_manual(struct parse_xml_block *parser, struct manual_data **manual, struct manual_data **chapter)
+static void parse_manual(struct parse_xml_block *parser, struct manual_data **manual, struct manual_data *chapter)
 {
 	bool done = false;
 	enum parse_xml_result result;
@@ -265,9 +263,9 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 				break;
 			case PARSE_ELEMENT_CHAPTER:
 			case PARSE_ELEMENT_INDEX:
-				item = parse_chapter(parser, *manual, *chapter);
+				item = parse_chapter(parser, *manual, chapter);
 
-				if (item != NULL) {
+				if (chapter == NULL && item != NULL) {
 					item->previous = tail;
 
 					if (tail != NULL)
@@ -464,7 +462,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 			switch (element) {
 			case PARSE_ELEMENT_TITLE:
 				if (new_chapter->title != NULL) {
-					msg_report(MSG_DUPLICATE_TAG, "title", parse_element_find_tag(type));
+					msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
 					parse_xml_set_error(parser);
 				} else {
 					new_chapter->title = parse_block_object(parser, new_chapter);
@@ -476,6 +474,14 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 				break;
 			}
 			break;
+		case PARSE_XML_RESULT_TAG_END:
+			element = parse_xml_get_element(parser);
+
+			if (element == type)
+				done = true;
+			else
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
 			break;
@@ -483,7 +489,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 			msg_report(MSG_UNEXPECTED_XML, result, parse_element_find_tag(type));
 			break;
 		}
-	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF);
+	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
 
 	printf("$ Pop Chapter Object (%s)\n", parse_element_find_tag(type));
 
