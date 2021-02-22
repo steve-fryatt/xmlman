@@ -398,7 +398,6 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 	struct parse_xml_block *attribute;
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
-	char filename[PARSE_MAX_LEAFNAME];
 	struct manual_data *new_chapter = NULL, *tail = NULL, *text = NULL;
 
 	type = parse_xml_get_element(parser);
@@ -677,7 +676,7 @@ static void parse_unknown(struct parse_xml_block *parser)
 
 static void parse_link_item(struct manual_data **previous, struct manual_data *parent, struct manual_data *item)
 {
-	if (item == NULL);
+	if (item == NULL)
 		return;
 
 	item->previous = *previous;
