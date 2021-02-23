@@ -357,8 +357,7 @@ enum parse_element_type parse_xml_get_element(struct parse_xml_block *instance)
 
 
 /**
- * Read the details of the current element parsed from
- * the file.
+ * Find a parser for a named attribute.
  * 
  * \param *instance	Pointer to the instance to be used.
  * \param *name		The name of the attribute to be matched.
@@ -374,6 +373,39 @@ struct parse_xml_block *parse_xml_get_attribute_parser(struct parse_xml_block *i
 		return NULL;
 
 	return attribute->parser;
+}
+
+
+/**
+ * Return a copy of the text from an attribute, without considering
+ * the validity of any of the characters within.
+ * 
+ * \param *instance	Pointer to the instance to be used.
+ * \param *name		The name of the attribute to be matched.
+ * \return		Pointer to a copy of the text, or NULL.
+ */
+
+char *parse_xml_get_attribute_text(struct parse_xml_block *instance, const char *name)
+{
+	struct parse_xml_attribute *attribute;
+	char *text;
+
+	if (instance == NULL || instance->file == NULL)
+		return NULL;
+
+	attribute = parse_xml_find_attribute(instance, name);
+	if (attribute == NULL)
+		return NULL;
+
+	/* Allocate a buffer and copy the text. */
+
+	text = malloc(attribute->length + 1);
+	if (text == NULL)
+		return NULL;
+
+	parse_copy_text_to_buffer(instance, attribute->start, attribute->length, text, attribute->length + 1);
+
+	return text;
 }
 
 

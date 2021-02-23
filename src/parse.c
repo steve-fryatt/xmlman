@@ -400,14 +400,6 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 
 	printf("$ Push Chapter Object (%s)\n", parse_element_find_tag(type));
 
-	/* Read the chapter id. */
-
-//	if (!parse_xml_copy_attribute_text(parser, "file", filename, PARSE_MAX_LEAFNAME)) {
-//		msg_report(MSG_MISSING_ATTRIBUTE, "file");
-//		parse_xml_set_error(parser);
-//		return NULL;
-//	}
-
 	/* Create the new chapter object. */
 
 	if (chapter == NULL) {
@@ -431,6 +423,10 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 		parse_xml_set_error(parser);
 		return NULL;
 	}
+
+	/* Read the chapter id. */
+
+	new_chapter->id = parse_xml_get_attribute_text(parser, "id");
 
 	/* We've now processed the actual chapter data. */
 
@@ -508,14 +504,6 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 
 	printf("$ Push Section Object (%s)\n", parse_element_find_tag(type));
 
-	/* Read the section id. */
-
-//	if (!parse_xml_copy_attribute_text(parser, "file", filename, PARSE_MAX_LEAFNAME)) {
-//		msg_report(MSG_MISSING_ATTRIBUTE, "file");
-//		parse_xml_set_error(parser);
-//		return NULL;
-//	}
-
 	/* Create the new section object. */
 
 	switch (type) {
@@ -532,6 +520,10 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 		parse_xml_set_error(parser);
 		return NULL;
 	}
+
+	/* Read the chapter id. */
+
+	new_section->id = parse_xml_get_attribute_text(parser, "id");
 
 	/* Parse the section contents. */
 
