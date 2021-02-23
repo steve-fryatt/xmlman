@@ -325,12 +325,9 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 
 static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *parser, struct manual_data *parent)
 {
-	bool done = false;
-	struct parse_xml_block *attribute;
-	enum parse_xml_result result;
-	enum parse_element_type type, element;
+	enum parse_element_type type;
 	char filename[PARSE_MAX_LEAFNAME];
-	struct manual_data *new_chapter = NULL, *tail = NULL;
+	struct manual_data *new_chapter = NULL;
 
 	type = parse_xml_get_element(parser);
 
@@ -386,7 +383,6 @@ static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *par
 static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct manual_data *chapter)
 {
 	bool done = false;
-	struct parse_xml_block *attribute;
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 	struct manual_data *new_chapter = NULL, *tail = NULL, *item = NULL;
@@ -493,7 +489,6 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 static struct manual_data *parse_section(struct parse_xml_block *parser)
 {
 	bool done = false;
-	struct parse_xml_block *attribute;
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 	struct manual_data *new_section = NULL, *tail = NULL, *item = NULL;
