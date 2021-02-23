@@ -342,7 +342,7 @@ static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *par
 
 	/* Read the supplied filename. */
 
-	if (!parse_xml_get_attribute_text(parser, "file", filename, PARSE_MAX_LEAFNAME)) {
+	if (!parse_xml_copy_attribute_text(parser, "file", filename, PARSE_MAX_LEAFNAME)) {
 		msg_report(MSG_MISSING_ATTRIBUTE, "file");
 		parse_xml_set_error(parser);
 		return NULL;
@@ -402,7 +402,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 
 	/* Read the chapter id. */
 
-//	if (!parse_xml_get_attribute_text(parser, "file", filename, PARSE_MAX_LEAFNAME)) {
+//	if (!parse_xml_copy_attribute_text(parser, "file", filename, PARSE_MAX_LEAFNAME)) {
 //		msg_report(MSG_MISSING_ATTRIBUTE, "file");
 //		parse_xml_set_error(parser);
 //		return NULL;
@@ -510,7 +510,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 
 	/* Read the section id. */
 
-//	if (!parse_xml_get_attribute_text(parser, "file", filename, PARSE_MAX_LEAFNAME)) {
+//	if (!parse_xml_copy_attribute_text(parser, "file", filename, PARSE_MAX_LEAFNAME)) {
 //		msg_report(MSG_MISSING_ATTRIBUTE, "file");
 //		parse_xml_set_error(parser);
 //		return NULL;

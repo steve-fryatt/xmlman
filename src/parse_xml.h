@@ -135,7 +135,7 @@ struct parse_xml_block *parse_xml_get_attribute_parser(struct parse_xml_block *i
  * \return		True if successful; otherwise false.
  */
 
-bool parse_xml_get_attribute_text(struct parse_xml_block *instance, const char *name, char *buffer, size_t length);
+bool parse_xml_copy_attribute_text(struct parse_xml_block *instance, const char *name, char *buffer, size_t length);
 
 /**
  * Read the details of the current entity parsed from

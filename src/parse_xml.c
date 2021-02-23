@@ -117,6 +117,7 @@ struct parse_xml_block {
 
 static struct parse_xml_block *parse_xml_initialise(void);
 static struct parse_xml_attribute *parse_xml_find_attribute(struct parse_xml_block *instance, const char *name);
+static void parse_copy_text_to_buffer(struct parse_xml_block *instance, long start, size_t length, char *buffer, size_t size);
 static void parse_xml_read_text(struct parse_xml_block *instance, char c);
 static void parse_xml_read_markup(struct parse_xml_block *instance, char c);
 static void parse_xml_read_comment(struct parse_xml_block *instance);
@@ -314,9 +315,6 @@ enum parse_xml_result parse_xml_read_next_chunk(struct parse_xml_block *instance
 char *parse_xml_get_text(struct parse_xml_block *instance)
 {
 	char *text;
-	int c;
-	long i = 0, j = 0;
-	bool last_cr = false;
 
 	if (instance == NULL || instance->file == NULL)
 		return NULL;
@@ -329,30 +327,8 @@ char *parse_xml_get_text(struct parse_xml_block *instance)
 	if (text == NULL)
 		return NULL;
 
-	fseek(instance->file, instance->text_block_start, SEEK_SET);
-
-	for (i = 0, j = 0; i < instance->text_block_length; i++) {
-		c = fgetc(instance->file);
-
-		if (c == instance->eof)
-			break;
-		
-		if (c == '\r') {
-			text[j++] = '\n';
-			last_cr = true;
-		} else if (c == '\n') {
-			if (!last_cr)
-				text[j++] = '\n';
-			last_cr = false;
-		} else {
-			text[j++] = c;
-			last_cr = false;
-		}
-	}
-
-	text[j] = '\0';
-
-	fseek(instance->file, instance->file_pointer, SEEK_SET);
+	parse_copy_text_to_buffer(instance, instance->text_block_start, instance->text_block_length,
+			text, instance->text_block_length + 1);
 
 	return text;
 }
@@ -412,10 +388,9 @@ struct parse_xml_block *parse_xml_get_attribute_parser(struct parse_xml_block *i
  * \return		True if successful; otherwise false.
  */
 
-bool parse_xml_get_attribute_text(struct parse_xml_block *instance, const char *name, char *buffer, size_t length)
+bool parse_xml_copy_attribute_text(struct parse_xml_block *instance, const char *name, char *buffer, size_t length)
 {
 	struct parse_xml_attribute *attribute;
-	int i;
 
 	/* Check that there's a return buffer. */
 
@@ -431,12 +406,7 @@ bool parse_xml_get_attribute_text(struct parse_xml_block *instance, const char *
 	if (attribute == NULL)
 		return false;
 
-	fseek(instance->file, attribute->start, SEEK_SET);
-
-	for (i = 0; i < (length - 1) && i < attribute->length; i++)
-		buffer[i] = fgetc(instance->file);
-
-	buffer[i] = '\0';
+	parse_copy_text_to_buffer(instance, attribute->start, attribute->length, buffer, length);
 
 	return true;
 }
@@ -488,6 +458,66 @@ enum manual_entity_type parse_xml_get_entity(struct parse_xml_block *instance)
 		return MANUAL_ENTITY_NONE;
 	
 	return manual_entity_find_type(instance->object_name);
+}
+
+
+/**
+ * Copy a chunk of text from the file into a buffer, converting line
+ * endings according to the XML spec as we go.
+ * 
+ * \param *instance	Pointer to the instance to be used.
+ * \param start		The pointer to where the text starts in the file.
+ * \param length	The number of characters to read.
+ * \param *buffer	Pointer to a buffer to take the text.
+ * \param size		The size of the supplied buffer.
+ */
+
+static void parse_copy_text_to_buffer(struct parse_xml_block *instance, long start, size_t length, char *buffer, size_t size)
+{
+	long i, j;
+	int c;
+	bool last_cr = false;
+
+	if (buffer == NULL || size == 0)
+		return;
+
+	/* Ensure a terminated buffer, if nothing else. */
+
+	buffer[0] = '\0';
+
+	if (instance == NULL)
+		return;
+
+	/* Find the start of the text to copy. */
+
+	fseek(instance->file, start, SEEK_SET);
+
+	/* Copy the text from the file to the buffer, converting \r and \r\n into \n. */
+
+	for (i = 0, j = 0; i < length && j < (size - 1); i++) {
+		c = fgetc(instance->file);
+
+		if (c == instance->eof)
+			break;
+		
+		if (c == '\r') {
+			buffer[j++] = '\n';
+			last_cr = true;
+		} else if (c == '\n') {
+			if (!last_cr)
+				buffer[j++] = '\n';
+			last_cr = false;
+		} else {
+			buffer[j++] = c;
+			last_cr = false;
+		}
+	}
+
+	buffer[j] = '\0';
+
+	/* Restore the file pointer to where it came from. */
+
+	fseek(instance->file, instance->file_pointer, SEEK_SET);
 }
 
 
