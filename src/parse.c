@@ -55,6 +55,7 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 static void parse_manual(struct parse_xml_block *parser, struct manual_data **manual, struct manual_data *chapter);
 static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *parser, struct manual_data *parent);
 static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct manual_data *parent, struct manual_data *chapter);
+static struct manual_data *parse_section(struct parse_xml_block *parser, struct manual_data *parent);
 static struct manual_data *parse_block_object(struct parse_xml_block *parser, struct manual_data *parent);
 
 static void parse_unknown(struct parse_xml_block *parser);
@@ -192,7 +193,7 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 		case PARSE_XML_RESULT_COMMENT:
 			break;
 		default:
-			msg_report(MSG_UNEXPECTED_XML, result, "Top Level");
+			msg_report(MSG_UNEXPECTED_XML, result, "Outer");
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF);
@@ -276,6 +277,19 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 					tail = item;
 				}
 				break;
+			case PARSE_ELEMENT_SECTION:
+				item = parse_section(parser, *manual);
+				if (item != NULL) {
+					item->previous = tail;
+
+					if (tail != NULL)
+						tail->next = item;
+					else
+						(*manual)->first_child = item;
+					
+					tail = item;
+				}
+				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Manual");
 				parse_unknown(parser);
@@ -343,7 +357,7 @@ static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *par
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 	char filename[PARSE_MAX_LEAFNAME];
-	struct manual_data *new_chapter = NULL, *tail = NULL, *text = NULL;
+	struct manual_data *new_chapter = NULL, *tail = NULL;
 
 	type = parse_xml_get_element(parser);
 
@@ -403,7 +417,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 	struct parse_xml_block *attribute;
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
-	struct manual_data *new_chapter = NULL, *tail = NULL, *text = NULL;
+	struct manual_data *new_chapter = NULL, *tail = NULL, *item = NULL;
 
 	type = parse_xml_get_element(parser);
 
@@ -468,6 +482,19 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 					new_chapter->title = parse_block_object(parser, new_chapter);
 				}
 				break;
+			case PARSE_ELEMENT_SECTION:
+				item = parse_section(parser, new_chapter);
+				if (item != NULL) {
+					item->previous = tail;
+
+					if (tail != NULL)
+						tail->next = item;
+					else
+						new_chapter->first_child = item;
+					
+					tail = item;
+				}
+				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
 				parse_unknown(parser);
@@ -498,6 +525,129 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 
 
 /**
+ * Process a section object (SECTION), returning a pointer to the root
+ * of the new data structure.
+ *
+ * \param *parser	Pointer to the parser to use.
+ * \param *parent	Pointer to the parent data structure.
+ * \return		Pointer to the new data structure.
+ */
+
+static struct manual_data *parse_section(struct parse_xml_block *parser, struct manual_data *parent)
+{
+	bool done = false;
+	struct parse_xml_block *attribute;
+	enum parse_xml_result result;
+	enum parse_element_type type, element;
+	struct manual_data *new_section = NULL, *tail = NULL, *item = NULL;
+
+	type = parse_xml_get_element(parser);
+
+	printf("$ Push Section Object (%s)\n", parse_element_find_tag(type));
+
+	/* Read the section id. */
+
+//	if (!parse_xml_get_attribute_text(parser, "file", filename, PARSE_MAX_LEAFNAME)) {
+//		msg_report(MSG_MISSING_ATTRIBUTE, "file");
+//		parse_xml_set_error(parser);
+//		return NULL;
+//	}
+
+	/* Create the new section object. */
+
+	switch (type) {
+	case PARSE_ELEMENT_SECTION:
+		new_section = manual_data_create(MANUAL_DATA_OBJECT_TYPE_SECTION);
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type));
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	if (new_section == NULL) {
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	/* Link the section object to its parent, if it is newly allocated. */
+
+	new_section->parent = parent;
+
+	/* Parse the section contents. */
+
+	do {
+		result = parse_xml_read_next_chunk(parser);
+
+		switch (result) {
+		case PARSE_XML_RESULT_TAG_START:
+			element = parse_xml_get_element(parser);
+
+			switch (element) {
+			case PARSE_ELEMENT_TITLE:
+				if (new_section->title != NULL) {
+					msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
+					parse_xml_set_error(parser);
+				} else {
+					new_section->title = parse_block_object(parser, new_section);
+				}
+				break;
+			case PARSE_ELEMENT_SECTION:
+				item = parse_section(parser, new_section);
+				if (item != NULL) {
+					item->previous = tail;
+
+					if (tail != NULL)
+						tail->next = item;
+					else
+						new_section->first_child = item;
+					
+					tail = item;
+				}
+				break;
+			case PARSE_ELEMENT_PARAGRAPH:
+				item = parse_block_object(parser, new_section);
+				if (item != NULL) {
+					item->previous = tail;
+
+					if (tail != NULL)
+						tail->next = item;
+					else
+						new_section->first_child = item;
+					
+					tail = item;
+				}
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
+				parse_unknown(parser);
+				break;
+			}
+			break;
+		case PARSE_XML_RESULT_TAG_END:
+			element = parse_xml_get_element(parser);
+
+			if (element == type)
+				done = true;
+			else
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+			break;
+		case PARSE_XML_RESULT_WHITESPACE:
+		case PARSE_XML_RESULT_COMMENT:
+			break;
+		default:
+			msg_report(MSG_UNEXPECTED_XML, result, parse_element_find_tag(type));
+			break;
+		}
+	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
+
+	printf("$ Pop Section Object (%s)\n", parse_element_find_tag(type));
+
+	return new_section;
+}
+
+
+/**
  * Process a block object (P, TITLE, SUMMARY), returning a pointer to the root
  * of the new data structure.
  *
@@ -511,7 +661,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 	bool done = false;
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
-	struct manual_data *new_block = NULL, *tail = NULL, *text = NULL;
+	struct manual_data *new_block = NULL, *tail = NULL, *item = NULL;
 
 	type = parse_xml_get_element(parser);
 
@@ -520,6 +670,9 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 	/* Create the block object. */
 
 	switch (type) {
+	case PARSE_ELEMENT_PARAGRAPH:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH);
+		break;
 	case PARSE_ELEMENT_TITLE:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TITLE);
 		break;
@@ -576,23 +729,43 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 		switch (result) {
 		case PARSE_XML_RESULT_TEXT:
 		case PARSE_XML_RESULT_WHITESPACE:
-			text = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TEXT);
-			if (text == NULL) {
+			item = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TEXT);
+			if (item == NULL) {
 				result = parse_xml_set_error(parser);
 				msg_report(MSG_DATA_MALLOC_FAIL);
 				continue;
 			}
-			text->chunk.text = parse_xml_get_text(parser, false);
-			text->parent = new_block;
-			text->previous = tail;
-			text->chunk.text = parse_xml_get_text(parser, false);
+			item->chunk.text = parse_xml_get_text(parser, false);
+			item->parent = new_block;
+			item->previous = tail;
+
+			encoding_flatten_whitespace(item->chunk.text);
 
 			if (tail != NULL)
-				tail->next = text;
+				tail->next = item;
 			else
-				new_block->first_child = text;
+				new_block->first_child = item;
 			
-			tail = text;
+			tail = item;
+			break;
+
+		case PARSE_XML_RESULT_TAG_ENTITY:
+			item = manual_data_create(MANUAL_DATA_OBJECT_TYPE_ENTITY);
+			if (item == NULL) {
+				result = parse_xml_set_error(parser);
+				msg_report(MSG_DATA_MALLOC_FAIL);
+				continue;
+			}
+			item->chunk.entity = parse_xml_get_entity(parser);
+			item->parent = new_block;
+			item->previous = tail;
+
+			if (tail != NULL)
+				tail->next = item;
+			else
+				new_block->first_child = item;
+			
+			tail = item;
 			break;
 
 		case PARSE_XML_RESULT_TAG_START:
@@ -609,7 +782,17 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 			case PARSE_ELEMENT_MOUSE:
 			case PARSE_ELEMENT_STRONG:
 			case PARSE_ELEMENT_WINDOW:
-				new_block->first_child = parse_block_object(parser, new_block);
+				item = parse_block_object(parser, new_block);
+				if (item != NULL) {
+					item->previous = tail;
+
+					if (tail != NULL)
+						tail->next = item;
+					else
+						new_block->first_child = item;
+					
+					tail = item;
+				}
 				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
