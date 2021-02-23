@@ -1,3 +1,3 @@
 rm -rf test-out/*
 #./buildlinux/xmlman test/test.xml -html test-out/html-out -strong test-out/StrongHelp,3d6 -text test-out/text-out
-./buildlinux/xmlman test/test.xml -debug foo
+./buildlinux/xmlman test/test.xml -text test-out/text-out
