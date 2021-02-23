@@ -311,11 +311,12 @@ enum parse_xml_result parse_xml_read_next_chunk(struct parse_xml_block *instance
  * \return			Pointer to a copy of the block, or NULL.
  */
 
-char *parse_xml_get_text(struct parse_xml_block *instance, bool retain_whitespace)
+char *parse_xml_get_text(struct parse_xml_block *instance)
 {
 	char *text;
 	int c;
-	long i = 0;
+	long i = 0, j = 0;
+	bool last_cr = false;
 
 	if (instance == NULL || instance->file == NULL)
 		return NULL;
@@ -330,19 +331,26 @@ char *parse_xml_get_text(struct parse_xml_block *instance, bool retain_whitespac
 
 	fseek(instance->file, instance->text_block_start, SEEK_SET);
 
-	for (i = 0; i < instance->text_block_length; i++) {
+	for (i = 0, j = 0; i < instance->text_block_length; i++) {
 		c = fgetc(instance->file);
 
 		if (c == instance->eof)
 			break;
 		
-		if (!retain_whitespace && parse_xml_isspace(c))
-			c = ' ';
-
-		text[i] = c;
+		if (c == '\r') {
+			text[j++] = '\n';
+			last_cr = true;
+		} else if (c == '\n') {
+			if (!last_cr)
+				text[j++] = '\n';
+			last_cr = false;
+		} else {
+			text[j++] = c;
+			last_cr = false;
+		}
 	}
 
-	text[i] = '\0';
+	text[j] = '\0';
 
 	fseek(instance->file, instance->file_pointer, SEEK_SET);
 
@@ -713,7 +721,7 @@ static void parse_xml_read_element_attributes(struct parse_xml_block *instance, 
 {
 	int len = 0;
 	long start = -1, length = 0;
-	char name[PARSE_XML_MAX_NAME_LEN], quote;
+	char name[PARSE_XML_MAX_NAME_LEN], quote = '\0';
 
 	if (instance == NULL || instance->file == NULL) {
 		instance->current_mode = PARSE_XML_RESULT_ERROR;

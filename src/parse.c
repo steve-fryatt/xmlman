@@ -673,7 +673,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 				msg_report(MSG_DATA_MALLOC_FAIL);
 				continue;
 			}
-			item->chunk.text = parse_xml_get_text(parser, false);
+			item->chunk.text = parse_xml_get_text(parser);
 			encoding_flatten_whitespace(item->chunk.text);
 			parse_link_item(&tail, new_block, item);
 			break;

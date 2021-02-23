@@ -98,11 +98,10 @@ enum parse_xml_result parse_xml_read_next_chunk(struct parse_xml_block *instance
  * the file.
  * 
  * \param *instance		Pointer to the instance to be used.
- * \param retain_whitespace	True to retain all whitespace characters.
  * \return			Pointer to a copy of the block, or NULL.
  */
 
-char *parse_xml_get_text(struct parse_xml_block *instance, bool retain_whitespace);
+char *parse_xml_get_text(struct parse_xml_block *instance);
 
 /**
  * Read the details of the current element parsed from
