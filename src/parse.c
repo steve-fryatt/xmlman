@@ -54,9 +54,9 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 
 static void parse_manual(struct parse_xml_block *parser, struct manual_data **manual, struct manual_data *chapter);
 static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *parser, struct manual_data *parent);
-static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct manual_data *parent, struct manual_data *chapter);
-static struct manual_data *parse_section(struct parse_xml_block *parser, struct manual_data *parent);
-static struct manual_data *parse_block_object(struct parse_xml_block *parser, struct manual_data *parent);
+static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct manual_data *chapter);
+static struct manual_data *parse_section(struct parse_xml_block *parser);
+static struct manual_data *parse_block_object(struct parse_xml_block *parser);
 
 static void parse_unknown(struct parse_xml_block *parser);
 static void parse_link_item(struct manual_data **previous, struct manual_data *parent, struct manual_data *item);
@@ -259,36 +259,18 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 					msg_report(MSG_DUPLICATE_TAG, "title", "manual");
 					parse_xml_set_error(parser);
 				} else {
-					(*manual)->title = parse_block_object(parser, *manual);
+					(*manual)->title = parse_block_object(parser);
 				}
 				break;
 			case PARSE_ELEMENT_CHAPTER:
 			case PARSE_ELEMENT_INDEX:
-				item = parse_chapter(parser, *manual, chapter);
-
-				if (chapter == NULL && item != NULL) {
-					item->previous = tail;
-
-					if (tail != NULL)
-						tail->next = item;
-					else
-						(*manual)->first_child = item;
-					
-					tail = item;
-				}
+				item = parse_chapter(parser, chapter);
+				if (chapter == NULL)
+					parse_link_item(&tail, *manual, item);
 				break;
 			case PARSE_ELEMENT_SECTION:
-				item = parse_section(parser, *manual);
-				if (item != NULL) {
-					item->previous = tail;
-
-					if (tail != NULL)
-						tail->next = item;
-					else
-						(*manual)->first_child = item;
-					
-					tail = item;
-				}
+				item = parse_section(parser);
+				parse_link_item(&tail, *manual, item);
 				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Manual");
@@ -303,16 +285,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 			case PARSE_ELEMENT_CHAPTER:
 			case PARSE_ELEMENT_INDEX:
 				item = parse_placeholder_chapter(parser, *manual);
-				if (item != NULL) {
-					item->previous = tail;
-
-					if (tail != NULL)
-						tail->next = item;
-					else
-						(*manual)->first_child = item;
-					
-					tail = item;
-				}
+				parse_link_item(&tail, *manual, item);
 				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
@@ -405,13 +378,12 @@ static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *par
  * of the new data structure.
  *
  * \param *parser	Pointer to the parser to use.
- * \param *parent	Pointer to the parent data structure.
  * \param *chapter	Pointer to a placeholder chapter to use, or NULL to
  *			create a new one.
  * \return		Pointer to the new data structure.
  */
 
-static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct manual_data *parent, struct manual_data *chapter)
+static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct manual_data *chapter)
 {
 	bool done = false;
 	struct parse_xml_block *attribute;
@@ -455,11 +427,6 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 		return NULL;
 	}
 
-	/* Link the chapter object to its parent, if it is newly allocated. */
-
-	if (chapter == NULL)
-		new_chapter->parent = parent;
-
 	/* We've now processed the actual chapter data. */
 
 	new_chapter->chapter.processed = true;
@@ -479,21 +446,12 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 					msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
 					parse_xml_set_error(parser);
 				} else {
-					new_chapter->title = parse_block_object(parser, new_chapter);
+					new_chapter->title = parse_block_object(parser);
 				}
 				break;
 			case PARSE_ELEMENT_SECTION:
-				item = parse_section(parser, new_chapter);
-				if (item != NULL) {
-					item->previous = tail;
-
-					if (tail != NULL)
-						tail->next = item;
-					else
-						new_chapter->first_child = item;
-					
-					tail = item;
-				}
+				item = parse_section(parser);
+				parse_link_item(&tail, new_chapter, item);
 				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
@@ -529,11 +487,10 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
  * of the new data structure.
  *
  * \param *parser	Pointer to the parser to use.
- * \param *parent	Pointer to the parent data structure.
  * \return		Pointer to the new data structure.
  */
 
-static struct manual_data *parse_section(struct parse_xml_block *parser, struct manual_data *parent)
+static struct manual_data *parse_section(struct parse_xml_block *parser)
 {
 	bool done = false;
 	struct parse_xml_block *attribute;
@@ -570,10 +527,6 @@ static struct manual_data *parse_section(struct parse_xml_block *parser, struct 
 		return NULL;
 	}
 
-	/* Link the section object to its parent, if it is newly allocated. */
-
-	new_section->parent = parent;
-
 	/* Parse the section contents. */
 
 	do {
@@ -589,34 +542,16 @@ static struct manual_data *parse_section(struct parse_xml_block *parser, struct 
 					msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
 					parse_xml_set_error(parser);
 				} else {
-					new_section->title = parse_block_object(parser, new_section);
+					new_section->title = parse_block_object(parser);
 				}
 				break;
 			case PARSE_ELEMENT_SECTION:
-				item = parse_section(parser, new_section);
-				if (item != NULL) {
-					item->previous = tail;
-
-					if (tail != NULL)
-						tail->next = item;
-					else
-						new_section->first_child = item;
-					
-					tail = item;
-				}
+				item = parse_section(parser);
+				parse_link_item(&tail, new_section, item);
 				break;
 			case PARSE_ELEMENT_PARAGRAPH:
-				item = parse_block_object(parser, new_section);
-				if (item != NULL) {
-					item->previous = tail;
-
-					if (tail != NULL)
-						tail->next = item;
-					else
-						new_section->first_child = item;
-					
-					tail = item;
-				}
+				item = parse_block_object(parser);
+				parse_link_item(&tail, new_section, item);
 				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
@@ -652,11 +587,10 @@ static struct manual_data *parse_section(struct parse_xml_block *parser, struct 
  * of the new data structure.
  *
  * \param *parser	Pointer to the parser to use.
- * \param *parent	Pointer to the parent data structure.
  * \return		Pointer to the new data structure.
  */
 
-static struct manual_data *parse_block_object(struct parse_xml_block *parser, struct manual_data *parent)
+static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 {
 	bool done = false;
 	enum parse_xml_result result;
@@ -717,10 +651,6 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 		return NULL;
 	}
 
-	/* Link the block object to its parent. */
-
-	new_block->parent = parent;
-
 	/* Process the content within the new object. */
 
 	do {
@@ -736,17 +666,8 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 				continue;
 			}
 			item->chunk.text = parse_xml_get_text(parser, false);
-			item->parent = new_block;
-			item->previous = tail;
-
 			encoding_flatten_whitespace(item->chunk.text);
-
-			if (tail != NULL)
-				tail->next = item;
-			else
-				new_block->first_child = item;
-			
-			tail = item;
+			parse_link_item(&tail, new_block, item);
 			break;
 
 		case PARSE_XML_RESULT_TAG_ENTITY:
@@ -757,15 +678,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 				continue;
 			}
 			item->chunk.entity = parse_xml_get_entity(parser);
-			item->parent = new_block;
-			item->previous = tail;
-
-			if (tail != NULL)
-				tail->next = item;
-			else
-				new_block->first_child = item;
-			
-			tail = item;
+			parse_link_item(&tail, new_block, item);
 			break;
 
 		case PARSE_XML_RESULT_TAG_START:
@@ -782,24 +695,14 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser, st
 			case PARSE_ELEMENT_MOUSE:
 			case PARSE_ELEMENT_STRONG:
 			case PARSE_ELEMENT_WINDOW:
-				item = parse_block_object(parser, new_block);
-				if (item != NULL) {
-					item->previous = tail;
-
-					if (tail != NULL)
-						tail->next = item;
-					else
-						new_block->first_child = item;
-					
-					tail = item;
-				}
+				item = parse_block_object(parser);
+				parse_link_item(&tail, new_block, item);
 				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
 				parse_unknown(parser);
 				break;
 			}
-
 			break;
 
 		case PARSE_XML_RESULT_TAG_EMPTY:
@@ -875,15 +778,25 @@ static void parse_unknown(struct parse_xml_block *parser)
 }
 
 
+/**
+ * Link a new manual data block on to the end of a chain.
+ *
+ * \param **previous	Pointer to the pointer to the chain tail.
+ * \param *parent	Pointer to the item's parent.
+ * \param *item		Pointer to the item.
+ */
+
 static void parse_link_item(struct manual_data **previous, struct manual_data *parent, struct manual_data *item)
 {
 	if (item == NULL)
 		return;
 
-	item->previous = *previous;
+	if (previous != NULL)
+		item->previous = *previous;
+
 	item->parent = parent;
 
-	if (previous != NULL && *previous == NULL)
+	if (previous != NULL && *previous != NULL)
 		(*previous)->next = item;
 	else if (parent != NULL)
 		parent->first_child = item;
@@ -891,6 +804,7 @@ static void parse_link_item(struct manual_data **previous, struct manual_data *p
 	if (previous != NULL)
 		*previous = item;
 }
+
 
 #if 0
 /**
