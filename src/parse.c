@@ -232,6 +232,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 	struct manual_data *tail = NULL, *item = NULL;
+
 	/* Create a new manual if this is the root file. */
 
 	if (*manual == NULL)
@@ -242,9 +243,13 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 		return;
 	}
 
+	/* Identify the tag which got us here. */
+
 	type = parse_xml_get_element(parser);
 
 	printf("$ Push Manual (%s)\n", parse_element_find_tag(type));
+
+	/* Process the manual contents. */
 
 	do {
 		result = parse_xml_read_next_chunk(parser);
@@ -329,6 +334,8 @@ static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *par
 	char filename[PARSE_MAX_LEAFNAME];
 	struct manual_data *new_chapter = NULL;
 
+	/* Identify the tag which got us here. */
+
 	type = parse_xml_get_element(parser);
 
 	printf("$ Create Placeholder Chapter Object (%s)\n", parse_element_find_tag(type));
@@ -386,6 +393,8 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 	struct manual_data *new_chapter = NULL, *tail = NULL, *item = NULL;
+
+	/* Identify the tag which got us here. */
 
 	type = parse_xml_get_element(parser);
 
@@ -493,6 +502,8 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 	enum parse_element_type type, element;
 	struct manual_data *new_section = NULL, *tail = NULL, *item = NULL;
 
+	/* Identify the tag which got us here. */
+
 	type = parse_xml_get_element(parser);
 
 	printf("$ Push Section Object (%s)\n", parse_element_find_tag(type));
@@ -591,6 +602,8 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 	struct manual_data *new_block = NULL, *tail = NULL, *item = NULL;
+
+	/* Identify the tag which got us here. */
 
 	type = parse_xml_get_element(parser);
 
@@ -738,6 +751,8 @@ static void parse_unknown(struct parse_xml_block *parser)
 	bool done = false;
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
+
+	/* Identify the tag which got us here. */
 
 	type = parse_xml_get_element(parser);
 
