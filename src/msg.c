@@ -71,6 +71,23 @@ struct msg_data {
 	bool		show_location;	/**< TRUE to indicate file and line number, where known.	*/
 };
 
+/**
+ * Message text colours.
+ */
+
+#ifdef LINUX
+#define MSG_TEXT_ERROR "\033[1;31m"
+#define MSG_TEXT_WARN "\033[1;33m"
+#define MSG_TEXT_INFO "\033[32m"
+#define MSG_TEXT_VERBOSE "\033[37m"
+#define MSG_TEXT_RESET "\033[0m"
+#else
+#define MSG_TEXT_ERROR ""
+#define MSG_TEXT_WARN ""
+#define MSG_TEXT_INFO ""
+#define MSG_TEXT_VERBOSE ""
+#define MSG_TEXT_RESET ""
+#endif
 
 /**
  * Error message definitions.
@@ -208,7 +225,7 @@ void msg_set_location(unsigned line, char *file)
 
 void msg_report(enum msg_type type, ...)
 {
-	char		message[MSG_MAX_MESSAGE], *level;
+	char		message[MSG_MAX_MESSAGE], *level, *start;
 	va_list		ap;
 
 	/* Check that the message code is valid. */
@@ -232,28 +249,35 @@ void msg_report(enum msg_type type, ...)
 	/* Select the message prefix. */
 
 	switch (msg_messages[type].level) {
-	case MSG_INFO:
 	case MSG_VERBOSE:
 		level = "Info";
+		start = MSG_TEXT_VERBOSE;
+		break;
+	case MSG_INFO:
+		level = "Info";
+		start = MSG_TEXT_INFO;
 		break;
 	case MSG_WARNING:
 		level = "Warning";
+		start = MSG_TEXT_WARN;
 		break;
 	case MSG_ERROR:
 		level = "Error";
+		start = MSG_TEXT_ERROR;
 		msg_error_reported = true;
 		break;
 	default:
 		level = "Message";
+		start = MSG_TEXT_VERBOSE;
 		break;
 	}
 
 	/* Output the message to screen. */
 
 	if (msg_messages[type].show_location)
-		fprintf(stderr, "%s: %s %s\n", level, message, msg_location);
+		fprintf(stderr, "%s%s: %s %s%s\n", start, level, message, msg_location, MSG_TEXT_RESET);
 	else
-		fprintf(stderr, "%s: %s\n", level, message);
+		fprintf(stderr, "%s%s: %s%s\n", start, level, message, MSG_TEXT_RESET);
 }
 
 /**
