@@ -51,7 +51,6 @@ OBJS := args.o			\
 	parse.o			\
 	parse_element.o		\
 	parse_link.o		\
-	parse_stack.o		\
 	parse_xml.o		\
 	string.o		\
 	xmlman.o
