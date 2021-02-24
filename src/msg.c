@@ -138,6 +138,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Duplicate <%s> tag in <%s>",					true},
 	{MSG_ERROR,	"Unknown '%s' mode",						false},
 	{MSG_ERROR,	"Attempt to read resources from unexpected block",		false},
+	{MSG_ERROR,	"Resource fields can only contain non-entity characters",	false},
 
 	{MSG_ERROR,	"Attempt to add content into unexpected stack location %d",	false},
 

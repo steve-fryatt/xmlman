@@ -62,6 +62,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser);
 static void parse_unknown(struct parse_xml_block *parser);
 static void parse_resources(struct parse_xml_block *parser, struct manual_data_resources *resources);
 static void parse_mode_resources(struct parse_xml_block *parser, struct manual_data_mode *resources);
+static char *parse_fetch_single_chunk(struct parse_xml_block *parser);
 static void parse_link_item(struct manual_data **previous, struct manual_data *parent, struct manual_data *item);
 
 /**
@@ -290,6 +291,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 					parse_resources(parser, resources);
 				else
 					parse_xml_set_error(parser);
+				break;
 			case PARSE_ELEMENT_CHAPTER:
 			case PARSE_ELEMENT_INDEX:
 				item = parse_chapter(parser, chapter);
@@ -299,6 +301,8 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 			case PARSE_ELEMENT_SECTION:
 				item = parse_section(parser);
 				parse_link_item(&tail, *manual, item);
+				break;
+			case PARSE_ELEMENT_NONE:
 				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), "Manual");
@@ -315,6 +319,8 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 				item = parse_placeholder_chapter(parser, *manual);
 				parse_link_item(&tail, *manual, item);
 				break;
+			case PARSE_ELEMENT_NONE:
+				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
 				break;
@@ -325,7 +331,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 
 			if (element == PARSE_ELEMENT_MANUAL)
 				done = true;
-			else
+			else if (element != PARSE_ELEMENT_NONE)
 				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
@@ -493,9 +499,12 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 					parse_resources(parser, resources);
 				else
 					parse_xml_set_error(parser);
+				break;
 			case PARSE_ELEMENT_SECTION:
 				item = parse_section(parser);
 				parse_link_item(&tail, new_chapter, item);
+				break;
+			case PARSE_ELEMENT_NONE:
 				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
@@ -508,7 +517,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 
 			if (element == type)
 				done = true;
-			else
+			else if (element != PARSE_ELEMENT_NONE)
 				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
@@ -606,6 +615,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 					parse_resources(parser, resources);
 				else
 					parse_xml_set_error(parser);
+				break;
 			case PARSE_ELEMENT_SECTION:
 				item = parse_section(parser);
 				parse_link_item(&tail, new_section, item);
@@ -613,6 +623,8 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 			case PARSE_ELEMENT_PARAGRAPH:
 				item = parse_block_object(parser);
 				parse_link_item(&tail, new_section, item);
+				break;
+			case PARSE_ELEMENT_NONE:
 				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
@@ -625,7 +637,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 
 			if (element == type)
 				done = true;
-			else
+			else if (element != PARSE_ELEMENT_NONE)
 				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
@@ -764,6 +776,8 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 				item = parse_block_object(parser);
 				parse_link_item(&tail, new_block, item);
 				break;
+			case PARSE_ELEMENT_NONE:
+				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
 				parse_unknown(parser);
@@ -779,7 +793,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 
 			if (element == type)
 				done = true;
-			else
+			else if (element != PARSE_ELEMENT_NONE)
 				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
 			break;
 
@@ -830,7 +844,7 @@ static void parse_unknown(struct parse_xml_block *parser)
 
 			if (element == type)
 				done = true;
-			else
+			else if (element != PARSE_ELEMENT_NONE)
 				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
@@ -908,8 +922,12 @@ static void parse_resources(struct parse_xml_block *parser, struct manual_data_r
 				}
 				break;
 			case PARSE_ELEMENT_DOWNLOADS:
+				resources->downloads = filename_make(parse_fetch_single_chunk(parser), FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
 				break;
 			case PARSE_ELEMENT_IMAGES:
+				resources->images = filename_make(parse_fetch_single_chunk(parser), FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
+				break;
+			case PARSE_ELEMENT_NONE:
 				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
@@ -922,7 +940,7 @@ static void parse_resources(struct parse_xml_block *parser, struct manual_data_r
 
 			if (element == type)
 				done = true;
-			else
+			else if (element != PARSE_ELEMENT_NONE)
 				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
@@ -982,8 +1000,12 @@ static void parse_mode_resources(struct parse_xml_block *parser, struct manual_d
 
 			switch (element) {
 			case PARSE_ELEMENT_FILENAME:
+				resources->filename = filename_make(parse_fetch_single_chunk(parser), FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
 				break;
 			case PARSE_ELEMENT_FOLDER:
+				resources->folder = filename_make(parse_fetch_single_chunk(parser), FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
+				break;
+			case PARSE_ELEMENT_NONE:
 				break;
 			default:
 				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
@@ -996,7 +1018,7 @@ static void parse_mode_resources(struct parse_xml_block *parser, struct manual_d
 
 			if (element == type)
 				done = true;
-			else
+			else if (element != PARSE_ELEMENT_NONE)
 				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
@@ -1009,6 +1031,69 @@ static void parse_mode_resources(struct parse_xml_block *parser, struct manual_d
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
 
 	msg_report(MSG_PARSE_POP, "Mode Resources", parse_element_find_tag(type));
+}
+
+
+/**
+ * Fetch a single block from the XML, up to the end of a non-nested tag pair.
+ * This must be plain text, with no entities or sub-structures.
+ *
+ * \param *parser	Pointer to the parser to use.
+ * \return		Pointer to the text, or NULL on failure.
+ */
+
+static char *parse_fetch_single_chunk(struct parse_xml_block *parser)
+{
+	bool done = false;
+	char *text = NULL;
+	enum parse_xml_result result;
+	enum parse_element_type type, element;
+
+	/* Identify the tag which got us here. */
+
+	type = parse_xml_get_element(parser);
+
+	msg_report(MSG_PARSE_PUSH, "Single Chunk", parse_element_find_tag(type));
+
+	/* Parse the resources data contents. */
+
+	do {
+		result = parse_xml_read_next_chunk(parser);
+
+		switch (result) {
+		case PARSE_XML_RESULT_TAG_START:
+			element = parse_xml_get_element(parser);
+			msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
+			parse_unknown(parser);
+			break;
+		case PARSE_XML_RESULT_TAG_END:
+			element = parse_xml_get_element(parser);
+
+			if (element == type)
+				done = true;
+			else if (element != PARSE_ELEMENT_NONE)
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+			break;
+		case PARSE_XML_RESULT_TEXT:
+			if (text == NULL) {
+				text = parse_xml_get_text(parser);
+			} else {
+				msg_report(MSG_BAD_RESOURCE_VALUE);
+				parse_xml_set_error(parser);
+			}
+			break;
+		case PARSE_XML_RESULT_WHITESPACE:
+		case PARSE_XML_RESULT_COMMENT:
+			break;
+		default:
+			msg_report(MSG_UNEXPECTED_XML, result, parse_element_find_tag(type));
+			break;
+		}
+	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
+
+	msg_report(MSG_PARSE_POP, "Single Chunk", parse_element_find_tag(type));
+
+	return text;
 }
 
 
