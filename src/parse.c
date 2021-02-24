@@ -36,6 +36,7 @@
 #include "manual.h"
 #include "manual_data.h"
 #include "manual_entity.h"
+#include "modes.h"
 #include "msg.h"
 #include "parse_element.h"
 #include "parse_link.h"
@@ -59,6 +60,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser);
 static struct manual_data *parse_block_object(struct parse_xml_block *parser);
 
 static void parse_unknown(struct parse_xml_block *parser);
+static void parse_resources(struct parse_xml_block *parser, struct manual_data_resources *resources);
 static void parse_link_item(struct manual_data **previous, struct manual_data *parent, struct manual_data *item);
 
 /**
@@ -822,6 +824,109 @@ static void parse_unknown(struct parse_xml_block *parser)
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
 	
 	msg_report(MSG_PARSE_POP, "Unknown", parse_element_find_tag(type));
+}
+
+
+/**
+ * Process a resource object (RESOURCES), returning a pointer to the root
+ * of the new data structure.
+ *
+ * \param *parser	Pointer to the parser to use.
+ * \param *resources	Pointer to the resources object to fill.
+ */
+
+static void parse_resources(struct parse_xml_block *parser, struct manual_data_resources *resources)
+{
+	bool done = false;
+	char name[MODES_MAX_NAME_LEN];
+	enum modes_type mode = MODES_TYPE_NONE;
+	enum parse_xml_result result;
+	enum parse_element_type type, element;
+
+	/* Identify the tag which got us here. */
+
+	type = parse_xml_get_element(parser);
+
+	msg_report(MSG_PARSE_PUSH, "Resources", parse_element_find_tag(type));
+
+	if (type != PARSE_ELEMENT_RESOURCES) {
+		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type));
+		parse_xml_set_error(parser);
+		return;
+	}
+
+	/* Check that the client supplied a resources block to fill. */
+
+	if (resources == NULL) {
+		parse_xml_set_error(parser);
+		return;
+	}
+
+	/* Identify the mode type. */
+
+	if (parse_xml_copy_attribute_text(parser, "type", name, MODES_MAX_NAME_LEN)) {
+
+	}
+
+	/* Parse the resources data contents. */
+
+	do {
+		result = parse_xml_read_next_chunk(parser);
+
+		switch (result) {
+		case PARSE_XML_RESULT_TAG_START:
+			element = parse_xml_get_element(parser);
+
+			switch (element) {
+			case PARSE_ELEMENT_TITLE:
+				if (new_chapter->title == NULL) {
+					new_chapter->title = parse_block_object(parser);
+				} else {
+					msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
+					parse_xml_set_error(parser);
+				}
+				break;
+			case PARSE_ELEMENT_SUMMARY:
+				resources = manual_data_get_resources(new_chapter);
+				if (resources != NULL) {
+					if (resources->summary == NULL) {
+						resources->summary = parse_block_object(parser);
+					} else {
+						msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
+						parse_xml_set_error(parser);
+					}
+				} else {
+					parse_xml_set_error(parser);
+				}
+				break;
+			case PARSE_ELEMENT_SECTION:
+				item = parse_section(parser);
+				parse_link_item(&tail, new_chapter, item);
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
+				parse_unknown(parser);
+				break;
+			}
+			break;
+		case PARSE_XML_RESULT_TAG_END:
+			element = parse_xml_get_element(parser);
+
+			if (element == type)
+				done = true;
+			else
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+			break;
+		case PARSE_XML_RESULT_WHITESPACE:
+		case PARSE_XML_RESULT_COMMENT:
+			break;
+		default:
+			msg_report(MSG_UNEXPECTED_XML, result, parse_element_find_tag(type));
+			break;
+		}
+	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
+
+	msg_report(MSG_PARSE_POP, "Resources", parse_element_find_tag(type));
 }
 
 

@@ -31,6 +31,12 @@
 #define XMLMAN_MODES_H
 
 /**
+ * The maximum length of a mode name.
+ */
+
+#define MODES_MAX_NAME_LEN 64
+
+/**
  * The possible mode types.
  */
 
