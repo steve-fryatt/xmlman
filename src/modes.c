@@ -33,6 +33,7 @@
 
 #include "modes.h"
 
+#include "manual_data.h"
 #include "msg.h"
 
 /* Constant Declarations. */
@@ -79,4 +80,33 @@ enum modes_type modes_find_type(char *name)
 	for (i = 0; modes_type_names[i].type != MODES_TYPE_NONE && strcmp(modes_type_names[i].name, name) != 0; i++);
 
 	return modes_type_names[i].type;
+}
+
+
+/**
+ * Given a mode type and a pointer to a resources block, return a pointer
+ * to the appropriate mode resources block within it.
+ * 
+ * \param *resources	Pointer to the resources block to use.
+ * \param type		The type of the required mode block.
+ * \return		Pointer to the required mode block, or NULL.
+ */
+
+struct manual_data_mode *modes_find_resources(struct manual_data_resources *resources, enum modes_type type)
+{
+	if (resources == NULL)
+		return NULL;
+	
+	switch (type) {
+	case MODES_TYPE_TEXT:
+		return &(resources->text);
+	case MODES_TYPE_STRONGHELP:
+		return &(resources->strong);
+	case MODES_TYPE_HTML:
+		return &(resources->html);
+	default:
+		break;
+	}
+
+	return NULL;
 }

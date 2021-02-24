@@ -30,6 +30,8 @@
 #ifndef XMLMAN_MODES_H
 #define XMLMAN_MODES_H
 
+#include "manual_data.h"
+
 /**
  * The maximum length of a mode name.
  */
@@ -56,6 +58,18 @@ enum modes_type {
  */
 
 enum modes_type modes_find_type(char *name);
+
+
+/**
+ * Given a mode type and a pointer to a resources block, return a pointer
+ * to the appropriate mode resources block within it.
+ * 
+ * \param *resources	Pointer to the resources block to use.
+ * \param type		The type of the required mode block.
+ * \return		Pointer to the required mode block, or NULL.
+ */
+
+struct manual_data_mode *modes_find_resources(struct manual_data_resources *resources, enum modes_type type);
 
 #endif
 
