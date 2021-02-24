@@ -232,6 +232,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 	struct manual_data *tail = NULL, *item = NULL;
+	struct manual_data_resources *resources;
 
 	/* Create a new manual if this is the root file. */
 
@@ -260,11 +261,24 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 
 			switch (element) {
 			case PARSE_ELEMENT_TITLE:
-				if ((*manual)->title != NULL) {
+				if ((*manual)->title == NULL) {
+					(*manual)->title = parse_block_object(parser);
+				} else {
 					msg_report(MSG_DUPLICATE_TAG, "title", "manual");
 					parse_xml_set_error(parser);
+				}
+				break;
+			case PARSE_ELEMENT_SUMMARY:
+				resources = manual_data_get_resources(*manual);
+				if (resources != NULL) {
+					if (resources->summary == NULL) {
+						resources->summary = parse_block_object(parser);
+					} else {
+						msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
+						parse_xml_set_error(parser);
+					}
 				} else {
-					(*manual)->title = parse_block_object(parser);
+					parse_xml_set_error(parser);
 				}
 				break;
 			case PARSE_ELEMENT_CHAPTER:
@@ -393,6 +407,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 	struct manual_data *new_chapter = NULL, *tail = NULL, *item = NULL;
+	struct manual_data_resources *resources;
 
 	/* Identify the tag which got us here. */
 
@@ -443,11 +458,24 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 
 			switch (element) {
 			case PARSE_ELEMENT_TITLE:
-				if (new_chapter->title != NULL) {
+				if (new_chapter->title == NULL) {
+					new_chapter->title = parse_block_object(parser);
+				} else {
 					msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
 					parse_xml_set_error(parser);
+				}
+				break;
+			case PARSE_ELEMENT_SUMMARY:
+				resources = manual_data_get_resources(new_chapter);
+				if (resources != NULL) {
+					if (resources->summary == NULL) {
+						resources->summary = parse_block_object(parser);
+					} else {
+						msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
+						parse_xml_set_error(parser);
+					}
 				} else {
-					new_chapter->title = parse_block_object(parser);
+					parse_xml_set_error(parser);
 				}
 				break;
 			case PARSE_ELEMENT_SECTION:
@@ -497,6 +525,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 	struct manual_data *new_section = NULL, *tail = NULL, *item = NULL;
+	struct manual_data_resources *resources;
 
 	/* Identify the tag which got us here. */
 
@@ -536,11 +565,24 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 
 			switch (element) {
 			case PARSE_ELEMENT_TITLE:
-				if (new_section->title != NULL) {
+				if (new_section->title == NULL) {
+					new_section->title = parse_block_object(parser);
+				} else {
 					msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
 					parse_xml_set_error(parser);
+				}
+				break;
+			case PARSE_ELEMENT_SUMMARY:
+				resources = manual_data_get_resources(new_section);
+				if (resources != NULL) {
+					if (resources->summary == NULL) {
+						resources->summary = parse_block_object(parser);
+					} else {
+						msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
+						parse_xml_set_error(parser);
+					}
 				} else {
-					new_section->title = parse_block_object(parser);
+					parse_xml_set_error(parser);
 				}
 				break;
 			case PARSE_ELEMENT_SECTION:
@@ -609,6 +651,9 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 		break;
 	case PARSE_ELEMENT_TITLE:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TITLE);
+		break;
+	case PARSE_ELEMENT_SUMMARY:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_SUMMARY);
 		break;
 	case PARSE_ELEMENT_CITE:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_CITATION);

@@ -172,13 +172,16 @@ struct manual_data_resources *manual_data_get_resources(struct manual_data *obje
 	case MANUAL_DATA_OBJECT_TYPE_SECTION:
 		break;
 	default:
+		msg_report(MSG_BAD_RESOURCE_BLOCK);
 		return NULL;
 	}
 
 	if (object->chapter.resources == NULL) {
 		object->chapter.resources = malloc(sizeof(struct manual_data_resources));
-		if (object->chapter.resources == NULL)
+		if (object->chapter.resources == NULL) {
+			msg_report(MSG_DATA_MALLOC_FAIL);
 			return NULL;
+		}
 
 		object->chapter.resources->images = NULL;
 		object->chapter.resources->downloads = NULL;
