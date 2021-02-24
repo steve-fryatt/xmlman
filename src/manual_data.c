@@ -50,7 +50,7 @@
 #define MANUAL_DATA_MAX_NUMBER_BUFFER_LEN 256
 
 /**
- * An chunk type definition structure.
+ * A chunk type definition structure.
  */
 
 struct manual_data_object_type_definition {
