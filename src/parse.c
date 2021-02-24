@@ -247,7 +247,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 
 	type = parse_xml_get_element(parser);
 
-	printf("$ Push Manual (%s)\n", parse_element_find_tag(type));
+	msg_report(MSG_PARSE_PUSH, "Manual", parse_element_find_tag(type));
 
 	/* Process the manual contents. */
 
@@ -314,7 +314,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
 	
-	printf("$ Pop Manual (%s)\n", parse_element_find_tag(type));
+	msg_report(MSG_PARSE_POP, "Manual", parse_element_find_tag(type));
 }
 
 
@@ -338,7 +338,7 @@ static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *par
 
 	type = parse_xml_get_element(parser);
 
-	printf("$ Create Placeholder Chapter Object (%s)\n", parse_element_find_tag(type));
+	msg_report(MSG_PARSE_PUSH, "Placeholder Chapter", parse_element_find_tag(type));
 
 	/* Read the supplied filename. */
 
@@ -398,7 +398,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 
 	type = parse_xml_get_element(parser);
 
-	printf("$ Push Chapter Object (%s)\n", parse_element_find_tag(type));
+	msg_report(MSG_PARSE_PUSH, "Chapter", parse_element_find_tag(type));
 
 	/* Create the new chapter object. */
 
@@ -477,7 +477,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
 
-	printf("$ Pop Chapter Object (%s)\n", parse_element_find_tag(type));
+	msg_report(MSG_PARSE_POP, "Chapter", parse_element_find_tag(type));
 
 	return new_chapter;
 }
@@ -502,7 +502,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 
 	type = parse_xml_get_element(parser);
 
-	printf("$ Push Section Object (%s)\n", parse_element_find_tag(type));
+	msg_report(MSG_PARSE_PUSH, "Section", parse_element_find_tag(type));
 
 	/* Create the new section object. */
 
@@ -574,7 +574,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
 
-	printf("$ Pop Section Object (%s)\n", parse_element_find_tag(type));
+	msg_report(MSG_PARSE_POP, "Section", parse_element_find_tag(type));
 
 	return new_section;
 }
@@ -599,7 +599,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 
 	type = parse_xml_get_element(parser);
 
-	printf("$ Push Block Object (%s)\n", parse_element_find_tag(type));
+	msg_report(MSG_PARSE_PUSH, "Block", parse_element_find_tag(type));
 
 	/* Create the block object. */
 
@@ -726,7 +726,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
 	
-	printf("$ Pop Block Object (%s)\n", parse_element_find_tag(type));
+	msg_report(MSG_PARSE_POP, "Block", parse_element_find_tag(type));
 
 	return new_block;
 }
@@ -748,7 +748,7 @@ static void parse_unknown(struct parse_xml_block *parser)
 
 	type = parse_xml_get_element(parser);
 
-	printf("$ Push Unknown Object (%s)\n", parse_element_find_tag(type));
+	msg_report(MSG_PARSE_PUSH, "Unknown", parse_element_find_tag(type));
 
 	do {
 		result = parse_xml_read_next_chunk(parser);
@@ -776,7 +776,7 @@ static void parse_unknown(struct parse_xml_block *parser)
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
 	
-	printf("$ Pop Unknown Object (%s)\n", parse_element_find_tag(type));
+	msg_report(MSG_PARSE_POP, "Unknown", parse_element_find_tag(type));
 }
 
 

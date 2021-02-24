@@ -38,8 +38,6 @@
 #include "parse_element.h"
 #include "parse_xml.h"
 
-#define PARSE_XML_DEBUG
-
 /**
  * The maximum tag or entity name length. */
 
@@ -240,7 +238,7 @@ enum parse_xml_result parse_xml_set_error(struct parse_xml_block *instance)
 	if (instance != NULL)
 		instance->current_mode = PARSE_XML_RESULT_ERROR;
 
-	printf("# Set Error!\n");
+	msg_report(MSG_PARSER_SET_ERROR);
 
 	return PARSE_XML_RESULT_ERROR;
 }
@@ -464,7 +462,6 @@ static struct parse_xml_attribute *parse_xml_find_attribute(struct parse_xml_blo
 		return NULL;
 
 	for (i = 0; i < instance->attribute_count; i++) {
-		printf("Compare '%s' to '%s'\n", instance->attributes[i].name, name);
 		if (strcmp(instance->attributes[i].name, name) == 0)
 			return instance->attributes + i;
 	}
@@ -587,20 +584,15 @@ static void parse_xml_read_text(struct parse_xml_block *instance, char c)
 	if (c != EOF)
 		fseek(instance->file, -1, SEEK_CUR);
 
-	instance->current_mode = (whitespace == true) ? PARSE_XML_RESULT_WHITESPACE : PARSE_XML_RESULT_TEXT;
+	/* Update the status. */
 
-#ifdef PARSE_XML_DEBUG
-	switch (instance->current_mode) {
-	case PARSE_XML_RESULT_TEXT:
-		printf("# Text\n");
-		break;
-	case PARSE_XML_RESULT_WHITESPACE:
-		printf("# Whitespace\n");
-		break;
-	default:
-		break;
+	if (whitespace == true) {
+		instance->current_mode = PARSE_XML_RESULT_WHITESPACE;
+		msg_report(MSG_PARSER_FOUND_WHITESPACE);
+	} else {
+		instance->current_mode = PARSE_XML_RESULT_TEXT;
+		msg_report(MSG_PARSER_FOUND_TEXT);
 	}
-#endif
 }
 
 
@@ -747,28 +739,21 @@ static void parse_xml_read_element(struct parse_xml_block *instance, char c)
 		return;
 	}
 
-#ifdef PARSE_XML_DEBUG
-	{
-		int i;
+	/* Log what we found. */
 
-		switch (instance->current_mode) {
-		case PARSE_XML_RESULT_TAG_START:
-			printf("# Opening Tag: %s\n", instance->object_name);
-			break;
-		case PARSE_XML_RESULT_TAG_EMPTY:
-			printf("# Self-Closing Tag: %s\n", instance->object_name);
-			break;
-		case PARSE_XML_RESULT_TAG_END:
-			printf("# Closing Tag: %s\n", instance->object_name);
-			break;
-		default:
-			break;
-		}
-
-		for (i = 0; i < instance->attribute_count; i++)
-			printf("  Attribute: %s\n", instance->attributes[i].name);
+	switch (instance->current_mode) {
+	case PARSE_XML_RESULT_TAG_START:
+		msg_report(MSG_PARSER_FOUND_OPENING_TAG, instance->object_name);
+		break;
+	case PARSE_XML_RESULT_TAG_EMPTY:
+		msg_report(MSG_PARSER_FOUND_SELF_CLOSING_TAG, instance->object_name);
+		break;
+	case PARSE_XML_RESULT_TAG_END:
+		msg_report(MSG_PARSER_FOUND_CLOSING_TAG, instance->object_name);
+		break;
+	default:
+		break;
 	}
-#endif
 }
 
 
@@ -925,9 +910,7 @@ static void parse_xml_read_comment(struct parse_xml_block *instance)
 
 	instance->current_mode = PARSE_XML_RESULT_COMMENT;
 
-#ifdef PARSE_XML_DEBUG
-	printf("# Skip Comment\n");
-#endif
+	msg_report(MSG_PARSER_FOUND_COMMENT);
 }
 
 
@@ -990,9 +973,7 @@ static void parse_xml_read_entity(struct parse_xml_block *instance, char c)
 
 	instance->current_mode = PARSE_XML_RESULT_TAG_ENTITY;
 
-#ifdef PARSE_XML_DEBUG
-	printf("# Entity: %s\n", instance->object_name);
-#endif
+	msg_report(MSG_PARSER_FOUND_ENTITY, instance->object_name);
 }
 
 

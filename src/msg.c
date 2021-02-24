@@ -79,7 +79,7 @@ struct msg_data {
 #define MSG_TEXT_ERROR "\033[1;31m"
 #define MSG_TEXT_WARN "\033[1;33m"
 #define MSG_TEXT_INFO "\033[32m"
-#define MSG_TEXT_VERBOSE "\033[37m"
+#define MSG_TEXT_VERBOSE "\033[30m"
 #define MSG_TEXT_RESET "\033[0m"
 #else
 #define MSG_TEXT_ERROR ""
@@ -99,7 +99,6 @@ struct msg_data {
 static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Unknown error",						true},
 
-	{MSG_ERROR,	"A file is already being parsed.",				false},
 	{MSG_ERROR,	"Unterminated entity &%s.",					true},
 	{MSG_ERROR,	"Entity name &%s... too long.",					true},
 	{MSG_ERROR,	"Unterminated tag <%s.",					true},
@@ -110,6 +109,19 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Unterminated attribute value for %s.",				true},
 	{MSG_ERROR,	"Too many attributes.",						true},
 	{MSG_ERROR,	"Unterminated comment.",					true},
+
+	{MSG_VERBOSE,	"Push %s Object (%s).",						false},
+	{MSG_VERBOSE,	"Pop %s Object (%s).",						false},
+
+	{MSG_VERBOSE,	"Parser Set Error!",						false},
+	{MSG_VERBOSE,	"Parsed Text.",							false},
+	{MSG_VERBOSE,	"Parsed Whitespace",						false},
+	{MSG_VERBOSE,	"Parsed Opening Tag: <%s>.",					false},
+	{MSG_VERBOSE,	"Parsed Self-Closing Tag: <%s />.",				false},
+	{MSG_VERBOSE,	"Parsed Closing Tag: </%s>.",					false},
+	{MSG_VERBOSE,	"Parsed Comment.",						false},
+	{MSG_VERBOSE,	"Parsed Entity: &%s;.",						false},
+
 
 
 	{MSG_ERROR,	"Failed to parse manual",					false},
@@ -250,7 +262,7 @@ void msg_report(enum msg_type type, ...)
 
 	switch (msg_messages[type].level) {
 	case MSG_VERBOSE:
-		level = "Info";
+		level = "Verbose";
 		start = MSG_TEXT_VERBOSE;
 		break;
 	case MSG_INFO:
