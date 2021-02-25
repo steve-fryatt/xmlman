@@ -61,7 +61,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser);
 static void parse_unknown(struct parse_xml_block *parser);
 static void parse_resources(struct parse_xml_block *parser, struct manual_data_resources *resources);
 static void parse_mode_resources(struct parse_xml_block *parser, struct manual_data_mode *resources);
-static char *parse_fetch_single_chunk(struct parse_xml_block *parser);
+static bool parse_fetch_single_chunk(struct parse_xml_block *parser, char *buffer, size_t length);
 static void parse_link_item(struct manual_data **previous, struct manual_data *parent, struct manual_data *item);
 
 /**
@@ -370,7 +370,7 @@ static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *par
 
 	/* Read the supplied filename. */
 
-	if (!parse_xml_copy_attribute_text(parser, "file", filename, PARSE_MAX_LEAFNAME)) {
+	if (parse_xml_copy_attribute_text(parser, "file", filename, PARSE_MAX_LEAFNAME) == 0) {
 		msg_report(MSG_MISSING_ATTRIBUTE, "file");
 		parse_xml_set_error(parser);
 		return NULL;
@@ -870,7 +870,7 @@ static void parse_unknown(struct parse_xml_block *parser)
 static void parse_resources(struct parse_xml_block *parser, struct manual_data_resources *resources)
 {
 	bool done = false;
-	char name[MODES_MAX_NAME_LEN];
+	char buffer[PARSE_MAX_LEAFNAME];
 	enum modes_type mode = MODES_TYPE_NONE;
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
@@ -906,13 +906,13 @@ static void parse_resources(struct parse_xml_block *parser, struct manual_data_r
 
 			switch (element) {
 			case PARSE_ELEMENT_MODE:
-				if (parse_xml_copy_attribute_text(parser, "type", name, MODES_MAX_NAME_LEN)) {
-					mode = modes_find_type(name);
+				if (parse_xml_copy_attribute_text(parser, "type", buffer, PARSE_MAX_LEAFNAME) > 0) {
+					mode = modes_find_type(buffer);
 					if (mode != MODES_TYPE_NONE) {
 						mode_resources = modes_find_resources(resources, mode);
 						parse_mode_resources(parser, mode_resources);
 					} else {
-						msg_report(MSG_UNKNOWN_MODE, name);
+						msg_report(MSG_UNKNOWN_MODE, buffer);
 						parse_xml_set_error(parser);
 					}
 				} else {
@@ -921,10 +921,12 @@ static void parse_resources(struct parse_xml_block *parser, struct manual_data_r
 				}
 				break;
 			case PARSE_ELEMENT_DOWNLOADS:
-				resources->downloads = filename_make(parse_fetch_single_chunk(parser), FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
+				if (parse_fetch_single_chunk(parser, buffer, PARSE_MAX_LEAFNAME))
+					resources->downloads = filename_make(buffer, FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
 				break;
 			case PARSE_ELEMENT_IMAGES:
-				resources->images = filename_make(parse_fetch_single_chunk(parser), FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
+				if (parse_fetch_single_chunk(parser, buffer, PARSE_MAX_LEAFNAME))
+					resources->images = filename_make(buffer, FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
 				break;
 			case PARSE_ELEMENT_NONE:
 				break;
@@ -966,6 +968,7 @@ static void parse_resources(struct parse_xml_block *parser, struct manual_data_r
 static void parse_mode_resources(struct parse_xml_block *parser, struct manual_data_mode *resources)
 {
 	bool done = false;
+	char buffer[PARSE_MAX_LEAFNAME];
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 
@@ -999,10 +1002,12 @@ static void parse_mode_resources(struct parse_xml_block *parser, struct manual_d
 
 			switch (element) {
 			case PARSE_ELEMENT_FILENAME:
-				resources->filename = filename_make(parse_fetch_single_chunk(parser), FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
+				if (parse_fetch_single_chunk(parser, buffer, PARSE_MAX_LEAFNAME))
+					resources->filename = filename_make(buffer, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
 				break;
 			case PARSE_ELEMENT_FOLDER:
-				resources->folder = filename_make(parse_fetch_single_chunk(parser), FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
+				if (parse_fetch_single_chunk(parser, buffer, PARSE_MAX_LEAFNAME))
+					resources->folder = filename_make(buffer, FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
 				break;
 			case PARSE_ELEMENT_NONE:
 				break;
@@ -1035,18 +1040,22 @@ static void parse_mode_resources(struct parse_xml_block *parser, struct manual_d
 
 /**
  * Fetch a single block from the XML, up to the end of a non-nested tag pair.
- * This must be plain text, with no entities or sub-structures.
+ * There must be no tags within the block, and only the default entities will
+ * be processed.
  *
  * \param *parser	Pointer to the parser to use.
- * \return		Pointer to the text, or NULL on failure.
+ * \param *buffer	Pointer to a buffer to take the text.
+ * \param length	The length of the supplied buffer.
+ * \return		True if successful; false on failure.
  */
 
-static char *parse_fetch_single_chunk(struct parse_xml_block *parser)
+static bool parse_fetch_single_chunk(struct parse_xml_block *parser, char *buffer, size_t length)
 {
 	bool done = false;
-	char *text = NULL;
+	size_t end = 0;
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
+	enum manual_entity_type entity;
 
 	/* Identify the tag which got us here. */
 
@@ -1074,14 +1083,37 @@ static char *parse_fetch_single_chunk(struct parse_xml_block *parser)
 				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
 			break;
 		case PARSE_XML_RESULT_TEXT:
-			if (text == NULL) {
-				text = parse_xml_get_text(parser);
-			} else {
-				msg_report(MSG_BAD_RESOURCE_VALUE);
-				parse_xml_set_error(parser);
-			}
-			break;
 		case PARSE_XML_RESULT_WHITESPACE:
+			end += parse_xml_copy_text(parser, buffer + end, length - end);
+			break;
+		case PARSE_XML_RESULT_TAG_ENTITY:
+			if (end >= (length - 2))
+				break;
+
+			entity = parse_xml_get_entity(parser);
+
+			switch (entity) {
+			case MANUAL_ENTITY_AMP:
+				buffer[end++] = '&';
+				break;
+			case MANUAL_ENTITY_QUOT:
+				buffer[end++] = '"';
+				break;
+			case MANUAL_ENTITY_APOS:
+				buffer[end++] = '\'';
+				break;
+			case MANUAL_ENTITY_LT:
+				buffer[end++] = '<';
+				break;
+			case MANUAL_ENTITY_GT:
+				buffer[end++] = '>';
+				break;
+			default:
+				buffer[end++] = '?';
+				break;
+			}
+			buffer[end] = '\0';
+			break;
 		case PARSE_XML_RESULT_COMMENT:
 			break;
 		default:
@@ -1092,7 +1124,7 @@ static char *parse_fetch_single_chunk(struct parse_xml_block *parser)
 
 	msg_report(MSG_PARSE_POP, "Single Chunk", parse_element_find_tag(type));
 
-	return text;
+	return (end > 0) ? true : false;
 }
 
 

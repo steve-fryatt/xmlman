@@ -115,7 +115,7 @@ struct parse_xml_block {
 
 static struct parse_xml_block *parse_xml_initialise(void);
 static struct parse_xml_attribute *parse_xml_find_attribute(struct parse_xml_block *instance, const char *name);
-static void parse_copy_text_to_buffer(struct parse_xml_block *instance, long start, size_t length, char *buffer, size_t size);
+static size_t parse_copy_text_to_buffer(struct parse_xml_block *instance, long start, size_t length, char *buffer, size_t size);
 static void parse_xml_read_text(struct parse_xml_block *instance, char c);
 static void parse_xml_read_markup(struct parse_xml_block *instance, char c);
 static void parse_xml_read_comment(struct parse_xml_block *instance);
@@ -306,7 +306,6 @@ enum parse_xml_result parse_xml_read_next_chunk(struct parse_xml_block *instance
  * the file.
  * 
  * \param *instance		Pointer to the instance to be used.
- * \param retain_whitespace	True to retain all whitespace characters.
  * \return			Pointer to a copy of the block, or NULL.
  */
 
@@ -329,6 +328,35 @@ char *parse_xml_get_text(struct parse_xml_block *instance)
 			text, instance->text_block_length + 1);
 
 	return text;
+}
+
+
+/**
+ * Copy the current text block parsed from the file into a buffer
+ * 
+ * \param *instance		Pointer to the instance to be used.
+ * \param *buffer		Pointer to a buffer to hold the value.
+ * \param length		The size of the supplied buffer.
+ * \return			The number of bytes copued into the buffer.
+ */
+
+size_t parse_xml_copy_text(struct parse_xml_block *instance, char *buffer, size_t length)
+{
+	/* Check that there's a return buffer. */
+
+	if (buffer == NULL || length == 0)
+		return 0;
+
+	buffer[0] = '\0';
+
+	if (instance == NULL || instance->file == NULL)
+		return 0;
+
+	if (instance->current_mode != PARSE_XML_RESULT_TEXT &&
+			instance->current_mode != PARSE_XML_RESULT_WHITESPACE)
+		return 0;
+
+	return parse_copy_text_to_buffer(instance, instance->text_block_start, instance->text_block_length, buffer, length);
 }
 
 
@@ -415,30 +443,28 @@ char *parse_xml_get_attribute_text(struct parse_xml_block *instance, const char 
  * \param *name		The name of the attribute to be matched.
  * \param *buffer	Pointer to a buffer to hold the value.
  * \param length	The size of the supplied buffer.
- * \return		True if successful; otherwise false.
+ * \return		The number of bytes copied into the buffer.
  */
 
-bool parse_xml_copy_attribute_text(struct parse_xml_block *instance, const char *name, char *buffer, size_t length)
+size_t parse_xml_copy_attribute_text(struct parse_xml_block *instance, const char *name, char *buffer, size_t length)
 {
 	struct parse_xml_attribute *attribute;
 
 	/* Check that there's a return buffer. */
 
 	if (buffer == NULL || length == 0)
-		return false;
+		return 0;
 
 	buffer[0] = '\0';
 
 	if (instance == NULL || instance->file == NULL)
-		return false;
+		return 0;
 
 	attribute = parse_xml_find_attribute(instance, name);
 	if (attribute == NULL)
-		return false;
+		return 0;
 
-	parse_copy_text_to_buffer(instance, attribute->start, attribute->length, buffer, length);
-
-	return true;
+	return parse_copy_text_to_buffer(instance, attribute->start, attribute->length, buffer, length);
 }
 
 
@@ -499,23 +525,24 @@ enum manual_entity_type parse_xml_get_entity(struct parse_xml_block *instance)
  * \param length	The number of characters to read.
  * \param *buffer	Pointer to a buffer to take the text.
  * \param size		The size of the supplied buffer.
+ * \return		The number of bytes copied into the output buffer.
  */
 
-static void parse_copy_text_to_buffer(struct parse_xml_block *instance, long start, size_t length, char *buffer, size_t size)
+static size_t parse_copy_text_to_buffer(struct parse_xml_block *instance, long start, size_t length, char *buffer, size_t size)
 {
 	long i, j;
 	int c;
 	bool last_cr = false;
 
 	if (buffer == NULL || size == 0)
-		return;
+		return 0;
 
 	/* Ensure a terminated buffer, if nothing else. */
 
 	buffer[0] = '\0';
 
 	if (instance == NULL)
-		return;
+		return 0;
 
 	/* Find the start of the text to copy. */
 
@@ -547,6 +574,8 @@ static void parse_copy_text_to_buffer(struct parse_xml_block *instance, long sta
 	/* Restore the file pointer to where it came from. */
 
 	fseek(instance->file, instance->file_pointer, SEEK_SET);
+
+	return j;
 }
 
 
@@ -1016,20 +1045,3 @@ static bool parse_xml_match_ahead(struct parse_xml_block *instance, const char *
 
 	return (*text == '\0') ? true : false;
 }
-
-/* When parsing text (& attribute values), store start ptr and length. Then use
- * generic copy routine to copy into new malloc block for the client.
- * 
- * tag and entity names can go into a fixed buffer, as we know in advance how long
- * the longest is. Look up, and return enum.
- * 
- * Return open, close, complete tag, entity, text, whitespace, eof, error codes
- * 
- * Parsting tags, we know how many entities there may be, so pre-process into
- * a fixed, static array and allow each to be called up and flagged as used. The
- * client can then trigger an "unused" scan after it has processed what it needs.
- * 
- * Flattening Whitespace appears to be handed by the encoding module?
- * 
- * We can then do a parse using recursive functions, and lose the stack?
- */

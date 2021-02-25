@@ -50,6 +50,9 @@ struct manual_entity_definition {
 static struct manual_entity_definition manual_entity_names[] = {
 	{MANUAL_ENTITY_AMP,		"amp"},
 	{MANUAL_ENTITY_QUOT,		"quot"},
+	{MANUAL_ENTITY_APOS,		"apos"},
+	{MANUAL_ENTITY_LT,		"lt"},
+	{MANUAL_ENTITY_GT,		"gt"},
 	{MANUAL_ENTITY_NBSP,		"nbsp"},
 	{MANUAL_ENTITY_LSQUO,		"lsquo"},
 	{MANUAL_ENTITY_LDQUO,		"ldquo"},
