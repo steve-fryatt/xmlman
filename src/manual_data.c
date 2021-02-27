@@ -33,6 +33,7 @@
 
 #include "manual_data.h"
 
+#include "modes.h"
 #include "msg.h"
 
 /* Constant Declarations. */
@@ -298,3 +299,62 @@ char *manual_data_get_node_number(struct manual_data *node)
 	return text;
 }
 
+
+/**
+ * Return a filename for a node, given a default  root filename and the
+ * target output type.
+ *
+ * \param *node		The node to return a filename for.
+ * \param *root		A default root filename.
+ * \param type		The target output type.
+ * \return		Pointer to a filename, or NULL on failure.
+ */
+
+struct filename *manual_data_get_node_filename(struct manual_data *node, struct filename *root, enum modes_type type)
+{
+	struct manual_data_mode *resources = NULL;
+	struct filename *filename;
+
+	if (node == NULL)
+		return NULL;
+
+	filename = filename_make(NULL, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
+	if (filename == NULL)
+		return NULL;
+
+	while (node != NULL) {
+		switch (node->type) {
+		case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+		case MANUAL_DATA_OBJECT_TYPE_INDEX:
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			resources = modes_find_resources(node->chapter.resources, type);
+			if (resources == NULL)
+				break;
+
+			if (resources->filename != NULL) {
+				filename_prepend(filename, resources->filename, 0);
+				root = NULL;
+			}
+
+			if (resources->folder != NULL) {
+				if (root != NULL)
+					filename_prepend(filename, root, 0);
+
+				filename_prepend(filename, resources->folder, 0);
+				root = NULL;
+			}
+			break;
+
+		default:
+			break;
+		}
+
+		node = node->parent;
+	}
+
+	if (root != NULL)
+		filename_prepend(filename, root, 0);
+
+	return filename;
+}

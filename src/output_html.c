@@ -38,6 +38,7 @@
 #include "encoding.h"
 #include "filename.h"
 #include "manual_data.h"
+#include "manual_queue.h"
 #include "msg.h"
 #include "output_html_file.h"
 
@@ -79,7 +80,8 @@ static struct filename *output_html_root_filename;
 /* Static Function Prototypes. */
 
 static bool output_html_write_manual(struct manual_data *manual, struct filename *folder);
-static bool output_html_write_object(struct manual_data *section, int level, struct filename *folder, bool in_line);
+static bool output_html_write_file(struct manual_data *object, struct filename *folder);
+static bool output_html_write_object(struct manual_data *object, int level);
 static bool output_html_write_head(struct manual_data *manual);
 static bool output_html_write_foot(struct manual_data *manual);
 static bool output_html_write_heading(struct manual_data *node, int level);
@@ -139,7 +141,7 @@ static bool output_html_write_manual(struct manual_data *manual, struct filename
 
 	if (manual == NULL || folder == NULL)
 		return false;
-
+printf("Writing HTML manual...\n");
 	/* Confirm that this is a manual. */
 
 	if (manual->type != MANUAL_DATA_OBJECT_TYPE_MANUAL) {
@@ -148,76 +150,120 @@ static bool output_html_write_manual(struct manual_data *manual, struct filename
 		return false;
 	}
 
-	/* Open the index file. */
+	/* Initialise the manual queue. */
 
-	if (!filename_mkdir(folder, true))
+	manual_queue_initialise();
+
+	/* Process the files, starting with the root node. */
+
+	manual_queue_add_node(manual);
+
+	do {
+		object = manual_queue_remove_node();
+		printf("De-queued node 0x%x to process...\n", object);
+		if (object == NULL)
+			continue;
+
+		if (!output_html_write_file(object, folder))
+			return false;
+	} while (object != NULL);
+
+	return true;
+}
+
+
+
+static bool output_html_write_file(struct manual_data *object, struct filename *folder)
+{
+	struct filename *filename = NULL, *foldername = NULL;
+
+	if (object == NULL || object->first_child == NULL)
+		return true;
+
+	/* Confirm that this is a suitable top-level object for a file. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_SECTION),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Find the file and folder names. */
+
+	filename = manual_data_get_node_filename(object, output_html_root_filename, MODES_TYPE_HTML);
+	if (filename == NULL)
 		return false;
 
-	filename = filename_join(folder, output_html_root_filename);
-
-	if (!output_html_file_open(filename)) {
+	if (!filename_prepend(filename, folder, 0)) {
 		filename_destroy(filename);
 		return false;
 	}
 
-	filename_destroy(filename);
-
-	if (!output_html_write_head(manual)) {
-		output_html_file_close();
+	foldername = filename_up(filename, 1);
+	if (foldername == NULL) {
+		filename_destroy(filename);
 		return false;
 	}
 
-	/* Output the inline details. */
+	/* Create the folder and open the file. */
 
-	object = manual->first_child;
-
-	while (object != NULL) {
-		switch (object->type) {
-		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
-		case MANUAL_DATA_OBJECT_TYPE_INDEX:
-		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_html_write_object(object, OUTPUT_HTML_BASE_LEVEL, folder, true)) {
-				output_html_file_close();
-				return false;
-			}
-			break;
-
-		default:
-			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(object->type));
-			break;
-		}
-
-		object = object->next;
+	if (!filename_mkdir(foldername, true)) {
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
 	}
 
-	if (!output_html_write_foot(manual)) {
+	if (!output_html_file_open(filename)) {
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	/* Write the file header. */
+
+	if (!output_html_write_head(object)) {
 		output_html_file_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	if (!output_html_file_write_newline()) {
+		output_html_file_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	/* Output the object. */
+
+	if (!output_html_write_object(object, 1)) {
+		output_html_file_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	/* Output the file footer. */
+
+	if (!output_html_write_foot(object)) {
+		output_html_file_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
 		return false;
 	}
 
 	output_html_file_close();
 
-	/* Output the separate files. */
-
-	object = manual->first_child;
-
-	while (object != NULL) {
-		switch (object->type) {
-		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
-		case MANUAL_DATA_OBJECT_TYPE_INDEX:
-			if (!output_html_write_object(object, OUTPUT_HTML_BASE_LEVEL, folder, false))
-				return false;
-			break;
-
-		default:
-			break;
-		}
-
-		object = object->next;
-	}
-
 	return true;
 }
+
 
 /**
  * Process the contents of an index, chapter or section block and write it out.
@@ -229,11 +275,72 @@ static bool output_html_write_manual(struct manual_data *manual, struct filename
  * \return			True if successful; False on error.
  */
 
+static bool output_html_write_object(struct manual_data *object, int level)
+{
+	struct manual_data *block;
+printf("Writing block at level %d\n", level);
+	/* Write out the object heading. */
+
+	if (object->title != NULL) {
+		if (!output_html_file_write_newline())
+			return false;
+
+		if (!output_html_write_heading(object, level))
+			return false;
+	}
+
+	/* Write out the blocks iwithin the object. */
+
+	block = object->first_child;
+
+	while (block != NULL) {
+		switch (block->type) {
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_INDEX:
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			if (!output_html_write_object(block, level + 1))
+				return false;
+			break;
+
+		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+			if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+				msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+				break;
+			}
+
+			if (!output_html_write_paragraph(block))
+				return false;
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+			break;
+		}
+
+		block = block->next;
+	}
+
+}
+
+
+
+/**
+ * Process the contents of an index, chapter or section block and write it out.
+ *
+ * \param *object		The object to process.
+ * \param level			The level to write the section at.
+ * \param *folder		The folder being written within.
+ * \param in_line		True if the section is being written inline; otherwise False.
+ * \return			True if successful; False on error.
+ */
+#if 0
 static bool output_html_write_object(struct manual_data *object, int level, struct filename *folder, bool in_line)
 {
 	struct manual_data *block;
 	struct filename *foldername = NULL, *filename = NULL;
 	bool self_contained = false;
+
+	struct filename *nodename = NULL;
 
 	if (object == NULL || object->first_child == NULL)
 		return true;
@@ -244,6 +351,12 @@ static bool output_html_write_object(struct manual_data *object, int level, stru
 		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_SECTION),
 				manual_data_find_object_name(object->type));
 		return false;
+	}
+
+	nodename = manual_data_get_node_filename(object, output_html_root_filename, MODES_TYPE_HTML);
+	if (nodename != NULL) {
+		filename_dump(nodename, "Node Filename");
+		free(nodename);
 	}
 
 	/* Check that the nesting depth is OK. */
@@ -402,7 +515,7 @@ static bool output_html_write_object(struct manual_data *object, int level, stru
 
 	return true;
 }
-
+#endif
 /**
  * Write an HTML file head block out. This starts with the doctype and
  * continues until we've written the opening <body>.
@@ -661,7 +774,7 @@ static const char *output_html_convert_entity(enum manual_entity_type entity)
  * \return		True if the object should be in a self-contained
  *			file; False if it should appear inline in its parent.
  */
-
+#if 0
 static bool output_html_find_folders(struct filename *base, struct manual_data_resources *resources, struct filename **folder, struct filename **file)
 {
 	if (folder != NULL)
@@ -700,3 +813,4 @@ static bool output_html_find_folders(struct filename *base, struct manual_data_r
 
 	return true;
 }
+#endif

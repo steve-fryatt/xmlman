@@ -135,8 +135,8 @@ bool filename_mkdir(struct filename *name, bool intermediate);
 void filename_dump(struct filename *name, char *label);
 
 /**
- * Duplicate a filename, optionally removing one or more leaves to remove the
- * leave filename or move up to a parent directory.
+ * Duplicate a filename, optionally removing one or more leaves to remove
+ * the leaf filename or move up to a parent directory.
  *
  * \param *name			The name to be duplicated.
  * \param up			The number of levels to move up, or zero for a
@@ -145,6 +145,22 @@ void filename_dump(struct filename *name, char *label);
  */
 
 struct filename *filename_up(struct filename *name, int up);
+
+/**
+ * Add two filenames together. The nodes in the second name are duplicated and
+ * added to the start of the first, so the second name can be deleted afterwards
+ * if required. In the event of a failure, the number of nodes in the first
+ * name is undefined.
+ *
+ * \param *name			Pointer to the first name, to which the nodes of
+ *				the second will be prepended.
+ * \param *add			Pointer to the name whose nodes will be prepended
+ *				to the first.
+ * \param levels		The number of levels to copy, or zero for all.
+ * \return			True if successful; False on failure.
+ */
+
+bool filename_prepend(struct filename *name, struct filename *add, int levels);
 
 /**
  * Add two filenames together. The nodes in the second name are duplicated and
@@ -160,11 +176,11 @@ struct filename *filename_up(struct filename *name, int up);
  * \return			True if successful; False on failure.
  */
 
-bool filename_add(struct filename *name, struct filename *add, int levels);
+bool filename_append(struct filename *name, struct filename *add, int levels);
 
 /**
  * Join two filenames together, returing the result as a new filename.
- * This is effectively an alternative to filename_add(), where the full
+ * This is effectively an alternative to filename_append(), where the full
  * names are required and the result is in a new instance.
  *
  * \param *first		The first filename instance to be included.

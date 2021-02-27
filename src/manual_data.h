@@ -32,6 +32,7 @@
 
 #include "manual_entity.h"
 #include "filename.h"
+#include "modes.h"
 
 /**
  * The possible node object types.
@@ -265,5 +266,16 @@ const char *manual_data_find_object_name(enum manual_data_object_type type);
 
 char *manual_data_get_node_number(struct manual_data *node);
 
-#endif
+/**
+ * Return a filename for a node, given a default  root filename and the
+ * target output type.
+ *
+ * \param *node		The node to return a filename for.
+ * \param *root		A default root filename.
+ * \param type		The target output type.
+ * \return		Pointer to a filename, or NULL on failure.
+ */
 
+struct filename *manual_data_get_node_filename(struct manual_data *node, struct filename *root, enum modes_type type);
+
+#endif

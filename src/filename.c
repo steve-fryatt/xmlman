@@ -364,12 +364,80 @@ struct filename *filename_up(struct filename *name, int up)
 
 	/* Copy across the required number of name nodes. */
 
-	if (levels > 0 && !filename_add(new_name, name, levels)) {
+	if (levels > 0 && !filename_append(new_name, name, levels)) {
 		filename_destroy(new_name);
 		return NULL;
 	}
 
 	return new_name;
+}
+
+
+/**
+ * Add two filenames together. The nodes in the second name are duplicated and
+ * added to the start of the first, so the second name can be deleted afterwards
+ * if required. In the event of a failure, the number of nodes in the first
+ * name is undefined.
+ *
+ * \param *name			Pointer to the first name, to which the nodes of
+ *				the second will be prepended.
+ * \param *add			Pointer to the name whose nodes will be prepended
+ *				to the first.
+ * \param levels		The number of levels to copy, or zero for all.
+ * \return			True if successful; False on failure.
+ */
+
+bool filename_prepend(struct filename *name, struct filename *add, int levels)
+{
+	struct filename_node	*original = NULL, *node = NULL, *new_node = NULL, *previous_node = NULL;
+	char			*new_part = NULL;
+	int			count = 0;
+
+	if (name == NULL || add == NULL)
+		return false;
+
+	/* Remember the start of the first name. */
+
+	original = name->name;
+
+	/* Copy the required number of nodes on to the end of the name. */
+
+	node = add->name;
+
+	while (node != NULL && ((levels == 0) || (count++ < levels))) {
+		new_node = malloc(sizeof(struct filename_node));
+		new_part = strdup(node->name);
+
+		/* Tidy up the loose nodes in the event of a memory error. */
+
+		if (new_node == NULL || new_part == NULL) {
+			if (new_node != NULL)
+				free(new_node);
+
+			if (new_part != NULL)
+				free(new_part);
+
+			return false;
+		}
+
+		new_node->name = new_part;
+		new_node->next = NULL;
+
+		/* Link the new node in to the instance. */
+
+		if (previous_node == NULL)
+			name->name = new_node;
+		else
+			previous_node->next = new_node;
+
+		previous_node = new_node;
+
+		node = node->next;
+	}
+
+	new_node->next = original;
+
+	return true;
 }
 
 /**
@@ -386,7 +454,7 @@ struct filename *filename_up(struct filename *name, int up)
  * \return			True if successful; False on failure.
  */
 
-bool filename_add(struct filename *name, struct filename *add, int levels)
+bool filename_append(struct filename *name, struct filename *add, int levels)
 {
 	struct filename_node	*node = NULL, *new_node = NULL, *previous_node = NULL;
 	char			*new_part = NULL;
@@ -445,7 +513,7 @@ bool filename_add(struct filename *name, struct filename *add, int levels)
 
 /**
  * Join two filenames together, returing the result as a new filename.
- * This is effectively an alternative to filename_add(), where the full
+ * This is effectively an alternative to filename_append(), where the full
  * names are required and the result is in a new instance.
  * 
  * If *second is NULL, *first is simply duplicated and returned.
@@ -472,7 +540,7 @@ struct filename *filename_join(struct filename *first, struct filename *second)
 
 	/* Append the second filename. */
 
-	if (!filename_add(name, second, 0)) {
+	if (!filename_append(name, second, 0)) {
 		filename_destroy(name);
 		return NULL;
 	}
