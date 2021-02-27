@@ -32,7 +32,6 @@
 
 #include "manual_entity.h"
 #include "filename.h"
-#include "modes.h"
 
 /**
  * The possible node object types.
@@ -265,6 +264,8 @@ const char *manual_data_find_object_name(enum manual_data_object_type type);
  */
 
 char *manual_data_get_node_number(struct manual_data *node);
+
+#include "modes.h"
 
 /**
  * Return a filename for a node, given a default  root filename and the

@@ -1,4 +1,4 @@
-/* Copyright 2018-2020, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2021, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -88,7 +88,6 @@ static bool output_html_write_heading(struct manual_data *node, int level);
 static bool output_html_write_paragraph(struct manual_data *object);
 static bool output_html_write_text(enum manual_data_object_type type, struct manual_data *text);
 static const char *output_html_convert_entity(enum manual_entity_type entity);
-static bool output_html_find_folders(struct filename *base, struct manual_data_resources *resources, struct filename **folder, struct filename **file);
 
 /**
  * Output a manual in HTML form.
@@ -137,7 +136,6 @@ bool output_html(struct manual *document, struct filename *folder, enum encoding
 static bool output_html_write_manual(struct manual_data *manual, struct filename *folder)
 {
 	struct manual_data *object;
-	struct filename *filename;
 
 	if (manual == NULL || folder == NULL)
 		return false;
@@ -320,6 +318,7 @@ printf("Writing block at level %d\n", level);
 		block = block->next;
 	}
 
+	return true;
 }
 
 
