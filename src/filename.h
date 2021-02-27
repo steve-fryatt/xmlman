@@ -66,6 +66,11 @@ enum filename_type {
 
 enum filename_platform {
 	/**
+	 * The platform isn't applicable.
+	 */
+	FILENAME_PLATFORM_NONE,
+
+	/**
 	 * A filename for the target platform on which XmlMan is running.
 	 */
 	FILENAME_PLATFORM_LOCAL,
@@ -78,7 +83,12 @@ enum filename_platform {
 	/**
 	 * A RISC OS filename.
 	 */
-	FILENAME_PLATFORM_RISCOS
+	FILENAME_PLATFORM_RISCOS,
+
+	/**
+	 * A filename suitable for StrongHelp links.
+	 */
+	FILENAME_PLATFORM_STRONGHELP
 };
 
 /**

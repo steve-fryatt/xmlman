@@ -86,6 +86,7 @@ static bool output_strong_write_head(struct manual_data *manual);
 static bool output_strong_write_foot(struct manual_data *manual);
 static bool output_strong_write_heading(struct manual_data *node, int level);
 static bool output_strong_write_paragraph(struct manual_data *object);
+static bool output_strong_write_reference(struct manual_data *target, char *text);
 static bool output_strong_write_text(enum manual_data_object_type type, struct manual_data *text);
 static const char *output_strong_convert_entity(enum manual_entity_type entity);
 
@@ -207,7 +208,7 @@ static bool output_strong_write_file(struct manual_data *object)
 
 	/* Find the file name and open the file. */
 
-	filename = manual_data_get_node_filename(object, output_strong_root_filename, FILENAME_PLATFORM_RISCOS, MODES_TYPE_STRONGHELP);
+	filename = manual_data_get_node_filename(object, output_strong_root_filename, MODES_TYPE_STRONGHELP);
 	if (filename == NULL)
 		return false;
 
@@ -299,7 +300,9 @@ static bool output_strong_write_object(struct manual_data *object, int level)
 			return false;
 	}
 
-	/* If this is a separate file, queue it for writing later. */
+	/* If this is a separate file, queue it for writing later. Otherwise,
+	 * write the objects which fall within it.
+	 */
 
 	if (resources != NULL && (level > OUTPUT_STRONG_BASE_LEVEL) &&
 			(resources->filename != NULL || resources->folder != NULL)) {
@@ -310,43 +313,48 @@ static bool output_strong_write_object(struct manual_data *object, int level)
 		if (!output_strong_file_write_newline())
 			return false;
 
-		if (!output_strong_file_write_plain("This is a link to an external file...\n"))
+		if (!output_strong_file_write_newline())
+			return false;
+
+		if (!output_strong_write_reference(object, "This is a link to an external file..."))
+			return false;
+
+		if (!output_strong_file_write_newline())
+			return false;
+
+		if (!output_strong_file_write_newline())
 			return false;
 
 		manual_queue_add_node(object);
+	} else {
+		block = object->first_child;
 
-		return true;
-	}
+		while (block != NULL) {
+			switch (block->type) {
+			case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+			case MANUAL_DATA_OBJECT_TYPE_INDEX:
+			case MANUAL_DATA_OBJECT_TYPE_SECTION:
+				if (!output_strong_write_object(block, level + 1))
+					return false;
+				break;
 
-	/* Output the blocks within the object. */
+			case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+					break;
+				}
 
-	block = object->first_child;
+				if (!output_strong_write_paragraph(block))
+					return false;
+				break;
 
-	while (block != NULL) {
-		switch (block->type) {
-		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
-		case MANUAL_DATA_OBJECT_TYPE_INDEX:
-		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_strong_write_object(block, level + 1))
-				return false;
-			break;
-
-		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
-			if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+			default:
 				msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
 				break;
 			}
 
-			if (!output_strong_write_paragraph(block))
-				return false;
-			break;
-
-		default:
-			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
-			break;
+			block = block->next;
 		}
-
-		block = block->next;
 	}
 
 	return true;
@@ -476,6 +484,52 @@ static bool output_strong_write_paragraph(struct manual_data *object)
 
 	return true;
 }
+
+
+/**
+ * Write an internal reference (a link to another page) to the output.
+ * 
+ * \param *target		The node to be the target of the link.
+ * \param *text			Text to use for the link, or NULL for none.
+ * \return			True if successful; False on failure.
+ */
+
+static bool output_strong_write_reference(struct manual_data *target, char *text)
+{
+	struct filename *filename = NULL;
+	char *link = NULL;
+
+	if (target == NULL)
+		return false;
+
+	filename = manual_data_get_node_filename(target, NULL, MODES_TYPE_STRONGHELP);
+	if (filename == NULL)
+		return false;
+
+	link = filename_convert(filename, FILENAME_PLATFORM_STRONGHELP, 0);
+	filename_destroy(filename);
+
+	if (link == NULL)
+		return false;
+
+	if (!output_strong_file_write_plain("<"))
+		return false;
+
+	if (text != NULL && !output_strong_file_write_plain(text))
+		return false;
+
+	if (text != NULL && !output_strong_file_write_plain("=>"))
+		return false;
+
+	if (!output_strong_file_write_plain(link))
+		return false;
+
+	if (!output_strong_file_write_plain(">"))
+		return false;
+
+	return true;
+}
+
 
 /**
  * Write a block of text to the output file.

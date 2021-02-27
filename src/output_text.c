@@ -208,7 +208,7 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 
 	/* Find the file and folder names. */
 
-	filename = manual_data_get_node_filename(object, output_text_root_filename, FILENAME_PLATFORM_LOCAL, MODES_TYPE_TEXT);
+	filename = manual_data_get_node_filename(object, output_text_root_filename, MODES_TYPE_TEXT);
 	if (filename == NULL)
 		return false;
 
@@ -339,7 +339,9 @@ static bool output_text_write_object(struct manual_data *object, int indent)
 		return false;
 	}
 
-	/* If this is a separate file, queue it for writing later. */
+	/* If this is a separate file, queue it for writing later. Otherwise,
+	 * write the objects which fall within it.
+	 */
 
 	if (resources != NULL && (indent > OUTPUT_TEXT_BASE_INDENT) &&
 			(resources->filename != NULL || resources->folder != NULL)) {

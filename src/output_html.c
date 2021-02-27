@@ -203,7 +203,7 @@ static bool output_html_write_file(struct manual_data *object, struct filename *
 
 	/* Find the file and folder names. */
 
-	filename = manual_data_get_node_filename(object, output_html_root_filename, FILENAME_PLATFORM_LOCAL, MODES_TYPE_HTML);
+	filename = manual_data_get_node_filename(object, output_html_root_filename, MODES_TYPE_HTML);
 	if (filename == NULL)
 		return false;
 
@@ -321,7 +321,9 @@ static bool output_html_write_object(struct manual_data *object, int level)
 			return false;
 	}
 
-	/* If this is a separate file, queue it for writing later. */
+	/* If this is a separate file, queue it for writing later. Otherwise,
+	 * write the objects which fall within it.
+	 */
 
 	if (resources != NULL && (level > OUTPUT_HTML_BASE_LEVEL) &&
 			(resources->filename != NULL || resources->folder != NULL)) {
@@ -333,39 +335,35 @@ static bool output_html_write_object(struct manual_data *object, int level)
 			return false;
 
 		manual_queue_add_node(object);
+	} else {
+		block = object->first_child;
 
-		return true;
-	}
+		while (block != NULL) {
+			switch (block->type) {
+			case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+			case MANUAL_DATA_OBJECT_TYPE_INDEX:
+			case MANUAL_DATA_OBJECT_TYPE_SECTION:
+				if (!output_html_write_object(block, level + 1))
+					return false;
+				break;
 
-	/* Write out the blocks within the object. */
+			case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+					break;
+				}
 
-	block = object->first_child;
+				if (!output_html_write_paragraph(block))
+					return false;
+				break;
 
-	while (block != NULL) {
-		switch (block->type) {
-		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
-		case MANUAL_DATA_OBJECT_TYPE_INDEX:
-		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_html_write_object(block, level + 1))
-				return false;
-			break;
-
-		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
-			if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+			default:
 				msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
 				break;
 			}
 
-			if (!output_html_write_paragraph(block))
-				return false;
-			break;
-
-		default:
-			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
-			break;
+			block = block->next;
 		}
-
-		block = block->next;
 	}
 
 	return true;

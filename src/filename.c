@@ -660,12 +660,14 @@ static bool filename_copy_to_buffer(struct filename *name, char *buffer, size_t 
 
 		/* Copy the character bytes in the name. */
 
-		while ((ptr < length) && (*c != '\0'))
-			buffer[ptr++] = *c++;
+		if (platform != FILENAME_PLATFORM_STRONGHELP || *c != '[') {
+			while ((ptr < length) && (*c != '\0'))
+				buffer[ptr++] = *c++;
+		}
 
 		/* Copy a separator after each intermediate node. */
 
-		if ((ptr < length) && (node->next != NULL) && (levels > 0))
+		if ((ptr < length) && (node->next != NULL) && (levels > 0) && platform != FILENAME_PLATFORM_STRONGHELP)
 			buffer[ptr++] = separator;
 
 		node = node->next;
@@ -727,6 +729,7 @@ static char filename_get_separator(enum filename_platform platform)
 		return '/';
 	case FILENAME_PLATFORM_RISCOS:
 		return '.';
+	case FILENAME_PLATFORM_STRONGHELP:
 	default:
 		return '\0';
 	};
