@@ -781,6 +781,7 @@ bool output_strong_file_write_text(char *text)
 bool output_strong_file_write_plain(char *text, ...)
 {
 	va_list ap;
+	bool success = true;
 
 	if (text == NULL)
 		return true;
@@ -799,10 +800,12 @@ bool output_strong_file_write_plain(char *text, ...)
   
 	if (vfprintf(output_strong_file_handle, text, ap) < 0) {
 		msg_report(MSG_WRITE_FAILED);
-		return false;
+		success = false;
 	}
 
-	return true;
+	va_end(ap);
+
+	return success;
 }
 
 /**
