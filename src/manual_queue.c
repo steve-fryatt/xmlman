@@ -131,8 +131,6 @@ bool manual_queue_add_node(struct manual_data *node)
 	if (manual_queue_tail == NULL)
 		manual_queue_tail = entry;
 
-	printf("Queue root: 0x%x, head: 0x%x, tail: 0x%x\n", manual_queue_root, manual_queue_head, manual_queue_tail);
-
 	return true;
 }
 
@@ -145,8 +143,6 @@ bool manual_queue_add_node(struct manual_data *node)
 struct manual_data *manual_queue_remove_node(void)
 {
 	struct manual_data *node = NULL;
-
-	printf("Queue tail: 0x%x\n", manual_queue_tail);
 
 	if (manual_queue_tail == NULL)
 		return NULL;

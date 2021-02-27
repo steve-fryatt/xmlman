@@ -341,6 +341,8 @@ bool output_strong_file_sub_open(struct filename *filename, int type)
 		return false;
 	}
 
+	msg_report(MSG_STRONG_OPENING_FILE, filecore_name);
+
 	output_strong_file_current_block = output_strong_file_add_entry(output_strong_file_root, filecore_name, type);
 	free(filecore_name);
 

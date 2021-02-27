@@ -145,6 +145,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Unknown element '<%s>'",					false},
 	{MSG_ERROR,	"Failed to allocate new manual data node",			false},
 
+	{MSG_INFO,	"Writing %s output...",						false},
 	{MSG_ERROR,	"Unexpected object type found",					false},
 	{MSG_ERROR,	"Stack full",							false},
 	{MSG_ERROR,	"Stack error in node",						false},
@@ -167,7 +168,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Missing column instance reference",				false},
 	{MSG_ERROR,	"No line ending selected",					false},
 
-
+	{MSG_INFO,	"Opening image file '%s' for output", 				false},
 	{MSG_ERROR,	"Failed to convert to Filecore name",				false},
 	{MSG_ERROR,	"Failed to create StrongHelp root structure",			false},
 	{MSG_ERROR,	"Failed to calculate StrongHelp directory sizes",		false},
@@ -176,6 +177,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"A '%s' object already exists in the '%s' directory",		false},
 
 
+	{MSG_INFO,	"Opened file '%s' for output",					false},
 	{MSG_ERROR,	"No filename supplied",						false},
 	{MSG_ERROR,	"Failed to open file '%s'",					false},
 	{MSG_ERROR,	"Failed to create folder '%s'",					false},

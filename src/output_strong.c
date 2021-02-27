@@ -39,6 +39,7 @@
 #include "filename.h"
 #include "manual_data.h"
 #include "manual_queue.h"
+#include "modes.h"
 #include "msg.h"
 #include "output_strong_file.h"
 
@@ -105,6 +106,8 @@ bool output_strong(struct manual *document, struct filename *filename, enum enco
 	if (document == NULL || document->manual == NULL)
 		return false;
 
+	msg_report(MSG_START_MODE, "StrongHelp");
+
 	/* Output encoding defaults to Acorn Latin1. */
 
 	encoding_select_table((encoding != ENCODING_TARGET_NONE) ? encoding : ENCODING_TARGET_ACORN_LATIN1);
@@ -163,7 +166,6 @@ static bool output_strong_write_manual(struct manual_data *manual)
 
 	do {
 		object = manual_queue_remove_node();
-		printf("De-queued node 0x%x to process...\n", object);
 		if (object == NULL)
 			continue;
 
@@ -259,11 +261,26 @@ static bool output_strong_write_file(struct manual_data *object)
 static bool output_strong_write_object(struct manual_data *object, int level)
 {
 	struct manual_data	*block;
-	struct filename *foldername = NULL, *filename = NULL;
-	bool self_contained = false;
+	struct manual_data_mode *resources = NULL;
 
 	if (object == NULL || object->first_child == NULL)
 		return true;
+
+	/* Confirm that this is a suitable object. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_SECTION),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	resources = modes_find_resources(object->chapter.resources, MODES_TYPE_STRONGHELP);
 
 	/* Check that the nesting depth is OK. */
 
@@ -280,6 +297,25 @@ static bool output_strong_write_object(struct manual_data *object, int level)
 
 		if (!output_strong_write_heading(object, level))
 			return false;
+	}
+
+	/* If this is a separate file, queue it for writing later. */
+
+	if (resources != NULL && (level > OUTPUT_STRONG_BASE_LEVEL) &&
+			(resources->filename != NULL || resources->folder != NULL)) {
+		if (object->chapter.resources->summary != NULL &&
+				!output_strong_write_paragraph(object->chapter.resources->summary))
+			return false;
+
+		if (!output_strong_file_write_newline())
+			return false;
+
+		if (!output_strong_file_write_plain("This is a link to an external file...\n"))
+			return false;
+
+		manual_queue_add_node(object);
+
+		return true;
 	}
 
 	/* Output the blocks within the object. */
@@ -316,197 +352,6 @@ static bool output_strong_write_object(struct manual_data *object, int level)
 	return true;
 }
 
-
-
-
-
-
-
-
-
-
-#if 0
-/**
- * Process the contents of an index, chapter or section block and write it out.
- *
- * \param *object		The object to process.
- * \param level			The level to write the section at.
- * \param *folder		The image file folder being written within.
- * \param in_line		True if the section is being written inline; otherwise False.
- * \return			True if successful; False on error.
- */
-
-static bool output_strong_write_object(struct manual_data *object, int level, struct filename *folder, bool in_line)
-{
-	struct manual_data	*block;
-	struct filename *foldername = NULL, *filename = NULL;
-	bool self_contained = false;
-
-	if (object == NULL || object->first_child == NULL)
-		return true;
-
-	/* Confirm that this is an index, chapter or section. */
-
-	if (object->type != MANUAL_DATA_OBJECT_TYPE_CHAPTER && object->type != MANUAL_DATA_OBJECT_TYPE_INDEX && object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
-		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_SECTION),
-				manual_data_find_object_name(object->type));
-		return false;
-	}
-
-	/* Check that the nesting depth is OK. */
-
-	if (level > OUTPUT_STRONG_MAX_NEST_DEPTH) {
-		msg_report(MSG_TOO_DEEP, level);
-		return false;
-	}
-
-	/* Check for an inlined or self-contained section. */
-
-	self_contained = output_strong_find_folders(folder, object->chapter.resources, &foldername, &filename);
-
-	if ((self_contained && in_line) || (!self_contained && !in_line)) {
-		if (in_line) {
-			if (!output_strong_file_write_newline() || !output_strong_write_heading(object, level)) {
-				filename_destroy(foldername);
-				filename_destroy(filename);
-				return false;
-			}
-
-			if (object->chapter.resources != NULL && object->chapter.resources->summary != NULL &&
-					!output_strong_write_paragraph(object->chapter.resources->summary)) {
-				filename_destroy(foldername);
-				filename_destroy(filename);
-				return false;
-			}
-
-			output_strong_file_write_plain("\nThis is a link to an external file...\n");
-		}
-
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return true;
-	}
-
-	if (self_contained && !output_strong_file_sub_open(filename, OUTPUT_STRONG_PAGE_FILETYPE)) {
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
-	if (self_contained && !output_strong_write_head(object)) {
-		output_strong_file_sub_close();
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
-	if (!output_strong_file_write_newline()) {
-		if (self_contained)
-			output_strong_file_sub_close();
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
-	/* Write out the section heading. */
-
-	if (object->title != NULL) {
-		if (!self_contained && !output_strong_file_write_newline()) {
-			filename_destroy(foldername);
-			filename_destroy(filename);
-			return false;
-		}
-
-		if (!output_strong_write_heading(object, level)) {
-			if (self_contained)
-				output_strong_file_sub_close();
-			filename_destroy(foldername);
-			filename_destroy(filename);
-			return false;
-		}
-	}
-
-	/* Output the blocks within the object. */
-
-	block = object->first_child;
-
-	while (block != NULL) {
-		switch (block->type) {
-		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_strong_write_object(block, level + 1, foldername, true)) {
-				if (self_contained)
-					output_strong_file_sub_close();
-				filename_destroy(foldername);
-				filename_destroy(filename);
-				return false;
-			}
-			break;
-
-		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
-			if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
-				msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
-				break;
-			}
-
-			if (!output_strong_write_paragraph(block)) {
-				if (self_contained)
-					output_strong_file_sub_close();
-				filename_destroy(foldername);
-				filename_destroy(filename);
-				return false;
-			}
-			break;
-
-		default:
-			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
-			break;
-		}
-
-		block = block->next;
-	}
-
-	if (self_contained && !output_strong_write_foot(object)) {
-		output_strong_file_sub_close();
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
-	if (self_contained && !output_strong_file_sub_close()) {
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
-	/* Output the stand-alone sections in their own files. */
-
-	block = object->first_child;
-
-	while (block != NULL) {
-		switch (block->type) {
-		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_strong_write_object(block, OUTPUT_STRONG_BASE_LEVEL, foldername, false)) {
-				filename_destroy(foldername);
-				filename_destroy(filename);
-				return false;
-			}
-			break;
-
-		default:
-			break;
-		}
-
-		block = block->next;
-	}
-
-	/* Free the filenames. */
-
-	filename_destroy(foldername);
-	filename_destroy(filename);
-
-	return true;
-}
-#endif
 
 /**
  * Write a StrongHelp file head block out.

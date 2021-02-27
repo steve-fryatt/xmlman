@@ -226,6 +226,8 @@ FILE *filename_fopen(struct filename *name, const char *mode)
 
 	if (handle == NULL)
 		msg_report(MSG_WRITE_OPEN_FAIL, filename);
+	else
+		msg_report(MSG_WRITE_OPENED_FILE, filename);
 
 	free(filename);
 

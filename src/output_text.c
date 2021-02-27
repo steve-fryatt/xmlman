@@ -39,6 +39,7 @@
 #include "filename.h"
 #include "manual_data.h"
 #include "manual_queue.h"
+#include "modes.h"
 #include "msg.h"
 #include "output_text_line.h"
 
@@ -111,6 +112,8 @@ bool output_text(struct manual *document, struct filename *filename, enum encodi
 	if (document == NULL || document->manual == NULL)
 		return false;
 
+	msg_report(MSG_START_MODE, "Text");
+
 	/* Output encoding defaults to UTF8. */
 
 	encoding_select_table((encoding != ENCODING_TARGET_NONE) ? encoding : ENCODING_TARGET_UTF8);
@@ -163,7 +166,6 @@ static bool output_text_write_manual(struct manual_data *manual, struct filename
 
 	do {
 		object = manual_queue_remove_node();
-		printf("De-queued node 0x%x to process...\n", object);
 		if (object == NULL)
 			continue;
 
@@ -287,10 +289,27 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 static bool output_text_write_object(struct manual_data *object, int indent)
 {
 	struct manual_data	*block;
+	struct manual_data_mode *resources = NULL;
 	struct output_text_line *paragraph_line;
 
 	if (object == NULL || object->first_child == NULL)
 		return true;
+
+	/* Confirm that this is a suitable object. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_SECTION),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	resources = modes_find_resources(object->chapter.resources, MODES_TYPE_TEXT);
 
 	/* Check that the nesting depth is OK. */
 
@@ -309,54 +328,7 @@ static bool output_text_write_object(struct manual_data *object, int indent)
 			return false;
 	}
 
-
-#if 0
-	/* Check for an inlined or self-contained section. */
-
-	self_contained = output_text_find_folders(folder, object->chapter.resources, &foldername, &filename);
-
-	if ((self_contained && in_line) || (!self_contained && !in_line)) {
-		if (in_line) {
-			if (!output_text_line_write_newline() || !output_text_write_heading(object, indent)) {
-				filename_destroy(foldername);
-				filename_destroy(filename);
-				return false;
-			}
-
-			if (object->chapter.resources != NULL && object->chapter.resources->summary != NULL) {
-				paragraph_line = output_text_line_create();
-				if (paragraph_line == NULL) {
-					filename_destroy(foldername);
-					filename_destroy(filename);
-					return false;
-				}
-
-				if (!output_text_line_add_column(paragraph_line, indent, output_text_page_width - indent)) {
-					output_text_line_destroy(paragraph_line);
-					filename_destroy(foldername);
-					filename_destroy(filename);
-					return false;
-				}
-
-				if (!output_text_write_paragraph(object->chapter.resources->summary, paragraph_line)) {
-					output_text_line_destroy(paragraph_line);
-					filename_destroy(foldername);
-					filename_destroy(filename);
-					return false;
-				}
-
-				output_text_line_destroy(paragraph_line);
-			}
-
-			// output_text("\nThis is a link to an external file...\n");
-		}
-
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return true;
-	}
-#endif
-	/* Output the blocks within the object. */
+	/* Create a paragraph for output. */
 
 	paragraph_line = output_text_line_create();
 	if (paragraph_line == NULL)
@@ -367,37 +339,55 @@ static bool output_text_write_object(struct manual_data *object, int indent)
 		return false;
 	}
 
-	block = object->first_child;
+	/* If this is a separate file, queue it for writing later. */
 
-	while (block != NULL) {
-		switch (block->type) {
-		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
-		case MANUAL_DATA_OBJECT_TYPE_INDEX:
-		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_text_write_object(block, indent + OUTPUT_TEXT_BLOCK_INDENT)) {
-				output_text_line_destroy(paragraph_line);
-				return false;
-			}
-			break;
+	if (resources != NULL && (indent > OUTPUT_TEXT_BASE_INDENT) &&
+			(resources->filename != NULL || resources->folder != NULL)) {
+		if (object->chapter.resources->summary != NULL &&
+				!output_text_write_paragraph(object->chapter.resources->summary, paragraph_line)) {
+			output_text_line_destroy(paragraph_line);
+			return false;
+		}
 
-		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
-			if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+	//	if (!output_text("\nThis is a link to an external file...\n"))
+	//		return false;
+
+		manual_queue_add_node(object);
+
+		return true;
+	} else {
+		block = object->first_child;
+
+		while (block != NULL) {
+			switch (block->type) {
+			case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+			case MANUAL_DATA_OBJECT_TYPE_INDEX:
+			case MANUAL_DATA_OBJECT_TYPE_SECTION:
+				if (!output_text_write_object(block, indent + OUTPUT_TEXT_BLOCK_INDENT)) {
+					output_text_line_destroy(paragraph_line);
+					return false;
+				}
+				break;
+
+			case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+					break;
+				}
+
+				if (!output_text_write_paragraph(block, paragraph_line)) {
+					output_text_line_destroy(paragraph_line);
+					return false;
+				}
+				break;
+
+			default:
 				msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
 				break;
 			}
 
-			if (!output_text_write_paragraph(block, paragraph_line)) {
-				output_text_line_destroy(paragraph_line);
-				return false;
-			}
-			break;
-
-		default:
-			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
-			break;
+			block = block->next;
 		}
-
-		block = block->next;
 	}
 
 	output_text_line_destroy(paragraph_line);
