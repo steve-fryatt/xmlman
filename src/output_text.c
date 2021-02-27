@@ -1,4 +1,4 @@
-/* Copyright 2018-2020, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2021, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -38,6 +38,7 @@
 #include "encoding.h"
 #include "filename.h"
 #include "manual_data.h"
+#include "manual_queue.h"
 #include "msg.h"
 #include "output_text_line.h"
 
@@ -84,14 +85,14 @@ static struct filename *output_text_root_filename;
 /* Static Function Prototypes. */
 
 static bool output_text_write_manual(struct manual_data *chapter, struct filename *folder);
-static bool output_text_write_object(struct manual_data *section, int indent, struct filename *folder, bool in_line);
+static bool output_text_write_file(struct manual_data *object, struct filename *folder);
+static bool output_text_write_object(struct manual_data *object, int indent);
 static bool output_text_write_head(struct manual_data *manual);
 static bool output_text_write_foot(struct manual_data *manual);
 static bool output_text_write_heading(struct manual_data *node, int indent);
 static bool output_text_write_paragraph(struct manual_data *object, struct output_text_line *paragraph_line);
 static bool output_text_write_text(struct output_text_line *line, int column, enum manual_data_object_type type, struct manual_data *text);
 static const char *output_text_convert_entity(enum manual_entity_type entity);
-static bool output_text_find_folders(struct filename *base, struct manual_data_resources *resources, struct filename **folder, struct filename **file);
 
 /**
  * Output a manual in text form.
@@ -132,15 +133,14 @@ bool output_text(struct manual *document, struct filename *filename, enum encodi
 /**
  * Process the contents of a chapter block and write it out.
  *
- * \param *manual		The manual to process.
+ * \param *manual	The manual to process.
  * \param *folder	The folder into which to write the manual.
- * \return			True if successful; False on error.
+ * \return		True if successful; False on error.
  */
 
 static bool output_text_write_manual(struct manual_data *manual, struct filename *folder)
 {
 	struct manual_data *object;
-	struct filename *filename;
 
 	if (manual == NULL || folder == NULL)
 		return true;
@@ -153,73 +153,123 @@ static bool output_text_write_manual(struct manual_data *manual, struct filename
 		return false;
 	}
 
-	/* Open the index file. */
+	/* Initialise the manual queue. */
 
-	if (!filename_mkdir(folder, true))
+	manual_queue_initialise();
+
+	/* Process the files, starting with the root node. */
+
+	manual_queue_add_node(manual);
+
+	do {
+		object = manual_queue_remove_node();
+		printf("De-queued node 0x%x to process...\n", object);
+		if (object == NULL)
+			continue;
+
+		if (!output_text_write_file(object, folder))
+			return false;
+	} while (object != NULL);
+
+	return true;
+}
+
+
+/**
+ * Write a node and its descendents as a self-contained file.
+ *
+ * \param *object	The object to process.
+ * \param *folder	The folder into which to write the manual.
+ * \return		TRUE if successful, otherwise FALSE.
+ */
+
+static bool output_text_write_file(struct manual_data *object, struct filename *folder)
+{
+	struct filename *filename = NULL, *foldername = NULL;
+
+	if (object == NULL || object->first_child == NULL)
+		return true;
+
+	/* Confirm that this is a suitable top-level object for a file. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_SECTION),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Find the file and folder names. */
+
+	filename = manual_data_get_node_filename(object, output_text_root_filename, FILENAME_PLATFORM_LOCAL, MODES_TYPE_TEXT);
+	if (filename == NULL)
 		return false;
 
-	filename = filename_join(folder, output_text_root_filename);
-
-	if (!output_text_line_open(filename)) {
+	if (!filename_prepend(filename, folder, 0)) {
 		filename_destroy(filename);
 		return false;
 	}
 
-	filename_destroy(filename);
-
-	if (!output_text_write_head(manual)) {
-		output_text_line_close();
+	foldername = filename_up(filename, 1);
+	if (foldername == NULL) {
+		filename_destroy(filename);
 		return false;
 	}
 
-	/* Output the inline details. */
+	/* Create the folder and open the file. */
 
-	object = manual->first_child;
-
-	while (object != NULL) {
-		switch (object->type) {
-		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
-		case MANUAL_DATA_OBJECT_TYPE_INDEX:
-		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_text_write_object(object, OUTPUT_TEXT_BASE_INDENT, folder, true)) {
-				output_text_line_close();
-				return false;
-			}
-			break;
-
-		default:
-			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(object->type));
-			break;
-		}
-
-		object = object->next;
+	if (!filename_mkdir(foldername, true)) {
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
 	}
 
-	if (!output_text_write_foot(manual)) {
+	if (!output_text_line_open(filename)) {
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	/* Write the file header. */
+
+	if (!output_text_write_head(object)) {
 		output_text_line_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	if (!output_text_line_write_newline()) {
+		output_text_line_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	/* Output the object. */
+
+	if (!output_text_write_object(object, OUTPUT_TEXT_BASE_INDENT)) {
+		output_text_line_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	/* Output the file footer. */
+
+	if (!output_text_write_foot(object)) {
+		output_text_line_close();
+		filename_destroy(foldername);
+		filename_destroy(filename);
 		return false;
 	}
 
 	output_text_line_close();
-
-	/* Output the separate files. */
-
-	object = manual->first_child;
-
-	while (object != NULL) {
-		switch (object->type) {
-		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
-		case MANUAL_DATA_OBJECT_TYPE_INDEX:
-			if (!output_text_write_object(object, OUTPUT_TEXT_BASE_INDENT, folder, false))
-				return false;
-			break;
-
-		default:
-			break;
-		}
-
-		object = object->next;
-	}
 
 	return true;
 }
@@ -227,30 +277,20 @@ static bool output_text_write_manual(struct manual_data *manual, struct filename
 /**
  * Process the contents of an index, chapter or section block and write it out.
  *
- * \param *object		The object to process.
- * \param indent		The indent to write the section at.
- * \param *folder		The folder being written within.
- * \param in_line		True if the section is being written inline; otherwise False.
- * \return			True if successful; False on error.
+ * \param *object	The object to process.
+ * \param indent	The indent to write the section at.
+ * \param *folder	The folder being written within.
+ * \param in_line	True if the section is being written inline; otherwise False.
+ * \return		True if successful; False on error.
  */
 
-static bool output_text_write_object(struct manual_data *object, int indent, struct filename *folder, bool in_line)
+static bool output_text_write_object(struct manual_data *object, int indent)
 {
 	struct manual_data	*block;
 	struct output_text_line *paragraph_line;
-	struct filename		*foldername = NULL, *filename = NULL;
-	bool			self_contained = false;
 
 	if (object == NULL || object->first_child == NULL)
 		return true;
-
-	/* Confirm that this is an index, chapter or section. */
-
-	if (object->type != MANUAL_DATA_OBJECT_TYPE_CHAPTER && object->type != MANUAL_DATA_OBJECT_TYPE_INDEX && object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
-		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_SECTION),
-				manual_data_find_object_name(object->type));
-		return false;
-	}
 
 	/* Check that the nesting depth is OK. */
 
@@ -259,6 +299,18 @@ static bool output_text_write_object(struct manual_data *object, int indent, str
 		return false;
 	}
 
+	/* Write out the object heading. */
+
+	if (object->title != NULL) {
+		if (!output_text_line_write_newline())
+			return false;
+
+		if (!output_text_write_heading(object, indent))
+			return false;
+	}
+
+
+#if 0
 	/* Check for an inlined or self-contained section. */
 
 	self_contained = output_text_find_folders(folder, object->chapter.resources, &foldername, &filename);
@@ -303,69 +355,15 @@ static bool output_text_write_object(struct manual_data *object, int indent, str
 		filename_destroy(filename);
 		return true;
 	}
-
-	if (self_contained && !filename_mkdir(foldername, true)) {
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
-	if (self_contained && !output_text_line_open(filename)) {
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
-	if (self_contained && !output_text_write_head(object)) {
-		output_text_line_close();
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
-	if (!output_text_line_write_newline()) {
-		if (self_contained)
-			output_text_line_close();
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
-	/* Write out the section heading. */
-
-	if (object->title != NULL) {
-		if (!self_contained && !output_text_line_write_newline()) {
-			filename_destroy(foldername);
-			filename_destroy(filename);
-			return false;
-		}
-
-		if (!output_text_write_heading(object, indent)) {
-			if (self_contained)
-				output_text_line_close();
-			filename_destroy(foldername);
-			filename_destroy(filename);
-			return false;
-		}
-	}
-
+#endif
 	/* Output the blocks within the object. */
 
 	paragraph_line = output_text_line_create();
-	if (paragraph_line == NULL) {
-		if (self_contained)
-			output_text_line_close();
-		filename_destroy(foldername);
-		filename_destroy(filename);
+	if (paragraph_line == NULL)
 		return false;
-	}
 
 	if (!output_text_line_add_column(paragraph_line, indent, output_text_page_width - indent)) {
 		output_text_line_destroy(paragraph_line);
-		if (self_contained)
-			output_text_line_close();
-		filename_destroy(foldername);
-		filename_destroy(filename);
 		return false;
 	}
 
@@ -373,13 +371,11 @@ static bool output_text_write_object(struct manual_data *object, int indent, str
 
 	while (block != NULL) {
 		switch (block->type) {
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_INDEX:
 		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_text_write_object(block, indent + OUTPUT_TEXT_BLOCK_INDENT, foldername, true)) {
+			if (!output_text_write_object(block, indent + OUTPUT_TEXT_BLOCK_INDENT)) {
 				output_text_line_destroy(paragraph_line);
-				if (self_contained)
-					output_text_line_close();
-				filename_destroy(foldername);
-				filename_destroy(filename);
 				return false;
 			}
 			break;
@@ -392,10 +388,6 @@ static bool output_text_write_object(struct manual_data *object, int indent, str
 
 			if (!output_text_write_paragraph(block, paragraph_line)) {
 				output_text_line_destroy(paragraph_line);
-				if (self_contained)
-					output_text_line_close();
-				filename_destroy(foldername);
-				filename_destroy(filename);
 				return false;
 			}
 			break;
@@ -409,43 +401,6 @@ static bool output_text_write_object(struct manual_data *object, int indent, str
 	}
 
 	output_text_line_destroy(paragraph_line);
-
-	if (self_contained && !output_text_write_foot(object)) {
-		if (self_contained)
-			output_text_line_close();
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
-	if (self_contained)
-		output_text_line_close();
-
-	/* Output the stand-alone sections in their own files. */
-
-	block = object->first_child;
-
-	while (block != NULL) {
-		switch (block->type) {
-		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_text_write_object(block, indent + OUTPUT_TEXT_BLOCK_INDENT, foldername, false)) {
-				filename_destroy(foldername);
-				filename_destroy(filename);
-				return false;
-			}
-			break;
-
-		default:
-			break;
-		}
-
-		block = block->next;
-	}
-
-	/* Free the filenames. */
-
-	filename_destroy(foldername);
-	filename_destroy(filename);
 
 	return true;
 }
@@ -676,57 +631,4 @@ static const char *output_text_convert_entity(enum manual_entity_type entity)
 		msg_report(MSG_ENTITY_NO_MAP, manual_entity_find_name(entity));
 		return "?";
 	}
-}
-
-/**
- * Taking a base folder and an object resources, work out the object's
- * base folder and filename.
- * 
- * \param *base		The base folder.
- * \param *resources	The object's resources.
- * \param **folder	Pointer to a filename pointer in which to return
- *			the object's base folder.
- * \param **file	Pointer to a filename pointer in which to return
- *			the object's filename.
- * \return		True if the object should be in a self-contained
- *			file; False if it should appear inline in its parent.
- */
-
-static bool output_text_find_folders(struct filename *base, struct manual_data_resources *resources, struct filename **folder, struct filename **file)
-{
-	if (folder != NULL)
-		*folder = NULL;
-
-	if (file != NULL)
-		*file = NULL;
-
-	/* If there are no resources, then this must be an inline block. */
-
-	if (resources == NULL || (resources->text.filename == NULL && resources->text.folder == NULL)) {
-		if (base != NULL && folder != NULL)
-			*folder = filename_up(base, 0);
-		return false;
-	}
-
-	/* If there's no base filename, there's no point working out the folders. */
-
-	if (base == NULL)
-		return true;
-
-	/* Get the root folder. */
-
-	*folder = filename_join(base, resources->text.folder);
-
-	/* Work out the filename. */
-
-	if (file != NULL) {
-		if (resources->text.filename == NULL)
-			*file = filename_join(*folder, output_text_root_filename);
-		else
-			*file = filename_join(*folder, resources->text.filename);
-	}
-
-	/* This is a self-contained file. */
-
-	return true;
 }

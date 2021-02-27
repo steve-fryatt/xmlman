@@ -170,6 +170,13 @@ printf("Writing HTML manual...\n");
 }
 
 
+/**
+ * Write a node and its descendents as a self-contained file.
+ *
+ * \param *object		The object to process.
+ * \param *folder	The folder into which to write the manual.
+ * \return		TRUE if successful, otherwise FALSE.
+ */
 
 static bool output_html_write_file(struct manual_data *object, struct filename *folder)
 {
@@ -194,7 +201,7 @@ static bool output_html_write_file(struct manual_data *object, struct filename *
 
 	/* Find the file and folder names. */
 
-	filename = manual_data_get_node_filename(object, output_html_root_filename, MODES_TYPE_HTML);
+	filename = manual_data_get_node_filename(object, output_html_root_filename, FILENAME_PLATFORM_LOCAL, MODES_TYPE_HTML);
 	if (filename == NULL)
 		return false;
 
@@ -276,7 +283,17 @@ static bool output_html_write_file(struct manual_data *object, struct filename *
 static bool output_html_write_object(struct manual_data *object, int level)
 {
 	struct manual_data *block;
-printf("Writing block at level %d\n", level);
+
+	if (object == NULL || object->first_child == NULL)
+		return true;
+
+	/* Check that the nesting depth is OK. */
+
+	if (level > OUTPUT_HTML_MAX_NEST_DEPTH) {
+		msg_report(MSG_TOO_DEEP, level);
+		return false;
+	}
+
 	/* Write out the object heading. */
 
 	if (object->title != NULL) {

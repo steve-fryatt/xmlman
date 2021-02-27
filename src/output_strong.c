@@ -1,4 +1,4 @@
-/* Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2021, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -38,6 +38,7 @@
 #include "encoding.h"
 #include "filename.h"
 #include "manual_data.h"
+#include "manual_queue.h"
 #include "msg.h"
 #include "output_strong_file.h"
 
@@ -78,14 +79,14 @@ static struct filename *output_strong_root_filename;
 /* Static Function Prototypes. */
 
 static bool output_strong_write_manual(struct manual_data *manual);
-static bool output_strong_write_object(struct manual_data *object, int level, struct filename *folder, bool in_line);
+static bool output_strong_write_file(struct manual_data *object);
+static bool output_strong_write_object(struct manual_data *object, int level);
 static bool output_strong_write_head(struct manual_data *manual);
 static bool output_strong_write_foot(struct manual_data *manual);
 static bool output_strong_write_heading(struct manual_data *node, int level);
 static bool output_strong_write_paragraph(struct manual_data *object);
 static bool output_strong_write_text(enum manual_data_object_type type, struct manual_data *text);
 static const char *output_strong_convert_entity(enum manual_entity_type entity);
-static bool output_strong_find_folders(struct filename *base, struct manual_data_resources *resources, struct filename **folder, struct filename **file);
 
 /**
  * Output a manual in StrongHelp form.
@@ -140,7 +141,6 @@ bool output_strong(struct manual *document, struct filename *filename, enum enco
 static bool output_strong_write_manual(struct manual_data *manual)
 {
 	struct manual_data *object;
-	struct filename *folder, *filename;
 
 	if (manual == NULL)
 		return false;
@@ -153,44 +153,88 @@ static bool output_strong_write_manual(struct manual_data *manual)
 		return false;
 	}
 
-	/* Prepare the root filename. */
+	/* Initialise the manual queue. */
 
-	folder = filename_make(NULL, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_RISCOS);
+	manual_queue_initialise();
 
-	filename = filename_join(folder, output_strong_root_filename);
+	/* Process the files, starting with the root node. */
+
+	manual_queue_add_node(manual);
+
+	do {
+		object = manual_queue_remove_node();
+		printf("De-queued node 0x%x to process...\n", object);
+		if (object == NULL)
+			continue;
+
+		if (!output_strong_write_file(object))
+			return false;
+	} while (object != NULL);
+
+	return true;
+}
+
+
+/**
+ * Write a node and its descendents as a self-contained file.
+ *
+ * \param *object	The object to process.
+ * \return		TRUE if successful, otherwise FALSE.
+ */
+
+static bool output_strong_write_file(struct manual_data *object)
+{
+	struct filename *filename = NULL;
+
+	if (object == NULL || object->first_child == NULL)
+		return true;
+
+	/* Confirm that this is a suitable top-level object for a file. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_SECTION),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Find the file name and open the file. */
+
+	filename = manual_data_get_node_filename(object, output_strong_root_filename, FILENAME_PLATFORM_RISCOS, MODES_TYPE_STRONGHELP);
+	if (filename == NULL)
+		return false;
 
 	if (!output_strong_file_sub_open(filename, OUTPUT_STRONG_PAGE_FILETYPE))
 		return false;
 
-	if (!output_strong_write_head(manual)) {
+	/* Write the file header. */
+
+	if (!output_strong_write_head(object)) {
 		output_strong_file_sub_close();
 		return false;
 	}
 
-	/* Output the inline details. */
-
-	object = manual->first_child;
-
-	while (object != NULL) {
-		switch (object->type) {
-		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
-		case MANUAL_DATA_OBJECT_TYPE_INDEX:
-		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_strong_write_object(object, OUTPUT_STRONG_BASE_LEVEL, folder, true)) {
-				output_strong_file_sub_close();
-				return false;
-			}
-			break;
-
-		default:
-			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(object->type));
-			break;
-		}
-
-		object = object->next;
+	if (!output_strong_file_write_newline()) {
+		output_strong_file_sub_close();
+		return false;
 	}
 
-	if (!output_strong_write_foot(manual)) {
+	/* Output the object. */
+
+	if (!output_strong_write_object(object, OUTPUT_STRONG_BASE_LEVEL)) {
+		output_strong_file_sub_close();
+		filename_destroy(filename);
+		return false;
+	}
+
+	/* Output the file footer. */
+
+	if (!output_strong_write_foot(object)) {
 		output_strong_file_sub_close();
 		return false;
 	}
@@ -198,32 +242,90 @@ static bool output_strong_write_manual(struct manual_data *manual)
 	if (!output_strong_file_sub_close())
 		return false;
 
-	/* Output the separate files. */
+	return true;
+}
 
-	object = manual->first_child;
 
-	while (object != NULL) {
-		switch (object->type) {
+/**
+ * Process the contents of an index, chapter or section block and write it out.
+ *
+ * \param *object		The object to process.
+ * \param level			The level to write the section at.
+ * \param *folder		The image file folder being written within.
+ * \param in_line		True if the section is being written inline; otherwise False.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_strong_write_object(struct manual_data *object, int level)
+{
+	struct manual_data	*block;
+	struct filename *foldername = NULL, *filename = NULL;
+	bool self_contained = false;
+
+	if (object == NULL || object->first_child == NULL)
+		return true;
+
+	/* Check that the nesting depth is OK. */
+
+	if (level > OUTPUT_STRONG_MAX_NEST_DEPTH) {
+		msg_report(MSG_TOO_DEEP, level);
+		return false;
+	}
+
+	/* Write out the object heading. */
+
+	if (object->title != NULL) {
+		if (!output_strong_file_write_newline())
+			return false;
+
+		if (!output_strong_write_heading(object, level))
+			return false;
+	}
+
+	/* Output the blocks within the object. */
+
+	block = object->first_child;
+
+	while (block != NULL) {
+		switch (block->type) {
 		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 		case MANUAL_DATA_OBJECT_TYPE_INDEX:
 		case MANUAL_DATA_OBJECT_TYPE_SECTION:
-			if (!output_strong_write_object(object, OUTPUT_STRONG_BASE_LEVEL, folder, false)) {
-				output_strong_file_sub_close();
+			if (!output_strong_write_object(block, level + 1))
 				return false;
+			break;
+
+		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+			if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+				msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+				break;
 			}
+
+			if (!output_strong_write_paragraph(block))
+				return false;
 			break;
 
 		default:
-			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(object->type));
+			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
 			break;
 		}
 
-		object = object->next;
+		block = block->next;
 	}
 
 	return true;
 }
 
+
+
+
+
+
+
+
+
+
+#if 0
 /**
  * Process the contents of an index, chapter or section block and write it out.
  *
@@ -404,6 +506,7 @@ static bool output_strong_write_object(struct manual_data *object, int level, st
 
 	return true;
 }
+#endif
 
 /**
  * Write a StrongHelp file head block out.
@@ -618,57 +721,4 @@ static const char *output_strong_convert_entity(enum manual_entity_type entity)
 		msg_report(MSG_ENTITY_NO_MAP, manual_entity_find_name(entity));
 		return "?";
 	}
-}
-
-/**
- * Taking a base folder and an object resources, work out the object's
- * base folder and filename.
- * 
- * \param *base		The base folder.
- * \param *resources	The object's resources.
- * \param **folder	Pointer to a filename pointer in which to return
- *			the object's base folder.
- * \param **file	Pointer to a filename pointer in which to return
- *			the object's filename.
- * \return		True if the object should be in a self-contained
- *			file; False if it should appear inline in its parent.
- */
-
-static bool output_strong_find_folders(struct filename *base, struct manual_data_resources *resources, struct filename **folder, struct filename **file)
-{
-	if (folder != NULL)
-		*folder = NULL;
-
-	if (file != NULL)
-		*file = NULL;
-
-	/* If there are no resources, then this must be an inline block. */
-
-	if (resources == NULL || (resources->strong.filename == NULL && resources->strong.folder == NULL)) {
-		if (base != NULL && folder != NULL)
-			*folder = filename_up(base, 0);
-		return false;
-	}
-
-	/* If there's no base filename, there's no point working out the folders. */
-
-	if (base == NULL)
-		return true;
-
-	/* Get the root folder. */
-
-	*folder = filename_join(base, resources->strong.folder);
-
-	/* Work out the filename. */
-
-	if (file != NULL) {
-		if (resources->strong.filename == NULL)
-			*file = filename_join(*folder, output_strong_root_filename);
-		else
-			*file = filename_join(*folder, resources->strong.filename);
-	}
-
-	/* This is a self-contained file. */
-
-	return true;
 }

@@ -306,11 +306,12 @@ char *manual_data_get_node_number(struct manual_data *node)
  *
  * \param *node		The node to return a filename for.
  * \param *root		A default root filename.
+ * \param platform	The target platform for the filename.
  * \param type		The target output type.
  * \return		Pointer to a filename, or NULL on failure.
  */
 
-struct filename *manual_data_get_node_filename(struct manual_data *node, struct filename *root, enum modes_type type)
+struct filename *manual_data_get_node_filename(struct manual_data *node, struct filename *root, enum filename_platform platform, enum modes_type type)
 {
 	struct manual_data_mode *resources = NULL;
 	struct filename *filename;
@@ -318,7 +319,7 @@ struct filename *manual_data_get_node_filename(struct manual_data *node, struct 
 	if (node == NULL)
 		return NULL;
 
-	filename = filename_make(NULL, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
+	filename = filename_make(NULL, FILENAME_TYPE_LEAF, platform);
 	if (filename == NULL)
 		return NULL;
 

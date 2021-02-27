@@ -81,7 +81,7 @@ void manual_queue_initialise(void)
 	struct manual_queue_entry *entry;
 
 	manual_queue_head = manual_queue_root;
-	manual_queue_tail = manual_queue_root;
+	manual_queue_tail = NULL;
 
 	/* Clear out the node details. */
 
@@ -120,14 +120,16 @@ bool manual_queue_add_node(struct manual_data *node)
 		} else {
 			manual_queue_root = entry;
 			manual_queue_head = entry;
-			manual_queue_tail = entry;
 		}
 	} else {
-		entry = manual_queue_head->next;
-		manual_queue_head = entry;
+		manual_queue_head = manual_queue_head->next;
+		entry = manual_queue_head;
 	}
 
 	entry->node = node;
+
+	if (manual_queue_tail == NULL)
+		manual_queue_tail = entry;
 
 	printf("Queue root: 0x%x, head: 0x%x, tail: 0x%x\n", manual_queue_root, manual_queue_head, manual_queue_tail);
 
@@ -143,6 +145,8 @@ bool manual_queue_add_node(struct manual_data *node)
 struct manual_data *manual_queue_remove_node(void)
 {
 	struct manual_data *node = NULL;
+
+	printf("Queue tail: 0x%x\n", manual_queue_tail);
 
 	if (manual_queue_tail == NULL)
 		return NULL;
