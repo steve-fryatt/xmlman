@@ -515,13 +515,13 @@ static bool output_strong_write_reference(struct manual_data *target, char *text
 	if (!output_strong_file_write_plain("<"))
 		return false;
 
-	if (text != NULL && !output_strong_file_write_plain(text))
+	if (text != NULL && !output_strong_file_write_text(text))
 		return false;
 
 	if (text != NULL && !output_strong_file_write_plain("=>"))
 		return false;
 
-	if (!output_strong_file_write_plain(link))
+	if (!output_strong_file_write_text(link))
 		return false;
 
 	if (!output_strong_file_write_plain(">"))

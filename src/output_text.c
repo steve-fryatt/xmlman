@@ -92,6 +92,7 @@ static bool output_text_write_head(struct manual_data *manual);
 static bool output_text_write_foot(struct manual_data *manual);
 static bool output_text_write_heading(struct manual_data *node, int indent);
 static bool output_text_write_paragraph(struct manual_data *object, struct output_text_line *paragraph_line);
+static bool output_text_write_reference(struct manual_data *target, struct output_text_line *paragraph_line);
 static bool output_text_write_text(struct output_text_line *line, int column, enum manual_data_object_type type, struct manual_data *text);
 static const char *output_text_convert_entity(enum manual_entity_type entity);
 
@@ -351,8 +352,10 @@ static bool output_text_write_object(struct manual_data *object, int indent)
 			return false;
 		}
 
-	//	if (!output_text("\nThis is a link to an external file...\n"))
-	//		return false;
+		if (!output_text_line_write_newline() || !output_text_write_reference(object, paragraph_line)) {
+			output_text_line_destroy(paragraph_line);
+			return false;
+		}
 
 		manual_queue_add_node(object);
 
@@ -534,6 +537,49 @@ static bool output_text_write_paragraph(struct manual_data *object, struct outpu
 
 	return true;
 }
+
+
+/**
+ * Write an internal reference (a link to another page) to the output.
+ * 
+ * \param *target		The node to be the target of the link.
+ * \param *paragraph_line	The paragraph line instance to use.
+ * \return			True if successful; False on failure.
+ */
+
+static bool output_text_write_reference(struct manual_data *target, struct output_text_line *paragraph_line)
+{
+	struct filename *filename = NULL;
+	char *link = NULL;
+
+	if (target == NULL)
+		return false;
+
+	filename = manual_data_get_node_filename(target, NULL, MODES_TYPE_TEXT);
+	if (filename == NULL)
+		return false;
+
+	link = filename_convert(filename, FILENAME_PLATFORM_RISCOS, 0);
+	filename_destroy(filename);
+
+	if (link == NULL)
+		return false;
+
+	if (!output_text_line_reset(paragraph_line))
+		return false;
+
+	if (!output_text_line_add_text(paragraph_line, 0, ">>> "))
+		return false;
+
+	if (!output_text_line_add_text(paragraph_line, 0, link))
+		return false;
+
+	if (!output_text_line_write(paragraph_line, false))
+		return false;
+
+	return true;
+}
+
 
 /**
  * Write a block of text to a column in an output line.

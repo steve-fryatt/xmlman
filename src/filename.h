@@ -201,6 +201,16 @@ bool filename_append(struct filename *name, struct filename *add, int levels);
 struct filename *filename_join(struct filename *first, struct filename *second);
 
 /**
+ * Create a new filename as the relative path between two other names.
+ *
+ * \param *from			The name to be the origin of the new name.
+ * \param *to			The name to be the destination of the new name.
+ * \return			The new filename instance, or NULL on failure.
+ */
+
+struct filename *filename_get_relative(struct filename *from, struct filename *to);
+
+/**
  * Convert a filename instance into a string suitable for a given target
  * platform. Conversion between platforms of root filenames is unlikely
  * to have the intended results.

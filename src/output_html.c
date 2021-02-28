@@ -87,6 +87,7 @@ static bool output_html_write_head(struct manual_data *manual);
 static bool output_html_write_foot(struct manual_data *manual);
 static bool output_html_write_heading(struct manual_data *node, int level);
 static bool output_html_write_paragraph(struct manual_data *object);
+static bool output_html_write_reference(struct manual_data *source, struct manual_data *target, char *text);
 static bool output_html_write_text(enum manual_data_object_type type, struct manual_data *text);
 static const char *output_html_convert_entity(enum manual_entity_type entity);
 
@@ -331,7 +332,22 @@ static bool output_html_write_object(struct manual_data *object, int level)
 				!output_html_write_paragraph(object->chapter.resources->summary))
 			return false;
 
-		if (!output_html_file_write_plain("<p>This is a link to an external file...</p>\n"))
+		if (!output_html_file_write_newline())
+			return false;
+
+		if (!output_html_file_write_newline())
+			return false;
+
+		if (!output_html_file_write_plain("<p>"))
+			return false;
+
+		if (!output_html_write_reference(object->parent, object, "This is a link to an external file..."))
+			return false;
+
+		if (!output_html_file_write_plain("</p>"))
+			return false;
+
+		if (!output_html_file_write_newline())
 			return false;
 
 		manual_queue_add_node(object);
@@ -519,6 +535,64 @@ static bool output_html_write_paragraph(struct manual_data *object)
 				return false;
 
 	if (!output_html_file_write_plain("</p>"))
+		return false;
+
+	return true;
+}
+
+
+/**
+ * Write an internal reference (a link to another page) to the output.
+ * 
+ * \param *source		The node to be the source of the link.
+ * \param *target		The node to be the target of the link.
+ * \param *text			Text to use for the link, or NULL for none.
+ * \return			True if successful; False on failure.
+ */
+
+static bool output_html_write_reference(struct manual_data *source, struct manual_data *target, char *text)
+{
+	struct filename *sourcename = NULL, *targetname = NULL, *filename = NULL;
+	char *link = NULL;
+
+	if (source == NULL || target == NULL)
+		return false;
+
+	sourcename = manual_data_get_node_filename(source, output_html_root_filename, MODES_TYPE_HTML);
+	if (sourcename == NULL)
+		return false;
+
+	targetname = manual_data_get_node_filename(target, output_html_root_filename, MODES_TYPE_HTML);
+	if (targetname == NULL) {
+		filename_destroy(sourcename);
+		return false;
+	}
+
+	filename = filename_get_relative(sourcename, targetname);
+	filename_destroy(sourcename);
+	filename_destroy(targetname);
+	if (filename == NULL)
+		return false;
+
+	link = filename_convert(filename, FILENAME_PLATFORM_LINUX, 0);
+	filename_destroy(filename);
+
+	if (link == NULL)
+		return false;
+
+	if (!output_html_file_write_plain("<a href=\""))
+		return false;
+
+	if (text != NULL && !output_html_file_write_text(link))
+		return false;
+
+	if (text != NULL && !output_html_file_write_plain("\">"))
+		return false;
+
+	if (!output_html_file_write_text(text))
+		return false;
+
+	if (!output_html_file_write_plain("</a>"))
 		return false;
 
 	return true;

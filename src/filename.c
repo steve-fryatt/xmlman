@@ -82,7 +82,10 @@ struct filename {
 static size_t filename_get_storage_size(struct filename *name);
 static bool filename_copy_to_buffer(struct filename *name, char *buffer, size_t length, enum filename_platform platform, int levels);
 static int filename_count_nodes(struct filename *name);
+static struct filename_node *filename_create_node(struct filename_node *node, size_t length);
 static char filename_get_separator(enum filename_platform platform);
+static char *filename_get_parent_name(enum filename_platform platform);
+
 
 /**
  * Convert a textual filename into a filename instance.
@@ -128,24 +131,15 @@ struct filename *filename_make(char *name, enum filename_type type, enum filenam
 
 		/* Allocate memory for the part name. */
 
-		current_node = malloc(sizeof(struct filename_node));
-		part = malloc(length + 1);
-
-		if (current_node == NULL || part == NULL) {
-			if (current_node != NULL)
-				free(current_node);
-
-			if (part != NULL)
-				free(part);
-
+		current_node = filename_create_node(NULL, length);
+		if (current_node == NULL) {
 			filename_destroy(root);
 			return NULL;
 		}
 
-		current_node->name = part;
-		current_node->next = NULL;
-
 		/* Copy the part name into the new structure. */
+
+		part = current_node->name;
 
 		while (name[position] != '\0' && name[position] != separator)
 			*part++ = name[position++];
@@ -407,23 +401,9 @@ bool filename_prepend(struct filename *name, struct filename *add, int levels)
 	node = add->name;
 
 	while (node != NULL && ((levels == 0) || (count++ < levels))) {
-		new_node = malloc(sizeof(struct filename_node));
-		new_part = strdup(node->name);
-
-		/* Tidy up the loose nodes in the event of a memory error. */
-
-		if (new_node == NULL || new_part == NULL) {
-			if (new_node != NULL)
-				free(new_node);
-
-			if (new_part != NULL)
-				free(new_part);
-
+		new_node = filename_create_node(node, 0);
+		if (new_node == NULL)
 			return false;
-		}
-
-		new_node->name = new_part;
-		new_node->next = NULL;
 
 		/* Link the new node in to the instance. */
 
@@ -479,23 +459,9 @@ bool filename_append(struct filename *name, struct filename *add, int levels)
 	node = add->name;
 
 	while (node != NULL && ((levels == 0) || (count++ < levels))) {
-		new_node = malloc(sizeof(struct filename_node));
-		new_part = strdup(node->name);
-
-		/* Tidy up the loose nodes in the event of a memory error. */
-
-		if (new_node == NULL || new_part == NULL) {
-			if (new_node != NULL)
-				free(new_node);
-
-			if (new_part != NULL)
-				free(new_part);
-
+		new_node = filename_create_node(node, 0);
+		if (new_node == NULL)
 			return false;
-		}
-
-		new_node->name = new_part;
-		new_node->next = NULL;
 
 		/* Link the new node in to the instance. */
 
@@ -548,6 +514,101 @@ struct filename *filename_join(struct filename *first, struct filename *second)
 	}
 
 	return name;
+}
+
+
+/**
+ * Create a new filename as the relative path between two other names.
+ *
+ * \param *from			The name to be the origin of the new name.
+ * \param *to			The name to be the destination of the new name.
+ * \return			The new filename instance, or NULL on failure.
+ */
+
+struct filename *filename_get_relative(struct filename *from, struct filename *to)
+{
+	struct filename *filename;
+	struct filename_node *node1 = NULL, *node2 = NULL, *tail = NULL, *node = NULL;
+	char *parent = NULL;
+	size_t parent_length;
+
+	if (from == NULL || to == NULL)
+		return NULL;
+
+	if (from->type != FILENAME_TYPE_LEAF || to->type != FILENAME_TYPE_LEAF)
+		return NULL;
+
+	/* Identify the parent directory symbol. */
+
+	parent = filename_get_parent_name(FILENAME_PLATFORM_NONE);
+	if (parent == NULL)
+		return NULL;
+
+	parent_length = strlen(parent);
+
+	/* Create the new name. */
+
+	filename = filename_make(NULL, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_NONE);
+	if (filename == NULL)
+		return NULL;
+
+	/* Find the common parts of the two names. */
+
+	node1 = from->name;
+	node2 = to->name;
+
+	while (node1 != NULL && node2 != NULL && strcmp(node1->name, node2->name) == 0) {
+		printf("Match %s and %s\n", node1->name, node2->name);
+		node1 = node1->next;
+		node2 = node2->next;
+	}
+
+	/* Drop one more from the first name, to allow for the leafname
+	 * that we don't need to step back up over.
+	 */
+
+	if (node1 != NULL)
+		node1 = node1->next;
+
+	/* Track up the tree from the first name. */
+
+	while (node1 != NULL) {
+		node = filename_create_node(NULL, parent_length);
+		if (node == NULL) {
+			filename_destroy(filename);
+			return NULL;
+		}
+
+		strncpy(node->name, parent, parent_length + 1);
+
+		if (tail == NULL)
+			filename->name = node;
+		else
+			tail->next = node;
+
+		tail = node;
+		node1 = node1->next;
+	}
+
+	/* Track back down to the second name. */
+
+	while (node2 != NULL) {
+		node = filename_create_node(node2, 0);
+		if (node == NULL) {
+			filename_destroy(filename);
+			return NULL;
+		}
+
+		if (tail == NULL)
+			filename->name = node;
+		else
+			tail->next = node;
+
+		tail = node;
+		node2 = node2->next;
+	}
+
+	return filename;
 }
 
 
@@ -658,14 +719,18 @@ static bool filename_copy_to_buffer(struct filename *name, char *buffer, size_t 
 	while ((ptr < length) && (node != NULL) && (levels-- > 0)) {
 		c = node->name;
 
-		/* Copy the character bytes in the name. */
+		/* Copy the character bytes in the name. In StrongHelp mode,
+		 * folders which start '[...]' are omitted from link names.
+		 */
 
 		if (platform != FILENAME_PLATFORM_STRONGHELP || *c != '[') {
 			while ((ptr < length) && (*c != '\0'))
 				buffer[ptr++] = *c++;
 		}
 
-		/* Copy a separator after each intermediate node. */
+		/* Copy a separator after each intermediate node. In StrongHelp
+		 * mode, separators are ignored when assembling link names.
+		 */
 
 		if ((ptr < length) && (node->next != NULL) && (levels > 0) && platform != FILENAME_PLATFORM_STRONGHELP)
 			buffer[ptr++] = separator;
@@ -686,7 +751,7 @@ static bool filename_copy_to_buffer(struct filename *name, char *buffer, size_t 
 }
 
 /**
- * Count the number of nodes in a filname.
+ * Count the number of nodes in a filename.
  *
  * \param *name			The filename instance to be counted.
  * \return			The number of nodes, or zero on failure.
@@ -707,6 +772,56 @@ static int filename_count_nodes(struct filename *name)
 	return levels;
 }
 
+
+/**
+ * Duplicate a node, or create a new one with a given name
+ * buffer length allocated. Either node is not NULL and length
+ * is zero, or node is NULL and length is not zero.
+ * 
+ * \param *node		Pointer to the node to duplicate, or NULL.
+ * \param length	Length of the filename buffer to allocate, or 0.
+ * \return		Pointer to the duplicate node, or NULL.
+ */
+
+static struct filename_node *filename_create_node(struct filename_node *node, size_t length)
+{
+	struct filename_node *new_node = NULL;
+	char *new_part = NULL;
+
+	if (node == NULL && length == 0)
+		return NULL;
+
+	/* Allocate the text buffer. */
+
+	if (node != NULL && length == 0) {
+		if (node->name != NULL)
+			new_part = strdup(node->name);
+	} else if (node == NULL && length > 0) {
+		new_part = malloc(length + 1);
+		new_part[0] = '\0';
+	}
+
+	new_node = malloc(sizeof(struct filename_node));
+
+	/* Tidy up the loose nodes in the event of a memory error. */
+
+	if (new_node == NULL || new_part == NULL) {
+		if (new_node != NULL)
+			free(new_node);
+
+		if (new_part != NULL)
+			free(new_part);
+
+		return NULL;
+	}
+
+	new_node->name = new_part;
+	new_node->next = NULL;
+
+	return new_node;
+}
+
+
 /**
  * Return the filename separator for a given platform.
  *
@@ -725,6 +840,7 @@ static char filename_get_separator(enum filename_platform platform)
 #ifdef RISCOS
 		return '.';
 #endif
+	case FILENAME_PLATFORM_NONE:
 	case FILENAME_PLATFORM_LINUX:
 		return '/';
 	case FILENAME_PLATFORM_RISCOS:
@@ -735,3 +851,31 @@ static char filename_get_separator(enum filename_platform platform)
 	};
 }
 
+
+/**
+ * Return the parent directory name for a given platform.
+ *
+ * \param platform		The target platform.
+ * \return			The parent directort name, or NULL.
+ */
+
+static char *filename_get_parent_name(enum filename_platform platform)
+{
+	switch (platform) {
+	case FILENAME_PLATFORM_LOCAL:
+#ifdef LINUX
+		return "..";
+#endif
+#ifdef RISCOS
+		return "^";
+#endif
+	case FILENAME_PLATFORM_NONE:
+	case FILENAME_PLATFORM_LINUX:
+		return "..";
+	case FILENAME_PLATFORM_RISCOS:
+		return "^";
+	case FILENAME_PLATFORM_STRONGHELP:
+	default:
+		return "";
+	};
+}
