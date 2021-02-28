@@ -243,13 +243,6 @@ static bool output_html_write_file(struct manual_data *object, struct filename *
 		return false;
 	}
 
-	if (!output_html_file_write_newline()) {
-		output_html_file_close();
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
 	/* Output the object. */
 
 	if (!output_html_write_object(object, OUTPUT_HTML_BASE_LEVEL, true)) {
@@ -317,7 +310,7 @@ static bool output_html_write_object(struct manual_data *object, int level, bool
 	/* Write out the object heading. */
 
 	if (object->title != NULL) {
-		if (!output_html_file_write_newline())
+		if (!root && !output_html_file_write_newline())
 			return false;
 
 		if (!output_html_write_heading(object, level, !root))
@@ -331,9 +324,6 @@ static bool output_html_write_object(struct manual_data *object, int level, bool
 	if (resources != NULL && !root && (resources->filename != NULL || resources->folder != NULL)) {
 		if (object->chapter.resources->summary != NULL &&
 				!output_html_write_paragraph(object->chapter.resources->summary))
-			return false;
-
-		if (!output_html_file_write_newline())
 			return false;
 
 		if (!output_html_file_write_newline())
@@ -412,7 +402,7 @@ static bool output_html_write_head(struct manual_data *manual)
 	if (!output_html_write_heading(manual, 0, false))
 		return false;
 
-	if (!output_html_file_write_plain("</head>") || !output_html_file_write_newline())
+	if (!output_html_file_write_plain("</head>") || !output_html_file_write_newline() || !output_html_file_write_newline())
 		return false;
 
 	if (!output_html_file_write_plain("<body>") || !output_html_file_write_newline())
