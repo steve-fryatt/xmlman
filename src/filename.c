@@ -84,6 +84,7 @@ static bool filename_copy_to_buffer(struct filename *name, char *buffer, size_t 
 static int filename_count_nodes(struct filename *name);
 static struct filename_node *filename_create_node(struct filename_node *node, size_t length);
 static char filename_get_separator(enum filename_platform platform);
+static char filename_get_extension(enum filename_platform platform);
 static char *filename_get_parent_name(enum filename_platform platform);
 
 
@@ -103,7 +104,7 @@ struct filename *filename_make(char *name, enum filename_type type, enum filenam
 	struct filename_node	*current_node = NULL, *previous_node = NULL;
 	char			*part = NULL;
 	int			position = 0, length = 0;
-	char			separator;
+	char			separator, extension;
 
 	/* Claim memory for the root of the name. */
 
@@ -120,6 +121,7 @@ struct filename *filename_make(char *name, enum filename_type type, enum filenam
 	/* Break the name down into chunks. */
 
 	separator = filename_get_separator(platform);
+	extension = filename_get_extension(platform);
 
 	while (name[position] != '\0') {
 		/* Find the next part of the name. */
@@ -141,8 +143,14 @@ struct filename *filename_make(char *name, enum filename_type type, enum filenam
 
 		part = current_node->name;
 
-		while (name[position] != '\0' && name[position] != separator)
-			*part++ = name[position++];
+		while (name[position] != '\0' && name[position] != separator) {
+			if (name[position] == extension)
+				*part++ = '\t';
+			else
+				*part++ = name[position];
+
+			position++;
+		}
 
 		*part = '\0';
 
@@ -386,7 +394,6 @@ struct filename *filename_up(struct filename *name, int up)
 bool filename_prepend(struct filename *name, struct filename *add, int levels)
 {
 	struct filename_node	*original = NULL, *node = NULL, *new_node = NULL, *previous_node = NULL;
-	char			*new_part = NULL;
 	int			count = 0;
 
 	if (name == NULL || add == NULL)
@@ -439,7 +446,6 @@ bool filename_prepend(struct filename *name, struct filename *add, int levels)
 bool filename_append(struct filename *name, struct filename *add, int levels)
 {
 	struct filename_node	*node = NULL, *new_node = NULL, *previous_node = NULL;
-	char			*new_part = NULL;
 	int			count = 0;
 
 	if (name == NULL || add == NULL)
@@ -558,7 +564,6 @@ struct filename *filename_get_relative(struct filename *from, struct filename *t
 	node2 = to->name;
 
 	while (node1 != NULL && node2 != NULL && strcmp(node1->name, node2->name) == 0) {
-		printf("Match %s and %s\n", node1->name, node2->name);
 		node1 = node1->next;
 		node2 = node2->next;
 	}
@@ -706,13 +711,14 @@ static bool filename_copy_to_buffer(struct filename *name, char *buffer, size_t 
 	struct filename_node	*node = NULL;
 	int			ptr = 0;
 	char			*c = NULL; 
-	char			separator;
+	char			separator, extension;
 
 	if (buffer == NULL || length == 0)
 		return false;
 
 	node = name->name;
 	separator = filename_get_separator(platform);
+	extension = filename_get_extension(platform);
 
 	/* Copy the name into the buffer, byte by byte. */
 
@@ -724,8 +730,14 @@ static bool filename_copy_to_buffer(struct filename *name, char *buffer, size_t 
 		 */
 
 		if (platform != FILENAME_PLATFORM_STRONGHELP || *c != '[') {
-			while ((ptr < length) && (*c != '\0'))
-				buffer[ptr++] = *c++;
+			while ((ptr < length) && (*c != '\0')) {
+				if (*c == '\t')
+					buffer[ptr++] = extension;
+				else
+					buffer[ptr++] = *c;
+
+				c++;
+			}
 		}
 
 		/* Copy a separator after each intermediate node. In StrongHelp
@@ -826,8 +838,7 @@ static struct filename_node *filename_create_node(struct filename_node *node, si
  * Return the filename separator for a given platform.
  *
  * \param platform		The target platform.
- * \return			The filename separator, or '\0' on
- *				failure.
+ * \return			The filename separator.
  */
 
 static char filename_get_separator(enum filename_platform platform)
@@ -845,6 +856,35 @@ static char filename_get_separator(enum filename_platform platform)
 		return '/';
 	case FILENAME_PLATFORM_RISCOS:
 		return '.';
+	case FILENAME_PLATFORM_STRONGHELP:
+	default:
+		return '\0';
+	};
+}
+
+
+/**
+ * Return the filename extension separator for a given platform.
+ *
+ * \param platform		The target platform.
+ * \return			The filename extension separator.
+ */
+
+static char filename_get_extension(enum filename_platform platform)
+{
+	switch (platform) {
+	case FILENAME_PLATFORM_LOCAL:
+#ifdef LINUX
+		return '.';
+#endif
+#ifdef RISCOS
+		return '/';
+#endif
+	case FILENAME_PLATFORM_NONE:
+	case FILENAME_PLATFORM_LINUX:
+		return '.';
+	case FILENAME_PLATFORM_RISCOS:
+		return '/';
 	case FILENAME_PLATFORM_STRONGHELP:
 	default:
 		return '\0';
