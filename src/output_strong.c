@@ -81,10 +81,10 @@ static struct filename *output_strong_root_filename;
 
 static bool output_strong_write_manual(struct manual_data *manual);
 static bool output_strong_write_file(struct manual_data *object);
-static bool output_strong_write_object(struct manual_data *object, int level);
+static bool output_strong_write_object(struct manual_data *object, int level, bool include_id);
 static bool output_strong_write_head(struct manual_data *manual);
 static bool output_strong_write_foot(struct manual_data *manual);
-static bool output_strong_write_heading(struct manual_data *node, int level);
+static bool output_strong_write_heading(struct manual_data *node, int level, bool root);
 static bool output_strong_write_paragraph(struct manual_data *object);
 static bool output_strong_write_reference(struct manual_data *target, char *text);
 static bool output_strong_write_text(enum manual_data_object_type type, struct manual_data *text);
@@ -229,7 +229,7 @@ static bool output_strong_write_file(struct manual_data *object)
 
 	/* Output the object. */
 
-	if (!output_strong_write_object(object, OUTPUT_STRONG_BASE_LEVEL)) {
+	if (!output_strong_write_object(object, OUTPUT_STRONG_BASE_LEVEL, true)) {
 		output_strong_file_sub_close();
 		filename_destroy(filename);
 		return false;
@@ -254,12 +254,11 @@ static bool output_strong_write_file(struct manual_data *object)
  *
  * \param *object		The object to process.
  * \param level			The level to write the section at.
- * \param *folder		The image file folder being written within.
- * \param in_line		True if the section is being written inline; otherwise False.
+ * \param root			True if the object is at the root of a file.
  * \return			True if successful; False on error.
  */
 
-static bool output_strong_write_object(struct manual_data *object, int level)
+static bool output_strong_write_object(struct manual_data *object, int level, bool root)
 {
 	struct manual_data	*block;
 	struct manual_data_mode *resources = NULL;
@@ -296,7 +295,7 @@ static bool output_strong_write_object(struct manual_data *object, int level)
 		if (!output_strong_file_write_newline())
 			return false;
 
-		if (!output_strong_write_heading(object, level))
+		if (!output_strong_write_heading(object, level, !root))
 			return false;
 	}
 
@@ -304,8 +303,7 @@ static bool output_strong_write_object(struct manual_data *object, int level)
 	 * write the objects which fall within it.
 	 */
 
-	if (resources != NULL && (level > OUTPUT_STRONG_BASE_LEVEL) &&
-			(resources->filename != NULL || resources->folder != NULL)) {
+	if (resources != NULL && !root && (resources->filename != NULL || resources->folder != NULL)) {
 		if (object->chapter.resources->summary != NULL &&
 				!output_strong_write_paragraph(object->chapter.resources->summary))
 			return false;
@@ -334,7 +332,7 @@ static bool output_strong_write_object(struct manual_data *object, int level)
 			case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 			case MANUAL_DATA_OBJECT_TYPE_INDEX:
 			case MANUAL_DATA_OBJECT_TYPE_SECTION:
-				if (!output_strong_write_object(block, level + 1))
+				if (!output_strong_write_object(block, level + 1, false))
 					return false;
 				break;
 
@@ -376,7 +374,7 @@ static bool output_strong_write_head(struct manual_data *manual)
 //	if (!output_strong_file_write_plain("<head>") || !output_strong_file_write_newline())
 //		return false;
 
-	if (!output_strong_write_heading(manual, 0))
+	if (!output_strong_write_heading(manual, 0, false))
 		return false;
 
 //	if (!output_strong_file_write_plain("</head>") || !output_strong_file_write_newline())
@@ -405,10 +403,11 @@ static bool output_strong_write_foot(struct manual_data *manual)
  *
  * \param *node			The node for which to write the title.
  * \param level			The level to write the title at.
+ * \param include_id		True to include the object ID, if specified.
  * \return			True if successful; False on error.
  */
 
-static bool output_strong_write_heading(struct manual_data *node, int level)
+static bool output_strong_write_heading(struct manual_data *node, int level, bool include_id)
 {
 	char *number;
 
@@ -417,6 +416,21 @@ static bool output_strong_write_heading(struct manual_data *node, int level)
 
 	if (level < 0 || level > 6)
 		return false;
+
+	/* Include a tag, if required. */
+
+	if (include_id && node->id != NULL) {
+		if (!output_strong_file_write_plain("#TAG "))
+			return false;
+
+		if (!output_strong_file_write_text(node->id))
+			return false;
+
+		if (!output_strong_file_write_newline())
+			return false;
+	}
+
+	/* Write the heading. */
 
 	number = manual_data_get_node_number(node);
 
@@ -431,7 +445,7 @@ static bool output_strong_write_heading(struct manual_data *node, int level)
 			return false;
 		}
 
-		if (!output_strong_file_write_text(" ")) {
+		if (!output_strong_file_write_plain(" ")) {
 			free(number);
 			return false;
 		}
@@ -571,7 +585,7 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 			output_strong_file_write_text(chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			output_strong_file_write_text(output_strong_convert_entity(chunk->chunk.entity));
+			output_strong_file_write_text((char *) output_strong_convert_entity(chunk->chunk.entity));
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(chunk->type));
