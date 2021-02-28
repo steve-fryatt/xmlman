@@ -58,10 +58,11 @@
 #define OUTPUT_HTML_MAX_NEST_DEPTH 6
 
 /**
- * The length of buffer required to build <title> and <h?> tags.
+ * The length of buffer required to build <title> and <h?> tags
+ * (allowing space for full-length ints, if ever required).
  */
 
-#define OUTPUT_HTML_TITLE_TAG_BLOCK_LEN 6
+#define OUTPUT_HTML_TITLE_TAG_BLOCK_LEN 20
 
 /**
  * The root filename used when writing into an empty folder.
@@ -82,10 +83,10 @@ static struct filename *output_html_root_filename;
 
 static bool output_html_write_manual(struct manual_data *manual, struct filename *folder);
 static bool output_html_write_file(struct manual_data *object, struct filename *folder);
-static bool output_html_write_object(struct manual_data *object, int level);
+static bool output_html_write_object(struct manual_data *object, int level, bool root);
 static bool output_html_write_head(struct manual_data *manual);
 static bool output_html_write_foot(struct manual_data *manual);
-static bool output_html_write_heading(struct manual_data *node, int level);
+static bool output_html_write_heading(struct manual_data *node, int level, bool include_id);
 static bool output_html_write_paragraph(struct manual_data *object);
 static bool output_html_write_reference(struct manual_data *source, struct manual_data *target, char *text);
 static bool output_html_write_text(enum manual_data_object_type type, struct manual_data *text);
@@ -251,7 +252,7 @@ static bool output_html_write_file(struct manual_data *object, struct filename *
 
 	/* Output the object. */
 
-	if (!output_html_write_object(object, OUTPUT_HTML_BASE_LEVEL)) {
+	if (!output_html_write_object(object, OUTPUT_HTML_BASE_LEVEL, true)) {
 		output_html_file_close();
 		filename_destroy(foldername);
 		filename_destroy(filename);
@@ -278,10 +279,11 @@ static bool output_html_write_file(struct manual_data *object, struct filename *
  *
  * \param *object		The object to process.
  * \param level			The level to write the section at.
+ * \param root			True if the object is at the root of a file.
  * \return			True if successful; False on error.
  */
 
-static bool output_html_write_object(struct manual_data *object, int level)
+static bool output_html_write_object(struct manual_data *object, int level, bool root)
 {
 	struct manual_data *block;
 	struct manual_data_mode *resources = NULL;
@@ -318,7 +320,7 @@ static bool output_html_write_object(struct manual_data *object, int level)
 		if (!output_html_file_write_newline())
 			return false;
 
-		if (!output_html_write_heading(object, level))
+		if (!output_html_write_heading(object, level, !root))
 			return false;
 	}
 
@@ -326,8 +328,7 @@ static bool output_html_write_object(struct manual_data *object, int level)
 	 * write the objects which fall within it.
 	 */
 
-	if (resources != NULL && (level > OUTPUT_HTML_BASE_LEVEL) &&
-			(resources->filename != NULL || resources->folder != NULL)) {
+	if (resources != NULL && !root && (resources->filename != NULL || resources->folder != NULL)) {
 		if (object->chapter.resources->summary != NULL &&
 				!output_html_write_paragraph(object->chapter.resources->summary))
 			return false;
@@ -359,7 +360,7 @@ static bool output_html_write_object(struct manual_data *object, int level)
 			case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 			case MANUAL_DATA_OBJECT_TYPE_INDEX:
 			case MANUAL_DATA_OBJECT_TYPE_SECTION:
-				if (!output_html_write_object(block, level + 1))
+				if (!output_html_write_object(block, level + 1, false))
 					return false;
 				break;
 
@@ -408,7 +409,7 @@ static bool output_html_write_head(struct manual_data *manual)
 	if (!output_html_file_write_plain("<head>") || !output_html_file_write_newline())
 		return false;
 
-	if (!output_html_write_heading(manual, 0))
+	if (!output_html_write_heading(manual, 0, false))
 		return false;
 
 	if (!output_html_file_write_plain("</head>") || !output_html_file_write_newline())
@@ -449,10 +450,11 @@ static bool output_html_write_foot(struct manual_data *manual)
  *
  * \param *node			The node for which to write the title.
  * \param level			The level to write the title at.
+ * \param include_id		True to include the object ID, if specified.
  * \return			True if successful; False on error.
  */
 
-static bool output_html_write_heading(struct manual_data *node, int level)
+static bool output_html_write_heading(struct manual_data *node, int level, bool include_id)
 {
 	char	buffer[OUTPUT_HTML_TITLE_TAG_BLOCK_LEN];
 	char	*number;
@@ -465,6 +467,8 @@ static bool output_html_write_heading(struct manual_data *node, int level)
 
 	number = manual_data_get_node_number(node);
 
+	/* Create and write the opening tag. */
+
 	if (level == 0)
 		snprintf(buffer, OUTPUT_HTML_TITLE_TAG_BLOCK_LEN, "title");
 	else
@@ -472,10 +476,36 @@ static bool output_html_write_heading(struct manual_data *node, int level)
 
 	buffer[OUTPUT_HTML_TITLE_TAG_BLOCK_LEN - 1] = '\0';
 
-	if (!output_html_file_write_plain("<%s>", buffer)) {
+	if (!output_html_file_write_plain("<%s", buffer)) {
 		free(number);
 		return false;
 	}
+
+	/* Include the ID in the opening tag, if required. */
+
+	if (include_id && node->id != NULL) {
+		if (!output_html_file_write_plain(" id=\"")) {
+			free(number);
+			return false;
+		}
+
+		if (!output_html_file_write_text(node->id)) {
+			free(number);
+			return false;
+		}
+
+		if (!output_html_file_write_plain("\"")) {
+			free(number);
+			return false;
+		}
+	}
+
+	if (!output_html_file_write_plain(">")) {
+		free(number);
+		return false;
+	}
+
+	/* Write the title text. */
 
 	if (number != NULL) {
 		if (!output_html_file_write_text(number)) {
@@ -493,6 +523,8 @@ static bool output_html_write_heading(struct manual_data *node, int level)
 
 	if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, node->title))
 		return false;
+
+	/* Write the closing tag. */
 
 	if (!output_html_file_write_plain("</%s>", buffer))
 		return false;
@@ -638,7 +670,7 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 			output_html_file_write_text(chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			output_html_file_write_text(output_html_convert_entity(chunk->chunk.entity));
+			output_html_file_write_text((char *) output_html_convert_entity(chunk->chunk.entity));
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(chunk->type));
