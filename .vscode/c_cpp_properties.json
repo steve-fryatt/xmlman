@@ -5,7 +5,11 @@
             "includePath": [
                 "${workspaceFolder}/**"
             ],
-            "defines": [],
+            "defines": [
+                "LINUX",
+                "BUILD_VERSION",
+                "BUILD_DATE"
+            ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c99",
             "cppStandard": "gnu++14"
@@ -16,7 +20,11 @@
                 "${workspaceFolder}/**",
                 "/home/steve/gccsdk/env/include/"
             ],
-            "defines": [],
+            "defines": [
+                "RISCOS",
+                "BUILD_VERSION",
+                "BUILD_DATE"
+            ],
             "compilerPath": "/home/steve/gccsdk/cross/arm-unknown-riscos/bin/gcc",
             "cStandard": "c99",
             "cppStandard": "gnu++14"
