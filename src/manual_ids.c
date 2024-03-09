@@ -33,6 +33,7 @@
 
 #include "manual_data.h"
 #include "manual_ids.h"
+#include "msg.h"
 
 /**
  * The size of the manual IDs hash table.
@@ -106,12 +107,18 @@ struct manual_ids *manual_ids_create(void)
 	return new;
 }
 
+/**
+ * Dump a manual IDs index instance to the log.
+ *
+ * \param *instance	The ID index instance to dump.
+ */
+
 void manual_ids_dump(struct manual_ids *instance)
 {
 	struct manual_ids_entry	*entry;
 	int			i;
 
-	printf("Dumping index table 0x%x\n", instance);
+	msg_report(MSG_ID_HASH_DUMP, instance);
 
 	if (instance == NULL)
 		return;
@@ -119,10 +126,10 @@ void manual_ids_dump(struct manual_ids *instance)
 	for (i = 0; i < MANUAL_IDS_HASH_SIZE; i++) {
 		entry = instance->table[i];
 
-		printf("Hash entry %d = 0x%x\n", i, entry);
+		msg_report(MSG_ID_HASH_LINE, i, entry);
 
 		while (entry != NULL) {
-			printf("Entry for '%s'\n", entry->id);
+			msg_report(MSG_ID_HASH_ENTRY, entry->id);
 			entry = entry->next;
 		}
 	}

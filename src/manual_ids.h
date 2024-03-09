@@ -48,6 +48,12 @@ struct manual_ids;
 
 struct manual_ids *manual_ids_create(void);
 
+/**
+ * Dump a manual IDs index instance to the log.
+ *
+ * \param *instance	The ID index instance to dump.
+ */
+
 void manual_ids_dump(struct manual_ids *instance);
 
 /**

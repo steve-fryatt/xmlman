@@ -173,6 +173,8 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 		return false;
 	}
 
+	msg_report(MSG_PARSE_FILE, file);
+
 	/* Parse the file contents. */
 
 	do {
