@@ -59,6 +59,7 @@ static struct parse_element_definition parse_element_tags[] = {
 	{PARSE_ELEMENT_KEY,		"key"},
 	{PARSE_ELEMENT_MOUSE,		"mouse"},
 	{PARSE_ELEMENT_STRONG,		"strong"},
+	{PARSE_ELEMENT_VARIABLE,	"variable"},
 	{PARSE_ELEMENT_WINDOW,		"window"},
 	{PARSE_ELEMENT_PARAGRAPH,	"p"},
 	{PARSE_ELEMENT_SECTION,		"section"},

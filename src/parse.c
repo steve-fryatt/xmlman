@@ -716,6 +716,9 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 	case PARSE_ELEMENT_STRONG:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS);
 		break;
+	case PARSE_ELEMENT_VARIABLE:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_VARIABLE);
+		break;
 	case PARSE_ELEMENT_WINDOW:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_WINDOW);
 		break;
@@ -773,6 +776,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 			case PARSE_ELEMENT_KEY:
 			case PARSE_ELEMENT_MOUSE:
 			case PARSE_ELEMENT_STRONG:
+			case PARSE_ELEMENT_VARIABLE:
 			case PARSE_ELEMENT_WINDOW:
 				item = parse_block_object(parser);
 				parse_link_item(&tail, new_block, item);

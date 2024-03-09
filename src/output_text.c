@@ -626,11 +626,38 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 		case MANUAL_DATA_OBJECT_TYPE_CITATION:
 			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_CITATION, chunk);
 			break;
+		case MANUAL_DATA_OBJECT_TYPE_CODE:
+			output_text_line_add_text(line, column, "\"");
+			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_CODE, chunk);
+			output_text_line_add_text(line, column, "\"");
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_USER_ENTRY:
+			output_text_line_add_text(line, column, "\"");
+			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_USER_ENTRY, chunk);
+			output_text_line_add_text(line, column, "\"");
+			break;
 		case MANUAL_DATA_OBJECT_TYPE_FILENAME:
 			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_FILENAME, chunk);
 			break;
+		case MANUAL_DATA_OBJECT_TYPE_ICON:
+			output_text_line_add_text(line, column, "'");
+			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_ICON, chunk);
+			output_text_line_add_text(line, column, "'");
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_KEY:
+			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_KEY, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_MOUSE:
+			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_MOUSE, chunk);
+			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
 			output_text_line_add_text(line, column, chunk->chunk.text);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_VARIABLE:
+			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_VARIABLE, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_WINDOW:
+			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_WINDOW, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
 			output_text_line_add_text(line, column, (char *) output_text_convert_entity(chunk->chunk.entity));
@@ -669,6 +696,14 @@ static const char *output_text_convert_entity(enum manual_entity_type entity)
 	case MANUAL_ENTITY_LDQUO:
 	case MANUAL_ENTITY_RDQUO:
 		return "\"";
+	case MANUAL_ENTITY_LT:
+		return "<";
+	case MANUAL_ENTITY_GT:
+		return ">";
+	case MANUAL_ENTITY_LE:
+		return "<=";
+	case MANUAL_ENTITY_GE:
+		return ">=";
 	case MANUAL_ENTITY_MINUS:
 		return "-";
 	case MANUAL_ENTITY_NDASH:

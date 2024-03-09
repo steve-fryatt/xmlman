@@ -53,6 +53,8 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{MANUAL_ENTITY_APOS,		"apos"},
 	{MANUAL_ENTITY_LT,		"lt"},
 	{MANUAL_ENTITY_GT,		"gt"},
+	{MANUAL_ENTITY_LE,		"le"},
+	{MANUAL_ENTITY_GE,		"ge"},
 	{MANUAL_ENTITY_NBSP,		"nbsp"},
 	{MANUAL_ENTITY_LSQUO,		"lsquo"},
 	{MANUAL_ENTITY_LDQUO,		"ldquo"},
@@ -62,6 +64,7 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{MANUAL_ENTITY_MDASH,		"mdash"},
 	{MANUAL_ENTITY_MINUS,		"minus"},
 	{MANUAL_ENTITY_TIMES,		"times"},
+	{MANUAL_ENTITY_MSEP,		"msep"},
 	{MANUAL_ENTITY_NONE,		""}
 };
 

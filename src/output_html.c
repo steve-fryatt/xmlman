@@ -90,6 +90,8 @@ static bool output_html_write_heading(struct manual_data *node, int level, bool 
 static bool output_html_write_paragraph(struct manual_data *object);
 static bool output_html_write_reference(struct manual_data *source, struct manual_data *target, char *text);
 static bool output_html_write_text(enum manual_data_object_type type, struct manual_data *text);
+static bool output_html_write_span_tag(enum manual_data_object_type type, char *tag, struct manual_data *text);
+static bool output_html_write_span_style(enum manual_data_object_type type, char *style, struct manual_data *text);
 static const char *output_html_convert_entity(enum manual_entity_type entity);
 
 /**
@@ -651,27 +653,40 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 	while (chunk != NULL) {
 		switch (chunk->type) {
 		case MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS:
-			output_html_file_write_plain("<em>");
-			output_html_write_text(MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, chunk);
-			output_html_file_write_plain("</em>");
+			output_html_write_span_tag(MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, "em", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
-			output_html_file_write_plain("<strong>");
-			output_html_write_text(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, chunk);
-			output_html_file_write_plain("</strong>");
+			output_html_write_span_tag(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, "strong", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_CITATION:
-			output_html_file_write_plain("<cite>");
-			output_html_write_text(MANUAL_DATA_OBJECT_TYPE_CITATION, chunk);
-			output_html_file_write_plain("</cite>");
+			output_html_write_span_tag(MANUAL_DATA_OBJECT_TYPE_CITATION, "cite", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_CODE:
+			output_html_write_span_tag(MANUAL_DATA_OBJECT_TYPE_CODE, "code", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_FILENAME:
-			output_html_file_write_plain("<span class=\"filename\"");
-			output_html_write_text(MANUAL_DATA_OBJECT_TYPE_FILENAME, chunk);
-			output_html_file_write_plain("</filename>");
+			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_FILENAME, "filename", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_ICON:
+			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_ICON, "icon", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_KEY:
+			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_KEY, "key", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_MOUSE:
+			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_MOUSE, "mouse", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
 			output_html_file_write_text(chunk->chunk.text);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_USER_ENTRY:
+			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_USER_ENTRY, "entry", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_VARIABLE:
+			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_VARIABLE, "variable", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_WINDOW:
+			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_WINDOW, "window", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
 			output_html_file_write_text((char *) output_html_convert_entity(chunk->chunk.entity));
@@ -685,6 +700,58 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 
 		chunk = chunk->next;
 	}
+
+	return true;
+}
+
+/**
+ * Write out a section of text wrapped in HTML tags.
+ * 
+ * \param type			The type of block which is expected.
+ * \param *tag			The HTML tag to use.
+ * \param *text			The block of text to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_span_tag(enum manual_data_object_type type, char *tag, struct manual_data *text)
+{
+	if (text == NULL || tag == NULL)
+		return false;
+
+	if (output_html_file_write_plain("<%s>", tag) == false)
+		return false;
+
+	if (output_html_write_text(type, text) == false)
+		return false;
+
+	if (output_html_file_write_plain("</%s>", tag) == false)
+		return false;
+
+	return true;
+}
+
+/**
+ * Write out a section of text wrapped in HTML <span> tags.
+ * 
+ * \param type			The type of block which is expected.
+ * \param *style		The CSS class to use in the span.
+ * \param *text			The block of text to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_span_style(enum manual_data_object_type type, char *style, struct manual_data *text)
+{
+	if (text == NULL || style == NULL)
+		return false;
+
+	if (output_html_file_write_plain("<span class=\"%s\">", style) == false)
+		return false;
+
+	if (output_html_write_text(type, text) == false)
+		return false;
+
+	if (output_html_file_write_plain("</span>") == false)
+		return false;
 
 	return true;
 }
@@ -713,6 +780,14 @@ static const char *output_html_convert_entity(enum manual_entity_type entity)
 		return "&ldquo;";
 	case MANUAL_ENTITY_RDQUO:
 		return "&rdquo;";
+	case MANUAL_ENTITY_LT:
+		return "&lt;";
+	case MANUAL_ENTITY_GT:
+		return "&gt";
+	case MANUAL_ENTITY_LE:
+		return "&le;";
+	case MANUAL_ENTITY_GE:
+		return "&ge;";
 	case MANUAL_ENTITY_MINUS:
 		return "&minus;";
 	case MANUAL_ENTITY_NDASH:
