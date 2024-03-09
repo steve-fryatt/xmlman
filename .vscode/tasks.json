@@ -1,0 +1,96 @@
+{
+	// See https://go.microsoft.com/fwlink/?LinkId=733558
+	// for the documentation about the tasks.json format
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build-linux",
+			"type": "shell",
+			"command": "make",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "build-riscos",
+			"type": "shell",
+			"command": "make",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"args": [
+				"TARGET=riscos"
+			],
+			"group": "build",
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "clean-linux",
+			"type": "shell",
+			"command": "make",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"args": [
+				"clean"
+			],
+			"group": "build",
+	//		"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "clean-riscos",
+			"type": "shell",
+			"command": "make",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"args": [
+				"clean",
+				"TARGET=riscos"
+			],
+			"group": "build",
+	//		"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "release-linux",
+			"type": "shell",
+			"command": "make",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"args": [
+				"release",
+				"VERSION=${input:version}"
+			],
+			"group": "build",
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "release-riscos",
+			"type": "shell",
+			"command": "make",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"args": [
+				"release",
+				"TARGET=riscos",
+				"VERSION=${input:version}"
+			],
+			"group": "build",
+			"problemMatcher": "$msCompile"
+		}
+	],
+	"inputs": [
+		{
+			"id": "version",
+			"type": "promptString",
+			"description": "Version"
+		}
+	]
+}
