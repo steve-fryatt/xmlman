@@ -338,7 +338,9 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 
 			case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
-					msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
 					break;
 				}
 
@@ -347,7 +349,9 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 				break;
 
 			default:
-				msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+				msg_report(MSG_UNEXPECTED_CHUNK,
+						manual_data_find_object_name(block->type),
+						manual_data_find_object_name(object->type));
 				break;
 			}
 
@@ -577,9 +581,19 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 			output_strong_file_write_plain("}");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
-			output_strong_file_write_plain("<strong>");
+			output_strong_file_write_plain("{f*:}");
 			output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, chunk);
-			output_strong_file_write_plain("</strong>");
+			output_strong_file_write_plain("}");
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_CITATION:
+			output_strong_file_write_plain("{f/:}");
+			output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_CITATION, chunk);
+			output_strong_file_write_plain("}");
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_FILENAME:
+			output_strong_file_write_plain("{f*:");
+			output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_FILENAME, chunk);
+			output_strong_file_write_plain("}");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
 			output_strong_file_write_text(chunk->chunk.text);
@@ -588,7 +602,9 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 			output_strong_file_write_text((char *) output_strong_convert_entity(chunk->chunk.entity));
 			break;
 		default:
-			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(chunk->type));
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(chunk->type),
+					manual_data_find_object_name(text->type));
 			break;
 		}
 
@@ -599,10 +615,10 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 }
 
 /**
- * Convert an entity into an StrongHelp representation.
+ * Convert an entity into a StrongHelp representation.
  *
  * \param entity		The entity to convert.
- * \return			Pointer to the HTML representation.
+ * \return			Pointer to the StrongHelp representation.
  */
 
 static const char *output_strong_convert_entity(enum manual_entity_type entity)

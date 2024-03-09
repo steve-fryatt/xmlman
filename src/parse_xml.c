@@ -1045,3 +1045,40 @@ static bool parse_xml_match_ahead(struct parse_xml_block *instance, const char *
 
 	return (*text == '\0') ? true : false;
 }
+
+/**
+ * Given an XML result code, return a human-readbale name.
+ * 
+ * \param result	The result code to look up.
+ * \return		Pointer to a name for the result.
+ */
+
+char *parse_xml_get_result_name(enum parse_xml_result result)
+{
+	switch (result) {
+	case PARSE_XML_RESULT_START:
+		return "Start";
+	case PARSE_XML_RESULT_ERROR:
+		return "Error";
+	case PARSE_XML_RESULT_EOF:
+		return "EOF";
+	case PARSE_XML_RESULT_TAG_START:
+		return "Tag Start";
+	case PARSE_XML_RESULT_TAG_END:
+		return "Tag End";
+	case PARSE_XML_RESULT_TAG_EMPTY:
+		return "Tag Empty";
+	case PARSE_XML_RESULT_TAG_ENTITY:
+		return "Tag Entity";
+	case PARSE_XML_RESULT_TEXT:
+		return "Text";
+	case PARSE_XML_RESULT_WHITESPACE:
+		return "White Space";
+	case PARSE_XML_RESULT_COMMENT:
+		return "Comment";
+	case PARSE_XML_RESULT_OTHER:
+		return "Other";
+	default:
+		return "Unknown Result";
+	}
+}

@@ -356,7 +356,9 @@ static bool output_html_write_object(struct manual_data *object, int level, bool
 
 			case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
-					msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
 					break;
 				}
 
@@ -365,7 +367,9 @@ static bool output_html_write_object(struct manual_data *object, int level, bool
 				break;
 
 			default:
-				msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+				msg_report(MSG_UNEXPECTED_CHUNK,
+						manual_data_find_object_name(block->type),
+						manual_data_find_object_name(object->type));
 				break;
 			}
 
@@ -656,6 +660,16 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 			output_html_write_text(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, chunk);
 			output_html_file_write_plain("</strong>");
 			break;
+		case MANUAL_DATA_OBJECT_TYPE_CITATION:
+			output_html_file_write_plain("<cite>");
+			output_html_write_text(MANUAL_DATA_OBJECT_TYPE_CITATION, chunk);
+			output_html_file_write_plain("</cite>");
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_FILENAME:
+			output_html_file_write_plain("<span class=\"filename\"");
+			output_html_write_text(MANUAL_DATA_OBJECT_TYPE_FILENAME, chunk);
+			output_html_file_write_plain("</filename>");
+			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
 			output_html_file_write_text(chunk->chunk.text);
 			break;
@@ -663,7 +677,9 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 			output_html_file_write_text((char *) output_html_convert_entity(chunk->chunk.entity));
 			break;
 		default:
-			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(chunk->type));
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(chunk->type),
+					manual_data_find_object_name(text->type));
 			break;
 		}
 

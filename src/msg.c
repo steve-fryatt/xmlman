@@ -131,7 +131,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_WARNING,	"Unexpected '<%s>' element found in %s node",			false},
 	{MSG_WARNING,	"Unexpected '<%s>' closing element in block",			false},
 	{MSG_ERROR,	"Unexpected stack entry type found",				false},
-	{MSG_WARNING,	"Unexpected XML result type %d found in %s",			false},
+	{MSG_WARNING,	"Unexpected XML result %s found in %s",				false},
 	{MSG_WARNING,	"Attempt to add unexpected block of type %s",			false},
 	{MSG_ERROR,	"Attempt to push incorrect %s block on to stack (expected %s)",	false},
 	{MSG_ERROR,	"Missing '%s' attribute",					false},
@@ -156,7 +156,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_WARNING,	"Unexpected UTF8 sequence",					false},
 	{MSG_WARNING,	"Character %d, (0x%x) is not mapped into selected encoding",	false},
 	{MSG_ERROR,	"Content block not of expected type (expected %s, found %s)",	false},
-	{MSG_ERROR,	"Content chunk not of expected type (found %s)",		false},
+	{MSG_ERROR,	"Content chunk not of expected type (found %s in %s)",		false},
 	{MSG_WARNING,	"Entity %s is not mapped in the selected target output",	false},
 	{MSG_ERROR,	"Sections are nested too deep, at %d levels",			false},
 

@@ -376,7 +376,9 @@ static bool output_text_write_object(struct manual_data *object, int indent)
 
 			case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
-					msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
 					break;
 				}
 
@@ -387,7 +389,9 @@ static bool output_text_write_object(struct manual_data *object, int indent)
 				break;
 
 			default:
-				msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(block->type));
+				msg_report(MSG_UNEXPECTED_CHUNK,
+						manual_data_find_object_name(block->type),
+						manual_data_find_object_name(object->type));
 				break;
 			}
 
@@ -619,14 +623,22 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, chunk);
 			output_text_line_add_text(line, column, "*");
 			break;
+		case MANUAL_DATA_OBJECT_TYPE_CITATION:
+			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_CITATION, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_FILENAME:
+			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_FILENAME, chunk);
+			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
 			output_text_line_add_text(line, column, chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			output_text_line_add_text(line, column, output_text_convert_entity(chunk->chunk.entity));
+			output_text_line_add_text(line, column, (char *) output_text_convert_entity(chunk->chunk.entity));
 			break;
 		default:
-			msg_report(MSG_UNEXPECTED_CHUNK, manual_data_find_object_name(chunk->type));
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(chunk->type),
+					manual_data_find_object_name(text->type));
 			break;
 		}
 

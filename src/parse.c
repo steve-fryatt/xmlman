@@ -196,7 +196,7 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 		case PARSE_XML_RESULT_COMMENT:
 			break;
 		default:
-			msg_report(MSG_UNEXPECTED_XML, result, "Outer");
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), "Outer");
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF);
@@ -337,7 +337,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 		case PARSE_XML_RESULT_COMMENT:
 			break;
 		default:
-			msg_report(MSG_UNEXPECTED_XML, result, parse_element_find_tag(type));
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
@@ -523,7 +523,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 		case PARSE_XML_RESULT_COMMENT:
 			break;
 		default:
-			msg_report(MSG_UNEXPECTED_XML, result, parse_element_find_tag(type));
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
@@ -643,7 +643,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 		case PARSE_XML_RESULT_COMMENT:
 			break;
 		default:
-			msg_report(MSG_UNEXPECTED_XML, result, parse_element_find_tag(type));
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
@@ -800,7 +800,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 			break;
 
 		default:
-			msg_report(MSG_UNEXPECTED_XML, result, parse_element_find_tag(type));
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
@@ -850,7 +850,7 @@ static void parse_unknown(struct parse_xml_block *parser)
 		case PARSE_XML_RESULT_COMMENT:
 			break;
 		default:
-			msg_report(MSG_UNEXPECTED_XML, result, "Unknown");
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), "Unknown");
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
@@ -948,7 +948,7 @@ static void parse_resources(struct parse_xml_block *parser, struct manual_data_r
 		case PARSE_XML_RESULT_COMMENT:
 			break;
 		default:
-			msg_report(MSG_UNEXPECTED_XML, result, parse_element_find_tag(type));
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
@@ -1029,7 +1029,7 @@ static void parse_mode_resources(struct parse_xml_block *parser, struct manual_d
 		case PARSE_XML_RESULT_COMMENT:
 			break;
 		default:
-			msg_report(MSG_UNEXPECTED_XML, result, parse_element_find_tag(type));
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
@@ -1117,7 +1117,7 @@ static bool parse_fetch_single_chunk(struct parse_xml_block *parser, char *buffe
 		case PARSE_XML_RESULT_COMMENT:
 			break;
 		default:
-			msg_report(MSG_UNEXPECTED_XML, result, parse_element_find_tag(type));
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);

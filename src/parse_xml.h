@@ -168,4 +168,13 @@ size_t parse_xml_copy_attribute_text(struct parse_xml_block *instance, const cha
 
 enum manual_entity_type parse_xml_get_entity(struct parse_xml_block *instance);
 
+/**
+ * Given an XML result code, return a human-readbale name.
+ * 
+ * \param result	The result code to look up.
+ * \return		Pointer to a name for the result.
+ */
+
+char *parse_xml_get_result_name(enum parse_xml_result result);
+
 #endif
