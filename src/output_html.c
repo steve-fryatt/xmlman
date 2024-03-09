@@ -796,6 +796,10 @@ static const char *output_html_convert_entity(enum manual_entity_type entity)
 		return "&mdash";
 	case MANUAL_ENTITY_TIMES:
 		return "&times;";
+	case MANUAL_ENTITY_SMILE:
+		return "&#128578;";
+	case MANUAL_ENTITY_SAD:
+		return "&#128577;";
 	default:
 		msg_report(MSG_ENTITY_NO_MAP, manual_entity_find_name(entity));
 		return "?";

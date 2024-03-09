@@ -712,6 +712,10 @@ static const char *output_text_convert_entity(enum manual_entity_type entity)
 		return ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY;
 	case MANUAL_ENTITY_TIMES:
 		return "x";
+	case MANUAL_ENTITY_SMILE:
+		return ":-)";
+	case MANUAL_ENTITY_SAD:
+		return ":-(";
 	default:
 		msg_report(MSG_ENTITY_NO_MAP, manual_entity_find_name(entity));
 		return "?";

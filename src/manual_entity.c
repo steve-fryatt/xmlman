@@ -65,6 +65,8 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{MANUAL_ENTITY_MINUS,		"minus"},
 	{MANUAL_ENTITY_TIMES,		"times"},
 	{MANUAL_ENTITY_MSEP,		"msep"},
+	{MANUAL_ENTITY_SMILE,		"smile"},
+	{MANUAL_ENTITY_SAD,		"sad"},
 	{MANUAL_ENTITY_NONE,		""}
 };
 
