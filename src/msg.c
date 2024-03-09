@@ -1,4 +1,4 @@
-/* Copyright 2014-2021, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2014-2024, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -134,7 +134,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_WARNING,	"Unexpected '<%s>' element found in %s node",			false},
 	{MSG_WARNING,	"Unexpected '<%s>' closing element in block",			false},
 	{MSG_ERROR,	"Unexpected stack entry type found",				false},
-	{MSG_WARNING,	"Unexpected XML result %s found in %s",				false},
+	{MSG_WARNING,	"Unexpected XML result %s found in %s",				true},
 	{MSG_WARNING,	"Attempt to add unexpected block of type %s",			false},
 	{MSG_ERROR,	"Attempt to push incorrect %s block on to stack (expected %s)",	false},
 	{MSG_ERROR,	"Missing '%s' attribute",					false},
@@ -145,7 +145,7 @@ static struct msg_data msg_messages[] = {
 
 	{MSG_ERROR,	"Attempt to add content into unexpected stack location %d",	false},
 
-	{MSG_ERROR,	"Unknown element '<%s>'",					false},
+	{MSG_ERROR,	"Unknown element '<%s>'",					true},
 	{MSG_ERROR,	"Failed to allocate new manual data node",			false},
 
 	{MSG_INFO,	"Writing %s output...",						false},
@@ -196,6 +196,12 @@ static struct msg_data msg_messages[] = {
 static char	msg_location[MSG_MAX_LOCATION_TEXT];
 
 /**
+ * The current error line.
+ */
+
+static unsigned	msg_line;
+
+/**
  * Set to true if an error is reported.
  */
 
@@ -216,6 +222,7 @@ static bool	msg_verbose_output = false;
 void msg_initialise(bool verbose)
 {
 	*msg_location = '\0';
+	msg_line = 0;
 	msg_error_reported = false;
 	msg_verbose_output = verbose;
 }
@@ -224,14 +231,26 @@ void msg_initialise(bool verbose)
  * Set the location for future messages, in the form of a file and line number
  * relating to the source files.
  *
+ * \param *file		Pointer to the name of the current file.
+ */
+
+void msg_set_location(char *file)
+{
+	strncpy(msg_location, (file != NULL) ? file : "", MSG_MAX_LOCATION_TEXT);
+	msg_location[MSG_MAX_LOCATION_TEXT - 1] = '\0';
+}
+
+/**
+ * Set the location for future messages, in the form of a line number
+ * relating to the source files.
+ *
  * \param line		The number of the current line.
  * \param *file		Pointer to the name of the current file.
  */
 
-void msg_set_location(unsigned line, char *file)
+void msg_set_line(unsigned line)
 {
-	snprintf(msg_location, MSG_MAX_LOCATION_TEXT, "at line %u of '%s'", line, (file != NULL) ? file : "");
-	msg_location[MSG_MAX_LOCATION_TEXT - 1] = '\0';
+	msg_line = line;
 }
 
 /**
@@ -293,7 +312,7 @@ void msg_report(enum msg_type type, ...)
 	/* Output the message to screen. */
 
 	if (msg_messages[type].show_location)
-		fprintf(stderr, "%s%s: %s %s%s\n", start, level, message, msg_location, MSG_TEXT_RESET);
+		fprintf(stderr, "%s%s: %s at line %u of '%s'%s\n", start, level, message, msg_line, msg_location, MSG_TEXT_RESET);
 	else
 		fprintf(stderr, "%s%s: %s%s\n", start, level, message, MSG_TEXT_RESET);
 }

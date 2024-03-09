@@ -1,4 +1,4 @@
-/* Copyright 2014-2021, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2014-2024, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -152,7 +152,18 @@ void msg_initialise(bool verbose);
  * \param *file		Pointer to the name of the current file.
  */
 
-void msg_set_location(unsigned line, char *file);
+void msg_set_location(char *file);
+
+
+/**
+ * Set the location for future messages, in the form of a line number
+ * relating to the source files.
+ *
+ * \param line		The number of the current line.
+ * \param *file		Pointer to the name of the current file.
+ */
+
+void msg_set_line(unsigned line);
 
 
 /**

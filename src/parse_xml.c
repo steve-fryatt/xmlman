@@ -1,4 +1,4 @@
-/* Copyright 2018-2021, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -86,6 +86,11 @@ struct parse_xml_block {
 	int eof;
 
 	/**
+	 * A count of the lines processed.
+	 */
+	int line_count;
+
+	/**
 	 * Buffer for the current element or entity name.
 	 */
 	char object_name[PARSE_XML_MAX_NAME_LEN];
@@ -123,6 +128,7 @@ static void parse_xml_read_element(struct parse_xml_block *instance, char c);
 static void parse_xml_read_element_attributes(struct parse_xml_block *instance, char c);
 static void parse_xml_read_entity(struct parse_xml_block *instance, char c);
 static bool parse_xml_match_ahead(struct parse_xml_block *instance, const char *text);
+static int parse_xml_getc(struct parse_xml_block *instance);
 
 /* Type tests. */
 
@@ -146,6 +152,7 @@ static struct parse_xml_block *parse_xml_initialise(void)
 
 	new->file_pointer = 0;
 	new->eof = EOF;
+	new->line_count = 0;
 
 	new->text_block_start = 0;
 	new->text_block_length = 0;
@@ -168,6 +175,8 @@ struct parse_xml_block *parse_xml_open_file(char *filename)
 	struct parse_xml_block *instance = NULL, *parser = NULL;
 	int i;
 
+	msg_set_location(NULL);
+
 	instance = parse_xml_initialise();
 	if (instance == NULL)
 		return NULL;
@@ -179,6 +188,8 @@ struct parse_xml_block *parse_xml_open_file(char *filename)
 		free(instance);
 		return NULL;
 	}
+
+	msg_set_location(filename);
 
 	/* Create parsers for the attributes. */
 
@@ -275,7 +286,7 @@ enum parse_xml_result parse_xml_read_next_chunk(struct parse_xml_block *instance
 
 	/* Decide what to do based on the next character in the file. */
 
-	c = fgetc(instance->file);
+	c = parse_xml_getc(instance);
 
 	if (c == EOF || c == instance->eof) {
 		instance->current_mode = PARSE_XML_RESULT_EOF;
@@ -551,7 +562,7 @@ static size_t parse_copy_text_to_buffer(struct parse_xml_block *instance, long s
 	/* Copy the text from the file to the buffer, converting \r and \r\n into \n. */
 
 	for (i = 0, j = 0; i < length && j < (size - 1); i++) {
-		c = fgetc(instance->file);
+		c = parse_xml_getc(instance);
 
 		if (c == instance->eof)
 			break;
@@ -605,7 +616,7 @@ static void parse_xml_read_text(struct parse_xml_block *instance, char c)
 		if (!parse_xml_isspace(c))
 			whitespace = false;
 
-		c = fgetc(instance->file);
+		c = parse_xml_getc(instance);
 	}
 
 	/* Return the last character to the file. */
@@ -646,7 +657,7 @@ static void parse_xml_read_markup(struct parse_xml_block *instance, char c)
 	 * later on.
 	 */
 
-	c = fgetc(instance->file);
+	c = parse_xml_getc(instance);
 
 	if (c == '!') {
 		if (parse_xml_match_ahead(instance, "--")) {
@@ -690,7 +701,7 @@ static void parse_xml_read_element(struct parse_xml_block *instance, char c)
 
 	if (c == '/') {
 		instance->current_mode = PARSE_XML_RESULT_TAG_END;
-		c = fgetc(instance->file);
+		c = parse_xml_getc(instance);
 	}
 
 	/* Copy the tag name until there's whitespace or a /. */
@@ -698,13 +709,13 @@ static void parse_xml_read_element(struct parse_xml_block *instance, char c)
 	if (c != instance->eof && parse_xml_isname_start(c)) {
 		instance->object_name[len++] = c;
 
-		c = fgetc(instance->file);
+		c = parse_xml_getc(instance);
 
 		while (c != instance->eof && parse_xml_isname(c)) {
 			if (c != instance->eof && parse_xml_isname(c) && len < PARSE_XML_MAX_NAME_LEN)
 				instance->object_name[len++] = c;
 
-			c = fgetc(instance->file);
+			c = parse_xml_getc(instance);
 		}
 	}
 
@@ -747,7 +758,7 @@ static void parse_xml_read_element(struct parse_xml_block *instance, char c)
 	/* If the tag ended with a /, it was a self-closing tag. */
 
 	fseek(instance->file, -2, SEEK_CUR);
-	c = fgetc(instance->file);
+	c = parse_xml_getc(instance);
 
 	if (c == '/') {
 		if (instance->current_mode == PARSE_XML_RESULT_TAG_START) {
@@ -760,7 +771,7 @@ static void parse_xml_read_element(struct parse_xml_block *instance, char c)
 
 	/* We should be looking at a > now. */
 
-	c = fgetc(instance->file);
+	c = parse_xml_getc(instance);
 
 	if (c != '>') {
 		instance->current_mode = PARSE_XML_RESULT_ERROR;
@@ -812,7 +823,7 @@ static void parse_xml_read_element_attributes(struct parse_xml_block *instance, 
 		/* Look for the start of an attribute name. */
 
 		while (c != instance->eof && c != '>' && !parse_xml_isname_start(c))
-			c = fgetc(instance->file);
+			c = parse_xml_getc(instance);
 
 		if (c == instance->eof || c == '>')
 			continue;
@@ -821,13 +832,13 @@ static void parse_xml_read_element_attributes(struct parse_xml_block *instance, 
 
 		name[len++] = c;
 
-		c = fgetc(instance->file);
+		c = parse_xml_getc(instance);
 
 		do {
 			if (c != instance->eof && parse_xml_isname(c) && len < PARSE_XML_MAX_NAME_LEN)
 				name[len++] = c;
 
-			c = fgetc(instance->file);
+			c = parse_xml_getc(instance);
 		} while (c != instance->eof && parse_xml_isname(c));
 
 		name[PARSE_XML_MAX_NAME_LEN - 1] = '\0';
@@ -845,17 +856,17 @@ static void parse_xml_read_element_attributes(struct parse_xml_block *instance, 
 		/* Skip any whitespace after the name. */
 
 		while (c != instance->eof && isspace(c))
-			c = fgetc(instance->file);
+			c = parse_xml_getc(instance);
 
 		/* There's a value with the attribute. */
 
 		if (c == '=') {
-			c = fgetc(instance->file);
+			c = parse_xml_getc(instance);
 
 			/* Skip any whitespace after the = sign. */
 
 			while (c != instance->eof && isspace(c))
-				c = fgetc(instance->file);
+				c = parse_xml_getc(instance);
 
 			/* What follows must be quoted in " or '. */
 
@@ -865,10 +876,10 @@ static void parse_xml_read_element_attributes(struct parse_xml_block *instance, 
 
 				/* Step through the data, and find the length. */
 
-				c = fgetc(instance->file);
+				c = parse_xml_getc(instance);
 
 				while (c != instance->eof && c != quote)
-					c = fgetc(instance->file);
+					c = parse_xml_getc(instance);
 
 				length = ftell(instance->file) - (start + 1);
 
@@ -878,7 +889,7 @@ static void parse_xml_read_element_attributes(struct parse_xml_block *instance, 
 					return;
 				}
 
-				c = fgetc(instance->file);
+				c = parse_xml_getc(instance);
 			}
 		} else {
 			start = -1;
@@ -921,7 +932,7 @@ static void parse_xml_read_comment(struct parse_xml_block *instance)
 	}
 
 	do {
-		c = fgetc(instance->file);
+		c = parse_xml_getc(instance);
 
 		if (c == '-')
 			dashes++;
@@ -961,20 +972,20 @@ static void parse_xml_read_entity(struct parse_xml_block *instance, char c)
 		return;
 	}
 
-	c = fgetc(instance->file);
+	c = parse_xml_getc(instance);
 
 	/* Copy the entity name until it's terminated or there's whitespace. */
 
 	if (c != instance->eof && parse_xml_isname_start(c)) {
 		instance->object_name[len++] = c;
 
-		c = fgetc(instance->file);
+		c = parse_xml_getc(instance);
 
 		while (c != instance->eof && parse_xml_isname(c)) {
 			if (c != instance->eof && parse_xml_isname(c) && len < PARSE_XML_MAX_NAME_LEN)
 				instance->object_name[len++] = c;
 
-			c = fgetc(instance->file);
+			c = parse_xml_getc(instance);
 		}
 	}
 
@@ -1030,7 +1041,7 @@ static bool parse_xml_match_ahead(struct parse_xml_block *instance, const char *
 	/* Match through the required string. */
 
 	while (*text != '\0') {
-		c = fgetc(instance->file);
+		c = parse_xml_getc(instance);
 
 		if (c == instance->eof || c != *text)
 			break;
@@ -1044,6 +1055,29 @@ static bool parse_xml_match_ahead(struct parse_xml_block *instance, const char *
 		fseek(instance->file, start, SEEK_SET);
 
 	return (*text == '\0') ? true : false;
+}
+
+/**
+ * Get the next character from the file, updating the line count if
+ * necessary.
+ * 
+ * \param *instance	The parser instance to use.
+ * \return		The next character read from the file.
+ */
+
+static int parse_xml_getc(struct parse_xml_block *instance)
+{
+	char c;
+
+	if (instance == NULL || instance->file == NULL)
+		return instance->eof;
+
+	c = fgetc(instance->file);
+
+	if (c == '\n')
+		msg_set_line(++(instance->line_count));
+
+	return c;
 }
 
 /**
