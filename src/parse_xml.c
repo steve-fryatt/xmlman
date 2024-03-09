@@ -120,7 +120,7 @@ struct parse_xml_block {
 
 static struct parse_xml_block *parse_xml_initialise(void);
 static struct parse_xml_attribute *parse_xml_find_attribute(struct parse_xml_block *instance, const char *name);
-static size_t parse_copy_text_to_buffer(struct parse_xml_block *instance, long start, size_t length, char *buffer, size_t size);
+static size_t parse_xml_copy_text_to_buffer(struct parse_xml_block *instance, long start, size_t length, char *buffer, size_t size);
 static void parse_xml_read_text(struct parse_xml_block *instance, char c);
 static void parse_xml_read_markup(struct parse_xml_block *instance, char c);
 static void parse_xml_read_comment(struct parse_xml_block *instance);
@@ -335,7 +335,7 @@ char *parse_xml_get_text(struct parse_xml_block *instance)
 	if (text == NULL)
 		return NULL;
 
-	parse_copy_text_to_buffer(instance, instance->text_block_start, instance->text_block_length,
+	parse_xml_copy_text_to_buffer(instance, instance->text_block_start, instance->text_block_length,
 			text, instance->text_block_length + 1);
 
 	return text;
@@ -367,7 +367,7 @@ size_t parse_xml_copy_text(struct parse_xml_block *instance, char *buffer, size_
 			instance->current_mode != PARSE_XML_RESULT_WHITESPACE)
 		return 0;
 
-	return parse_copy_text_to_buffer(instance, instance->text_block_start, instance->text_block_length, buffer, length);
+	return parse_xml_copy_text_to_buffer(instance, instance->text_block_start, instance->text_block_length, buffer, length);
 }
 
 
@@ -440,7 +440,7 @@ char *parse_xml_get_attribute_text(struct parse_xml_block *instance, const char 
 	if (text == NULL)
 		return NULL;
 
-	parse_copy_text_to_buffer(instance, attribute->start, attribute->length, text, attribute->length + 1);
+	parse_xml_copy_text_to_buffer(instance, attribute->start, attribute->length, text, attribute->length + 1);
 
 	return text;
 }
@@ -475,7 +475,7 @@ size_t parse_xml_copy_attribute_text(struct parse_xml_block *instance, const cha
 	if (attribute == NULL)
 		return 0;
 
-	return parse_copy_text_to_buffer(instance, attribute->start, attribute->length, buffer, length);
+	return parse_xml_copy_text_to_buffer(instance, attribute->start, attribute->length, buffer, length);
 }
 
 
@@ -539,7 +539,7 @@ enum manual_entity_type parse_xml_get_entity(struct parse_xml_block *instance)
  * \return		The number of bytes copied into the output buffer.
  */
 
-static size_t parse_copy_text_to_buffer(struct parse_xml_block *instance, long start, size_t length, char *buffer, size_t size)
+static size_t parse_xml_copy_text_to_buffer(struct parse_xml_block *instance, long start, size_t length, char *buffer, size_t size)
 {
 	long i, j;
 	int c;
