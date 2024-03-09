@@ -581,12 +581,12 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 			output_strong_file_write_plain("}");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
-			output_strong_file_write_plain("{f*:}");
+			output_strong_file_write_plain("{f*:");
 			output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, chunk);
 			output_strong_file_write_plain("}");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_CITATION:
-			output_strong_file_write_plain("{f/:}");
+			output_strong_file_write_plain("{f/:");
 			output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_CITATION, chunk);
 			output_strong_file_write_plain("}");
 			break;
