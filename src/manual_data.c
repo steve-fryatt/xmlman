@@ -1,4 +1,4 @@
-/* Copyright 2018-2020, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -80,6 +80,7 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_ICON,			"Icon"},
 	{MANUAL_DATA_OBJECT_TYPE_KEY,			"Key"},
 	{MANUAL_DATA_OBJECT_TYPE_MOUSE,			"Mouse"},
+	{MANUAL_DATA_OBJECT_TYPE_VARIABLE,		"Variable"},
 	{MANUAL_DATA_OBJECT_TYPE_WINDOW,		"Window"},
 
 	{MANUAL_DATA_OBJECT_TYPE_RESOURCE_FILE,		"File Resource"},
