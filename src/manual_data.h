@@ -1,4 +1,4 @@
-/* Copyright 2018-2020, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -56,6 +56,8 @@ enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_ICON,
 	MANUAL_DATA_OBJECT_TYPE_KEY,
 	MANUAL_DATA_OBJECT_TYPE_MOUSE,
+	MANUAL_DATA_OBJECT_TYPE_LINK,
+	MANUAL_DATA_OBJECT_TYPE_REFERENCE,
 	MANUAL_DATA_OBJECT_TYPE_VARIABLE,
 	MANUAL_DATA_OBJECT_TYPE_WINDOW,
 
@@ -126,6 +128,11 @@ struct manual_data_resources {
 
 struct manual_data_chunk {
 	union {
+		char				*id;
+		char				*link;
+	};
+
+	union {
 		/**
 		 * Pointer to the chunk text.
 		 */
@@ -143,6 +150,8 @@ struct manual_data_chunk {
  */
 
 struct manual_data_chapter {
+	char					*id;
+
 	/**
 	 * Has the chapter been processed, or is this just a placeholder?
 	 */
@@ -180,7 +189,7 @@ struct manual_data {
 	 * Pointer to the object's ID, or NULL if none has been set.
 	 */
 
-	char					*id;
+//	char					*id;
 
 	/**
 	 * The index number of the node, or zero.

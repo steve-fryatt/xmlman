@@ -418,16 +418,26 @@ static bool output_strong_write_heading(struct manual_data *node, int level, boo
 	if (node == NULL || node->title == NULL)
 		return true;
 
+	switch (node->type) {
+	case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		break;
+	default:
+		return false;
+	}
+
 	if (level < 0 || level > 6)
 		return false;
 
 	/* Include a tag, if required. */
 
-	if (include_id && node->id != NULL) {
+	if (include_id && node->chapter.id != NULL) {
 		if (!output_strong_file_write_plain("#TAG "))
 			return false;
 
-		if (!output_strong_file_write_text(node->id))
+		if (!output_strong_file_write_text(node->chapter.id))
 			return false;
 
 		if (!output_strong_file_write_newline())

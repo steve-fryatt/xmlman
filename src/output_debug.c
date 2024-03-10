@@ -80,8 +80,8 @@ bool output_debug(struct manual *document, struct filename *filename, enum encod
 
 		printf("Processed: %d\n", chapter->chapter.processed);
 
-		if (chapter->id != NULL)
-			printf("Chapter ID '%s'\n", chapter->id);
+		if (chapter->chapter.id != NULL)
+			printf("Chapter ID '%s'\n", chapter->chapter.id);
 
 		/* Output the section details. */
 
@@ -92,8 +92,8 @@ bool output_debug(struct manual *document, struct filename *filename, enum encod
 
 			output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, section->title);
 
-			if (section->id != NULL)
-				printf("Section ID '%s'\n", section->id);
+			if (section->chapter.id != NULL)
+				printf("Section ID '%s'\n", section->chapter.id);
 
 			/* Output the block details. */
 

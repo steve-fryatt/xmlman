@@ -1,4 +1,4 @@
-/* Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -79,10 +79,18 @@ static void parse_link_node(struct manual_data *node, struct manual_data *parent
 		node->previous = previous;
 		node->parent = parent;
 
-		/* Index the node ID. */
+		/* Index the node ID, if applicable. */
 
-		if (node->id != NULL)
-			manual_ids_add_node(id_index, node);
+		switch (node->type) {
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_INDEX:
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			if (node->chapter.id != NULL)
+				manual_ids_add_node(id_index, node);
+			break;
+		default:
+			break;
+		}
 
 		/* Number the node, if appropriate. */
 

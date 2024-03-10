@@ -457,7 +457,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 
 	/* Read the chapter id. */
 
-	new_chapter->id = parse_xml_get_attribute_text(parser, "id");
+	new_chapter->chapter.id = parse_xml_get_attribute_text(parser, "id");
 
 	/* We've now processed the actual chapter data. */
 
@@ -577,7 +577,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 
 	/* Read the chapter id. */
 
-	new_section->id = parse_xml_get_attribute_text(parser, "id");
+	new_section->chapter.id = parse_xml_get_attribute_text(parser, "id");
 
 	/* Parse the section contents. */
 
@@ -710,8 +710,14 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 	case PARSE_ELEMENT_KEY:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_KEY);
 		break;
+	case PARSE_ELEMENT_LINK:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_LINK);
+		break;
 	case PARSE_ELEMENT_MOUSE:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_MOUSE);
+		break;
+	case PARSE_ELEMENT_REF:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_REFERENCE);
 		break;
 	case PARSE_ELEMENT_STRONG:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS);
@@ -731,6 +737,17 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 	if (new_block == NULL) {
 		parse_xml_set_error(parser);
 		return NULL;
+	}
+
+	/* Read attributes where applicable. */
+
+	switch (type) {
+	case PARSE_ELEMENT_LINK:
+		new_block->chunk.link = parse_xml_get_attribute_text(parser, "href");
+		break;
+	case PARSE_ELEMENT_REF:
+		new_block->chunk.id = parse_xml_get_attribute_text(parser, "id");
+		break;
 	}
 
 	/* Process the content within the new object. */
@@ -774,7 +791,9 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 			case PARSE_ELEMENT_FILE:
 			case PARSE_ELEMENT_ICON:
 			case PARSE_ELEMENT_KEY:
+			case PARSE_ELEMENT_LINK:
 			case PARSE_ELEMENT_MOUSE:
+			case PARSE_ELEMENT_REF:
 			case PARSE_ELEMENT_STRONG:
 			case PARSE_ELEMENT_VARIABLE:
 			case PARSE_ELEMENT_WINDOW:

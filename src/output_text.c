@@ -647,8 +647,24 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 		case MANUAL_DATA_OBJECT_TYPE_KEY:
 			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_KEY, chunk);
 			break;
+		case MANUAL_DATA_OBJECT_TYPE_LINK:
+			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_LINK, chunk);
+			if (chunk->chunk.link != NULL) {
+				output_text_line_add_text(line, column, " [");
+				output_text_line_add_text(line, column, chunk->chunk.link);
+				output_text_line_add_text(line, column, "]");
+			}
+			break;
 		case MANUAL_DATA_OBJECT_TYPE_MOUSE:
 			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_MOUSE, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_REFERENCE:
+			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_REFERENCE, chunk);
+			if (chunk->chunk.id != NULL) {
+				output_text_line_add_text(line, column, " (see ");
+	//			output_text_line_add_text(line, column, chunk->chunk.link);
+				output_text_line_add_text(line, column, ")");
+			}
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
 			output_text_line_add_text(line, column, chunk->chunk.text);

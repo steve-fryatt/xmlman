@@ -458,6 +458,16 @@ static bool output_html_write_heading(struct manual_data *node, int level, bool 
 	if (node == NULL || node->title == NULL)
 		return true;
 
+	switch (node->type) {
+	case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		break;
+	default:
+		return false;
+	}
+
 	if (level < 0 || level > 6)
 		return false;
 
@@ -479,13 +489,13 @@ static bool output_html_write_heading(struct manual_data *node, int level, bool 
 
 	/* Include the ID in the opening tag, if required. */
 
-	if (include_id && node->id != NULL) {
+	if (include_id && node->chapter.id != NULL) {
 		if (!output_html_file_write_plain(" id=\"")) {
 			free(number);
 			return false;
 		}
 
-		if (!output_html_file_write_text(node->id)) {
+		if (!output_html_file_write_text(node->chapter.id)) {
 			free(number);
 			return false;
 		}
@@ -672,6 +682,13 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_KEY:
 			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_KEY, "key", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_LINK:
+			if (chunk->chunk.link != NULL)
+				output_html_file_write_plain("<a href=\"%s\">", chunk->chunk.link);
+			output_html_write_text(MANUAL_DATA_OBJECT_TYPE_LINK, chunk);
+			if (chunk->chunk.link != NULL)
+				output_html_file_write_plain("</a>");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MOUSE:
 			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_MOUSE, "mouse", chunk);

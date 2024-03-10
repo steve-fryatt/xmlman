@@ -1,4 +1,4 @@
-/* Copyright 2018-2020, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -57,10 +57,12 @@ static struct parse_element_definition parse_element_tags[] = {
 	{PARSE_ELEMENT_FILE,		"file"},
 	{PARSE_ELEMENT_ICON,		"icon"},
 	{PARSE_ELEMENT_KEY,		"key"},
+	{PARSE_ELEMENT_LINK,		"link"},
 	{PARSE_ELEMENT_MOUSE,		"mouse"},
 	{PARSE_ELEMENT_STRONG,		"strong"},
 	{PARSE_ELEMENT_VARIABLE,	"variable"},
 	{PARSE_ELEMENT_WINDOW,		"window"},
+	{PARSE_ELEMENT_REF,		"ref"},
 	{PARSE_ELEMENT_PARAGRAPH,	"p"},
 	{PARSE_ELEMENT_SECTION,		"section"},
 	{PARSE_ELEMENT_TITLE,		"title"},

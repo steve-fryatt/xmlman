@@ -79,7 +79,9 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_FILENAME,		"Filename"},
 	{MANUAL_DATA_OBJECT_TYPE_ICON,			"Icon"},
 	{MANUAL_DATA_OBJECT_TYPE_KEY,			"Key"},
+	{MANUAL_DATA_OBJECT_TYPE_LINK,			"Link"},
 	{MANUAL_DATA_OBJECT_TYPE_MOUSE,			"Mouse"},
+	{MANUAL_DATA_OBJECT_TYPE_REFERENCE,		"Reference"},
 	{MANUAL_DATA_OBJECT_TYPE_VARIABLE,		"Variable"},
 	{MANUAL_DATA_OBJECT_TYPE_WINDOW,		"Window"},
 
@@ -117,7 +119,6 @@ struct manual_data *manual_data_create(enum manual_data_object_type type)
 
 	data->type = type;
 
-	data->id = NULL;
 	data->index = 0;
 	data->title = NULL;
 	data->first_child = NULL;
@@ -128,20 +129,24 @@ struct manual_data *manual_data_create(enum manual_data_object_type type)
 	switch (type) {
 	case MANUAL_DATA_OBJECT_TYPE_INDEX:
 	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		data->chapter.id = NULL;
 		data->chapter.filename = NULL;
 		data->chapter.processed = false;
 		break;
 
 	case MANUAL_DATA_OBJECT_TYPE_MANUAL:
 	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		data->chapter.id = NULL;
 		data->chapter.resources = NULL;
 		break;
 
 	case MANUAL_DATA_OBJECT_TYPE_TEXT:
+		data->chunk.id = NULL; // .link should also be NULL.
 		data->chunk.text = NULL;
 		break;
 
 	case MANUAL_DATA_OBJECT_TYPE_ENTITY:
+		data->chunk.id = NULL; // .link should also be NULL.
 		data->chunk.entity = MANUAL_ENTITY_NONE;
 		break;
 

@@ -151,16 +151,27 @@ bool manual_ids_add_node(struct manual_ids *instance, struct manual_data *node)
 	if (instance == NULL)
 		return false;
 
-	if (node == NULL || node->id == NULL)
+	if (node == NULL || node->chapter.id == NULL)
 		return false;
+
+	/* Only non-chunk types can have IDs. */
+
+	switch (node->type) {
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		break;
+	default:
+		return false;
+	}
 
 	new = malloc(sizeof(struct manual_ids_entry));
 	if (new == NULL)
 		return false;
 
-	hash = manual_ids_get_hash(node->id);
+	hash = manual_ids_get_hash(node->chapter.id);
 
-	new->id = node->id;
+	new->id = node->chapter.id;
 	new->node = node;
 
 	new->next = instance->table[hash];
