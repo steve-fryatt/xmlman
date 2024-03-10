@@ -569,14 +569,22 @@ static bool output_text_write_reference(struct manual_data *target, struct outpu
 	if (link == NULL)
 		return false;
 
-	if (!output_text_line_reset(paragraph_line))
+	if (!output_text_line_reset(paragraph_line)) {
+		free(link);
 		return false;
+	}
 
-	if (!output_text_line_add_text(paragraph_line, 0, ">>> "))
+	if (!output_text_line_add_text(paragraph_line, 0, ">>> ")) {
+		free(link);
 		return false;
+	}
 
-	if (!output_text_line_add_text(paragraph_line, 0, link))
+	if (!output_text_line_add_text(paragraph_line, 0, link)) {
+		free(link);
 		return false;
+	}
+
+	free(link);
 
 	if (!output_text_line_write(paragraph_line, false))
 		return false;

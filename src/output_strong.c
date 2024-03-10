@@ -540,17 +540,27 @@ static bool output_strong_write_reference(struct manual_data *target, char *text
 	if (link == NULL)
 		return false;
 
-	if (!output_strong_file_write_plain("<"))
+	if (!output_strong_file_write_plain("<")) {
+		free(link);
 		return false;
+	}
 
-	if (text != NULL && !output_strong_file_write_text(text))
+	if (text != NULL && !output_strong_file_write_text(text)) {
+		free(link);
 		return false;
+	}
 
-	if (text != NULL && !output_strong_file_write_plain("=>"))
+	if (text != NULL && !output_strong_file_write_plain("=>")) {
+		free(link);
 		return false;
+	}
 
-	if (!output_strong_file_write_text(link))
+	if (!output_strong_file_write_text(link)) {
+		free(link);
 		return false;
+	}
+
+	free(link);
 
 	if (!output_strong_file_write_plain(">"))
 		return false;

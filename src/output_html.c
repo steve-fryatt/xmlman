@@ -618,11 +618,17 @@ static bool output_html_write_reference(struct manual_data *source, struct manua
 	if (link == NULL)
 		return false;
 
-	if (!output_html_file_write_plain("<a href=\""))
+	if (!output_html_file_write_plain("<a href=\"")) {
+		free(link);
 		return false;
+	}
 
-	if (text != NULL && !output_html_file_write_text(link))
+	if (text != NULL && !output_html_file_write_text(link)) {
+		free(link);
 		return false;
+	}
+
+	free(link);
 
 	if (text != NULL && !output_html_file_write_plain("\">"))
 		return false;
