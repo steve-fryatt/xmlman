@@ -616,6 +616,17 @@ struct filename *filename_get_relative(struct filename *from, struct filename *t
 	return filename;
 }
 
+/**
+ * Test a filename to see if it is empty.
+ * 
+ * \param *name			The filename instance to be tested.
+ * \return			True if the name is empty; otherwise false.
+ */
+
+bool filename_is_empty(struct filename *name)
+{
+	return (name == NULL || name->name == NULL) ? true : false;
+}
 
 /**
  * Convert a filename instance into a string suitable for a given target

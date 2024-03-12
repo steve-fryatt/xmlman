@@ -38,6 +38,7 @@
 #include "encoding.h"
 #include "filename.h"
 #include "manual_data.h"
+#include "manual_ids.h"
 #include "manual_queue.h"
 #include "modes.h"
 #include "msg.h"
@@ -83,6 +84,14 @@ static int output_text_page_width = 77;
 
 static struct filename *output_text_root_filename;
 
+/**
+ * The ID database to use for the active file.
+ * 
+ * TODO -- This should probably be improved.
+ */
+
+static struct manual_ids *output_text_id_database;
+
 /* Static Function Prototypes. */
 
 static bool output_text_write_manual(struct manual_data *chapter, struct filename *folder);
@@ -94,6 +103,8 @@ static bool output_text_write_heading(struct manual_data *node, int indent);
 static bool output_text_write_paragraph(struct manual_data *object, struct output_text_line *paragraph_line);
 static bool output_text_write_reference(struct manual_data *target, struct output_text_line *paragraph_line);
 static bool output_text_write_text(struct output_text_line *line, int column, enum manual_data_object_type type, struct manual_data *text);
+static bool output_text_write_inline_reference(struct output_text_line *line, int column, struct manual_data *reference);
+static bool output_text_write_title(struct output_text_line *line, int column, struct manual_data *node);
 static const char *output_text_convert_entity(enum manual_entity_type entity);
 
 /**
@@ -126,6 +137,7 @@ bool output_text(struct manual *document, struct filename *filename, enum encodi
 	/* Write the manual file content. */
 
 	output_text_root_filename = filename_make(OUTPUT_TEXT_ROOT_FILENAME, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
+	output_text_id_database = document->id_index;
 
 	result = output_text_write_manual(document->manual, filename);
 
@@ -454,12 +466,9 @@ static bool output_text_write_foot(struct manual_data *manual)
 static bool output_text_write_heading(struct manual_data *node, int indent)
 {
 	struct output_text_line	*line;
-	char			*number;
 
 	if (node == NULL || node->title == NULL)
 		return true;
-
-	number = manual_data_get_node_number(node);
 
 	line = output_text_line_create();
 	if (line == NULL)
@@ -475,21 +484,7 @@ static bool output_text_write_heading(struct manual_data *node, int indent)
 		return false;
 	}
 
-	if (number != NULL) {
-		if (!output_text_line_add_text(line, 0, number)) {
-			output_text_line_destroy(line);
-			return false;
-		}
-
-		if (!output_text_line_add_text(line, 0, " ")) {
-			output_text_line_destroy(line);
-			return false;
-		}
-
-		free(number);
-	}
-
-	if (!output_text_write_text(line, 0, MANUAL_DATA_OBJECT_TYPE_TITLE, node->title)) {
+	if (!output_text_write_title(line, 0, node)) {
 		output_text_line_destroy(line);
 		return false;
 	}
@@ -559,7 +554,7 @@ static bool output_text_write_reference(struct manual_data *target, struct outpu
 	if (target == NULL)
 		return false;
 
-	filename = manual_data_get_node_filename(target, NULL, MODES_TYPE_TEXT);
+	filename = manual_data_get_node_filename(target, output_text_root_filename, MODES_TYPE_TEXT);
 	if (filename == NULL)
 		return false;
 
@@ -667,12 +662,7 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_MOUSE, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_REFERENCE:
-			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_REFERENCE, chunk);
-			if (chunk->chunk.id != NULL) {
-				output_text_line_add_text(line, column, " (see ");
-	//			output_text_line_add_text(line, column, chunk->chunk.link);
-				output_text_line_add_text(line, column, ")");
-			}
+			output_text_write_inline_reference(line, column, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
 			output_text_line_add_text(line, column, chunk->chunk.text);
@@ -698,6 +688,116 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 
 	return true;
 }
+
+
+/**
+ * Write an inline reference to a column in an output line.
+ *
+ * \param *line			The line to write to.
+ * \param column		The column in the line to write to.
+ * \param *reference		The reference to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_text_write_inline_reference(struct output_text_line *line, int column, struct manual_data *reference)
+{
+	struct manual_data *target = NULL;
+	struct filename *filename = NULL;
+	char *link = NULL;
+
+	if (reference == NULL)
+		return false;
+
+	/* Confirm that this is a reference. */
+
+	if (reference->type != MANUAL_DATA_OBJECT_TYPE_REFERENCE) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_REFERENCE),
+				manual_data_find_object_name(reference->type));
+		return false;
+	}
+
+	/* Find the target object. */
+
+	target = manual_ids_find_node(output_text_id_database, reference);
+
+	/* Write the reference text. */
+
+	if (reference->first_child != NULL && !output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_REFERENCE, reference))
+		return false;
+
+	if (target == NULL)
+		return false;
+
+	/* Write the reference information. */
+
+	if (reference->first_child != NULL && !output_text_line_add_text(line, column, " (see "))
+		return false;
+
+	if (!output_text_write_title(line, column, target))
+		return false;
+
+	if (manual_data_nodes_share_file(reference, target, MODES_TYPE_TEXT) == false) {
+		if (!output_text_line_add_text(line, column, " in "))
+			return false;
+
+		filename = manual_data_get_node_filename(target, output_text_root_filename, MODES_TYPE_TEXT);
+		if (filename == NULL)
+			return false;
+
+		link = filename_convert(filename, FILENAME_PLATFORM_RISCOS, 0);
+		filename_destroy(filename);
+
+		if (link == NULL)
+			return false;
+
+		if (!output_text_line_add_text(line, column, link)) {
+			free(link);
+			return false;
+		}
+
+		free(link);
+	}
+
+	if (reference->first_child != NULL && !output_text_line_add_text(line, column, ")"))
+		return false;
+
+	return true;
+}
+
+
+/**
+ * Write the title of a node to a column in an output line.
+ *
+ * \param *line			The line to write to.
+ * \param column		The column in the line to write to.
+ * \param *node			The node whose title is to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_text_write_title(struct output_text_line *line, int column, struct manual_data *node)
+{
+	char *number;
+
+	if (node == NULL || node->title == NULL)
+		return false;
+
+	number = manual_data_get_node_number(node);
+
+	if (number != NULL) {
+		if (!output_text_line_add_text(line, 0, number)) {
+			free(number);
+			return false;
+		}
+
+		free(number);
+
+		if (!output_text_line_add_text(line, 0, " "))
+			return false;
+	}
+
+	return output_text_write_text(line, 0, MANUAL_DATA_OBJECT_TYPE_TITLE, node->title);
+}
+
 
 /**
  * Convert an entity into a textual representation.

@@ -211,6 +211,15 @@ struct filename *filename_join(struct filename *first, struct filename *second);
 struct filename *filename_get_relative(struct filename *from, struct filename *to);
 
 /**
+ * Test a filename to see if it is empty.
+ * 
+ * \param *name			The filename instance to be tested.
+ * \return			True if the name is empty; otherwise false.
+ */
+
+bool filename_is_empty(struct filename *name);
+
+/**
  * Convert a filename instance into a string suitable for a given target
  * platform. Conversion between platforms of root filenames is unlikely
  * to have the intended results.

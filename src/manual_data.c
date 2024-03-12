@@ -339,17 +339,14 @@ struct filename *manual_data_get_node_filename(struct manual_data *node, struct 
 			if (resources == NULL)
 				break;
 
-			if (resources->filename != NULL) {
+			if (resources->filename != NULL)
 				filename_prepend(filename, resources->filename, 0);
-				root = NULL;
-			}
 
 			if (resources->folder != NULL) {
-				if (root != NULL)
+				if (root != NULL && filename_is_empty(filename))
 					filename_prepend(filename, root, 0);
 
 				filename_prepend(filename, resources->folder, 0);
-				root = NULL;
 			}
 			break;
 
@@ -360,8 +357,75 @@ struct filename *manual_data_get_node_filename(struct manual_data *node, struct 
 		node = node->parent;
 	}
 
-	if (root != NULL)
+	if (root != NULL && filename_is_empty(filename))
 		filename_prepend(filename, root, 0);
 
 	return filename;
+}
+
+/**
+ * Test a pair of nodes, to determine whether or not they are
+ * in the same file for a given output mode.
+ *
+ * \param *node1	The first node to be compared.
+ * \param *node2	The second node to be compared.
+ * \param type		The target output type.
+ * \return		True if the nodes are both in the same file;
+ *			otherwise false.
+ */
+
+bool manual_data_nodes_share_file(struct manual_data *node1, struct manual_data *node2, enum modes_type type)
+{
+	struct manual_data_mode *resources = NULL;
+	bool found = false;
+
+	if (node1 == NULL || node2 == NULL)
+		return false;
+
+	found = false;
+
+	while (node1 != NULL && !found) {
+		switch (node1->type) {
+		case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+		case MANUAL_DATA_OBJECT_TYPE_INDEX:
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			resources = modes_find_resources(node1->chapter.resources, type);
+			if (resources != NULL && (resources->filename != NULL || resources->folder != NULL))
+				found = true;
+			break;
+
+		default:
+			break;
+		}
+
+		node1 = node1->parent;
+	}
+
+	found = false;
+
+	while (node2 != NULL && !found) {
+		switch (node2->type) {
+		case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+		case MANUAL_DATA_OBJECT_TYPE_INDEX:
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			resources = modes_find_resources(node2->chapter.resources, type);
+			if (resources != NULL && (resources->filename != NULL || resources->folder != NULL))
+				found = true;
+			break;
+
+		default:
+			break;
+		}
+
+		node2 = node2->parent;
+	}
+
+	/* Are the nodes the same? If no filenames were passed in either
+	 * case, both pointers will be NULL, which is a valid outcome: it
+	 * just means that both files are the root file for the manual.
+	 */
+
+	return (node1 == node2) ? true : false;
 }

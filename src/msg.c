@@ -143,6 +143,9 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Attempt to read resources from unexpected block",		false},
 	{MSG_ERROR,	"Resource fields can only contain non-entity characters",	false},
 
+	{MSG_ERROR,	"Failed to store duplicate ID '%s'",				false},
+	{MSG_ERROR,	"Failed to find ID '%s'",					false},
+
 	{MSG_ERROR,	"Attempt to add content into unexpected stack location %d",	false},
 
 	{MSG_ERROR,	"Unknown element '<%s>'",					true},

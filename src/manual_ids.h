@@ -66,5 +66,15 @@ void manual_ids_dump(struct manual_ids *instance);
 
 bool manual_ids_add_node(struct manual_ids *instance, struct manual_data *node);
 
+/**
+ * Given a reference node, find the node that it refers to.
+ *
+ * \param *instance	The ID index instance to search in.
+ * \param *node		The reference node to start from.
+ * \return		The target node, or NULL.
+ */
+
+struct manual_data *manual_ids_find_node(struct manual_ids *instance, struct manual_data *node);
+
 #endif
 

@@ -30,6 +30,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "manual_data.h"
 #include "manual_ids.h"
@@ -80,6 +81,7 @@ struct manual_ids {
 
 /* Static Function Prototypes. */
 
+static struct manual_ids_entry *manual_ids_find_id(struct manual_ids *instance, char *id);
 static int manual_ids_get_hash(char *id);
 
 /**
@@ -148,10 +150,7 @@ bool manual_ids_add_node(struct manual_ids *instance, struct manual_data *node)
 	struct manual_ids_entry	*new;
 	int			hash;
 
-	if (instance == NULL)
-		return false;
-
-	if (node == NULL || node->chapter.id == NULL)
+	if (instance == NULL || node == NULL || node->chapter.id == NULL)
 		return false;
 
 	/* Only non-chunk types can have IDs. */
@@ -164,6 +163,15 @@ bool manual_ids_add_node(struct manual_ids *instance, struct manual_data *node)
 	default:
 		return false;
 	}
+
+	/* Check that the ID isn't in the table already. */
+
+	if (manual_ids_find_id(instance, node->chapter.id) != NULL) {
+		msg_report(MSG_BAD_ID_STORE, node->chapter.id);
+		return false;
+	}
+
+	/* Create the new record and link it into the table. */
 
 	new = malloc(sizeof(struct manual_ids_entry));
 	if (new == NULL)
@@ -178,6 +186,69 @@ bool manual_ids_add_node(struct manual_ids *instance, struct manual_data *node)
 	instance->table[hash] = new;
 
 	return true;
+}
+
+/**
+ * Given a reference node, find the node that it refers to.
+ *
+ * \param *instance	The ID index instance to search in.
+ * \param *node		The reference node to start from.
+ * \return		The target node, or NULL.
+ */
+
+struct manual_data *manual_ids_find_node(struct manual_ids *instance, struct manual_data *node)
+{
+	struct manual_data *target = NULL;
+	struct manual_ids_entry *entry;
+
+	if (instance == NULL || node == NULL || node->chunk.id == NULL)
+		return NULL;
+
+	/* Only chunk types can have IDs. */
+
+	switch (node->type) {
+	case MANUAL_DATA_OBJECT_TYPE_REFERENCE:
+		break;
+	default:
+		return false;
+	}
+
+	entry = manual_ids_find_id(instance, node->chunk.id);
+	if (entry == NULL) {
+		msg_report(MSG_BAD_ID_LOOKUP, node->chunk.id);
+		return NULL;
+	}
+
+	return entry->node;
+}
+
+/**
+ * Given and ID, find a matching record in the index.
+ *
+ * \param *instance	The ID index instance to search in.
+ * \param *id		The ID to search for.
+ * \return		Pointer to the matching entry, or NULL.
+ */
+
+static struct manual_ids_entry *manual_ids_find_id(struct manual_ids *instance, char *id)
+{
+	struct manual_ids_entry *entry = NULL;
+	int hash;
+
+	if (instance == NULL || id == NULL)
+		return NULL;
+
+	hash = manual_ids_get_hash(id);
+	entry = instance->table[hash];
+
+	while (entry != NULL) {
+		if (entry->id != NULL && strcmp(id, entry->id) == 0)
+			return entry;
+
+		entry = entry->next;
+	}
+
+	return NULL;
 }
 
 /**

@@ -128,7 +128,14 @@ struct manual_data_resources {
 
 struct manual_data_chunk {
 	union {
+		/**
+		 * Pointer to the target object's ID, or NULL if none has been set.
+		 */
 		char				*id;
+
+		/**
+		 * Pointer to the target link text, or NULL if none has been set.
+		 */
 		char				*link;
 	};
 
@@ -150,6 +157,10 @@ struct manual_data_chunk {
  */
 
 struct manual_data_chapter {
+	/**
+	 * Pointer to the object's ID, or NULL if none has been set.
+	 */
+
 	char					*id;
 
 	/**
@@ -184,12 +195,6 @@ struct manual_data {
 	 */
 
 	enum manual_data_object_type		type;
-
-	/**
-	 * Pointer to the object's ID, or NULL if none has been set.
-	 */
-
-//	char					*id;
 
 	/**
 	 * The index number of the node, or zero.
@@ -289,5 +294,18 @@ char *manual_data_get_node_number(struct manual_data *node);
  */
 
 struct filename *manual_data_get_node_filename(struct manual_data *node, struct filename *root, enum modes_type type);
+
+/**
+ * Test a pair of nodes, to determine whether or not they are
+ * in the same file for a given output mode.
+ *
+ * \param *node1	The first node to be compared.
+ * \param *node2	The second node to be compared.
+ * \param type		The target output type.
+ * \return		True if the nodes are both in the same file;
+ *			otherwise false.
+ */
+
+bool manual_data_nodes_share_file(struct manual_data *node1, struct manual_data *node2, enum modes_type type);
 
 #endif

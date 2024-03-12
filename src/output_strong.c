@@ -530,7 +530,7 @@ static bool output_strong_write_reference(struct manual_data *target, char *text
 	if (target == NULL)
 		return false;
 
-	filename = manual_data_get_node_filename(target, NULL, MODES_TYPE_STRONGHELP);
+	filename = manual_data_get_node_filename(target, output_strong_root_filename, MODES_TYPE_STRONGHELP);
 	if (filename == NULL)
 		return false;
 
