@@ -161,13 +161,14 @@ bool manual_ids_add_node(struct manual_ids *instance, struct manual_data *node)
 	case MANUAL_DATA_OBJECT_TYPE_SECTION:
 		break;
 	default:
+		msg_report(MSG_ID_BAD_TARGET, manual_data_find_object_name(node->type));
 		return false;
 	}
 
 	/* Check that the ID isn't in the table already. */
 
 	if (manual_ids_find_id(instance, node->chapter.id) != NULL) {
-		msg_report(MSG_BAD_ID_STORE, node->chapter.id);
+		msg_report(MSG_ID_BAD_STORE, node->chapter.id);
 		return false;
 	}
 
@@ -208,6 +209,7 @@ struct manual_data *manual_ids_find_node(struct manual_ids *instance, struct man
 
 	switch (node->type) {
 	case MANUAL_DATA_OBJECT_TYPE_REFERENCE:
+		msg_report(MSG_ID_BAD_REFERENCE, manual_data_find_object_name(node->type));
 		break;
 	default:
 		return false;
@@ -215,7 +217,7 @@ struct manual_data *manual_ids_find_node(struct manual_ids *instance, struct man
 
 	entry = manual_ids_find_id(instance, node->chunk.id);
 	if (entry == NULL) {
-		msg_report(MSG_BAD_ID_LOOKUP, node->chunk.id);
+		msg_report(MSG_ID_BAD_LOOKUP, node->chunk.id);
 		return NULL;
 	}
 

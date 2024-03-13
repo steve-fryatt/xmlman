@@ -125,6 +125,10 @@ static struct msg_data msg_messages[] = {
 	{MSG_VERBOSE,	"Dumping index table 0x%x",					false},
 	{MSG_VERBOSE,	"Hash entry %d starting at 0x%x",				false},
 	{MSG_VERBOSE,	"- Entry for '%s'",						false},
+	{MSG_ERROR,	"Failed to store duplicate ID '%s'",				false},
+	{MSG_ERROR,	"Failed to find ID '%s'",					false},
+	{MSG_ERROR,	"Attempt to store id reference from invalid object type %s",	false},
+	{MSG_ERROR,	"Attempt to store id target for invalid object type %s",	false},
 
 	{MSG_INFO,	"Parsing source file '%s'...",					false},
 	{MSG_ERROR,	"Failed to parse manual",					false},
@@ -142,9 +146,6 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Unknown '%s' mode",						false},
 	{MSG_ERROR,	"Attempt to read resources from unexpected block",		false},
 	{MSG_ERROR,	"Resource fields can only contain non-entity characters",	false},
-
-	{MSG_ERROR,	"Failed to store duplicate ID '%s'",				false},
-	{MSG_ERROR,	"Failed to find ID '%s'",					false},
 
 	{MSG_ERROR,	"Attempt to add content into unexpected stack location %d",	false},
 
