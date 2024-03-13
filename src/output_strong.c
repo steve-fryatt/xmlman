@@ -77,6 +77,14 @@
 
 static struct filename *output_strong_root_filename;
 
+/**
+ * The ID database to use for the active file.
+ * 
+ * TODO -- This should probably be improved.
+ */
+
+static struct manual_ids *output_strong_id_database;
+
 /* Static Function Prototypes. */
 
 static bool output_strong_write_manual(struct manual_data *manual);
@@ -88,6 +96,9 @@ static bool output_strong_write_heading(struct manual_data *node, int level, boo
 static bool output_strong_write_paragraph(struct manual_data *object);
 static bool output_strong_write_reference(struct manual_data *target, char *text);
 static bool output_strong_write_text(enum manual_data_object_type type, struct manual_data *text);
+static bool output_strong_write_inline_link(struct manual_data *link);
+static bool output_strong_write_inline_reference(struct manual_data *reference);
+static bool output_strong_write_title(struct manual_data *node);
 static const char *output_strong_convert_entity(enum manual_entity_type entity);
 
 /**
@@ -125,6 +136,7 @@ bool output_strong(struct manual *document, struct filename *filename, enum enco
 	/* Write the manual content. */
 
 	output_strong_root_filename = filename_make(OUTPUT_STRONG_ROOT_FILENAME, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
+	output_strong_id_database = document->id_index;
 
 	result = output_strong_write_manual(document->manual);
 
@@ -413,8 +425,6 @@ static bool output_strong_write_foot(struct manual_data *manual)
 
 static bool output_strong_write_heading(struct manual_data *node, int level, bool include_id)
 {
-	char *number;
-
 	if (node == NULL || node->title == NULL)
 		return true;
 
@@ -446,28 +456,10 @@ static bool output_strong_write_heading(struct manual_data *node, int level, boo
 
 	/* Write the heading. */
 
-	number = manual_data_get_node_number(node);
-
-	if ((level > 0) && !output_strong_file_write_plain("{fh%d:", level)) {
-		free(number);
+	if ((level > 0) && !output_strong_file_write_plain("{fh%d:", level))
 		return false;
-	}
 
-	if (number != NULL) {
-		if (!output_strong_file_write_text(number)) {
-			free(number);
-			return false;
-		}
-
-		if (!output_strong_file_write_plain(" ")) {
-			free(number);
-			return false;
-		}
-
-		free(number);
-	}
-
-	if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, node->title))
+	if (!output_strong_write_title(node))
 		return false;
 
 	if ((level > 0) && !output_strong_file_write_plain("}"))
@@ -615,6 +607,12 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 			output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_FILENAME, chunk);
 			output_strong_file_write_plain("}");
 			break;
+		case MANUAL_DATA_OBJECT_TYPE_LINK:
+			output_strong_write_inline_link(chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_REFERENCE:
+			output_strong_write_inline_reference(chunk);
+			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
 			output_strong_file_write_text(chunk->chunk.text);
 			break;
@@ -632,6 +630,163 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 	}
 
 	return true;
+}
+
+/**
+ * Write an inline link out to the file.
+ *
+ * \param *link			The link to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_strong_write_inline_link(struct manual_data *link)
+{
+	if (link == NULL)
+		return false;
+
+	/* Confirm that this is a link. */
+
+	if (link->type != MANUAL_DATA_OBJECT_TYPE_LINK) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_LINK),
+				manual_data_find_object_name(link->type));
+		return false;
+	}
+
+	/* Output the opening link tag. */
+
+	if (link->chunk.link != NULL && !output_strong_file_write_plain("<"))
+		return false;
+
+	/* Output the link body. */
+
+	if (link->first_child != NULL) {
+		if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_LINK, link))
+			return false;
+	} else if (link->chunk.link != NULL) {
+		if (!output_strong_file_write_plain("%s", link->chunk.link))
+			return false;
+	}
+	
+	/* Output the closing link tag. */
+
+	if (link->chunk.link != NULL && !output_strong_file_write_plain("=>#URL %s>", link->chunk.link))
+		return false;
+
+	return true;
+}
+
+/**
+ * Write an inline reference to the output file.
+ *
+ * \param *reference		The reference to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_strong_write_inline_reference(struct manual_data *reference)
+{
+	struct manual_data *target = NULL;
+	struct filename *filename = NULL;
+	char *link = NULL;
+
+	if (reference == NULL)
+		return false;
+
+	/* Confirm that this is a reference. */
+
+	if (reference->type != MANUAL_DATA_OBJECT_TYPE_REFERENCE) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_REFERENCE),
+				manual_data_find_object_name(reference->type));
+		return false;
+	}
+
+	/* Find the target object. */
+
+	target = manual_ids_find_node(output_strong_id_database, reference);
+
+	/* Output the opening link tag. */
+
+	if (target != NULL && !output_strong_file_write_plain("<"))
+		return false;
+
+	/* Output the link body. */
+
+	if (reference->first_child != NULL) {
+		if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_REFERENCE, reference))
+			return false;
+	} else {
+		if (!output_strong_write_title(target))
+			return false;
+	}
+
+	/* Establish the relative link, if external. */
+
+	if (target != NULL) {
+		if (manual_data_nodes_share_file(reference, target, MODES_TYPE_STRONGHELP) == false) {
+			filename = manual_data_get_node_filename(target, output_strong_root_filename, MODES_TYPE_STRONGHELP);
+			if (filename == NULL)
+				return false;
+
+			link = filename_convert(filename, FILENAME_PLATFORM_STRONGHELP, 0);
+			filename_destroy(filename);
+
+			if (link == NULL)
+				return false;
+
+			if (!output_strong_file_write_plain("=>%s", link)) {
+				free(link);
+				return false;
+			}
+
+			free(link);
+
+			if (target->chapter.id != NULL && !output_strong_file_write_plain("#"))
+				return false;
+		} else if (target->chapter.id != NULL) {
+			if (!output_strong_file_write_plain("=>#TAG "))
+				return false;
+		}
+
+		if (target->chapter.id != NULL && !output_strong_file_write_plain("%s", target->chapter.id))
+			return false;
+
+		/* Output the closing link tag. */
+
+		if (!output_strong_file_write_plain(">"))
+			return false;
+	}
+
+	return true;
+}
+
+/**
+ * Write the title of a node to the output file.
+ *
+ * \param *node			The node whose title is to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_strong_write_title(struct manual_data *node)
+{
+	char *number;
+
+	if (node == NULL || node->title == NULL)
+		return false;
+
+	number = manual_data_get_node_number(node);
+
+	if (number != NULL) {
+		if (!output_strong_file_write_text(number)) {
+			free(number);
+			return false;
+		}
+
+		free(number);
+
+		if (!output_strong_file_write_plain(" "))
+			return false;
+	}
+
+	return output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, node->title);
 }
 
 /**

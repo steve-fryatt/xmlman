@@ -103,6 +103,7 @@ static bool output_text_write_heading(struct manual_data *node, int indent);
 static bool output_text_write_paragraph(struct manual_data *object, struct output_text_line *paragraph_line);
 static bool output_text_write_reference(struct manual_data *target, struct output_text_line *paragraph_line);
 static bool output_text_write_text(struct output_text_line *line, int column, enum manual_data_object_type type, struct manual_data *text);
+static bool output_text_write_inline_link(struct output_text_line *line, int column, struct manual_data *link);
 static bool output_text_write_inline_reference(struct output_text_line *line, int column, struct manual_data *reference);
 static bool output_text_write_title(struct output_text_line *line, int column, struct manual_data *node);
 static const char *output_text_convert_entity(enum manual_entity_type entity);
@@ -470,6 +471,16 @@ static bool output_text_write_heading(struct manual_data *node, int indent)
 	if (node == NULL || node->title == NULL)
 		return true;
 
+	switch (node->type) {
+	case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		break;
+	default:
+		return false;
+	}
+
 	line = output_text_line_create();
 	if (line == NULL)
 		return false;
@@ -651,12 +662,7 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_KEY, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_LINK:
-			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_LINK, chunk);
-			if (chunk->chunk.link != NULL) {
-				output_text_line_add_text(line, column, " [");
-				output_text_line_add_text(line, column, chunk->chunk.link);
-				output_text_line_add_text(line, column, "]");
-			}
+			output_text_write_inline_link(line, column, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MOUSE:
 			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_MOUSE, chunk);
@@ -685,6 +691,48 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 
 		chunk = chunk->next;
 	}
+
+	return true;
+}
+
+
+/**
+ * Write an inline link to a column in an output line.
+ *
+ * \param *line			The line to write to.
+ * \param column		The column in the line to write to.
+ * \param *link			The link to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_text_write_inline_link(struct output_text_line *line, int column, struct manual_data *link)
+{
+	if (link == NULL)
+		return false;
+
+	/* Confirm that this is a link. */
+
+	if (link->type != MANUAL_DATA_OBJECT_TYPE_LINK) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_LINK),
+				manual_data_find_object_name(link->type));
+		return false;
+	}
+
+	/* Write the link text. */
+
+	if (link->first_child != NULL && !output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_LINK, link))
+		return false;
+
+	/* Write the link information. */
+
+	if (link->first_child != NULL && !output_text_line_add_text(line, column, " ["))
+		return false;
+
+	if (link->chunk.link != NULL && !output_text_line_add_text(line, column, link->chunk.link))
+		return false;
+
+	if (link->first_child != NULL && !output_text_line_add_text(line, column, "]"))
+		return false;
 
 	return true;
 }

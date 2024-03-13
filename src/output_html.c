@@ -78,6 +78,14 @@
 
 static struct filename *output_html_root_filename;
 
+/**
+ * The ID database to use for the active file.
+ * 
+ * TODO -- This should probably be improved.
+ */
+
+static struct manual_ids *output_html_id_database;
+
 
 /* Static Function Prototypes. */
 
@@ -92,6 +100,9 @@ static bool output_html_write_reference(struct manual_data *source, struct manua
 static bool output_html_write_text(enum manual_data_object_type type, struct manual_data *text);
 static bool output_html_write_span_tag(enum manual_data_object_type type, char *tag, struct manual_data *text);
 static bool output_html_write_span_style(enum manual_data_object_type type, char *style, struct manual_data *text);
+static bool output_html_write_inline_link(struct manual_data *link);
+static bool output_html_write_inline_reference(struct manual_data *reference);
+static bool output_html_write_title(struct manual_data *node);
 static const char *output_html_convert_entity(enum manual_entity_type entity);
 
 /**
@@ -124,6 +135,7 @@ bool output_html(struct manual *document, struct filename *folder, enum encoding
 	/* Write the manual file content. */
 
 	output_html_root_filename = filename_make(OUTPUT_HTML_ROOT_FILENAME, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
+	output_html_id_database = document->id_index;
 
 	result = output_html_write_manual(document->manual, folder);
 
@@ -453,7 +465,6 @@ static bool output_html_write_foot(struct manual_data *manual)
 static bool output_html_write_heading(struct manual_data *node, int level, bool include_id)
 {
 	char	buffer[OUTPUT_HTML_TITLE_TAG_BLOCK_LEN];
-	char	*number;
 
 	if (node == NULL || node->title == NULL)
 		return true;
@@ -471,8 +482,6 @@ static bool output_html_write_heading(struct manual_data *node, int level, bool 
 	if (level < 0 || level > 6)
 		return false;
 
-	number = manual_data_get_node_number(node);
-
 	/* Create and write the opening tag. */
 
 	if (level == 0)
@@ -482,52 +491,28 @@ static bool output_html_write_heading(struct manual_data *node, int level, bool 
 
 	buffer[OUTPUT_HTML_TITLE_TAG_BLOCK_LEN - 1] = '\0';
 
-	if (!output_html_file_write_plain("<%s", buffer)) {
-		free(number);
+	if (!output_html_file_write_plain("<%s", buffer))
 		return false;
-	}
 
 	/* Include the ID in the opening tag, if required. */
 
 	if (include_id && node->chapter.id != NULL) {
-		if (!output_html_file_write_plain(" id=\"")) {
-			free(number);
+		if (!output_html_file_write_plain(" id=\""))
 			return false;
-		}
 
-		if (!output_html_file_write_text(node->chapter.id)) {
-			free(number);
+		if (!output_html_file_write_text(node->chapter.id))
 			return false;
-		}
 
-		if (!output_html_file_write_plain("\"")) {
-			free(number);
+		if (!output_html_file_write_plain("\""))
 			return false;
-		}
 	}
 
-	if (!output_html_file_write_plain(">")) {
-		free(number);
+	if (!output_html_file_write_plain(">"))
 		return false;
-	}
 
 	/* Write the title text. */
 
-	if (number != NULL) {
-		if (!output_html_file_write_text(number)) {
-			free(number);
-			return false;
-		}
-
-		if (!output_html_file_write_text(" ")) {
-			free(number);
-			return false;
-		}
-
-		free(number);
-	}
-
-	if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, node->title))
+	if (!output_html_write_title(node))
 		return false;
 
 	/* Write the closing tag. */
@@ -690,14 +675,13 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_KEY, "key", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_LINK:
-			if (chunk->chunk.link != NULL)
-				output_html_file_write_plain("<a href=\"%s\">", chunk->chunk.link);
-			output_html_write_text(MANUAL_DATA_OBJECT_TYPE_LINK, chunk);
-			if (chunk->chunk.link != NULL)
-				output_html_file_write_plain("</a>");
+			output_html_write_inline_link(chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MOUSE:
 			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_MOUSE, "mouse", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_REFERENCE:
+			output_html_write_inline_reference(chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
 			output_html_file_write_text(chunk->chunk.text);
@@ -778,6 +762,158 @@ static bool output_html_write_span_style(enum manual_data_object_type type, char
 
 	return true;
 }
+
+
+/**
+ * Write out an inline link.
+ *
+ * \param *link			The link to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_inline_link(struct manual_data *link)
+{
+	if (link == NULL)
+		return false;
+
+	/* Confirm that this is a link. */
+
+	if (link->type != MANUAL_DATA_OBJECT_TYPE_LINK) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_LINK),
+				manual_data_find_object_name(link->type));
+		return false;
+	}
+
+	/* Output the opening link tag. */
+
+	if (link->chunk.link != NULL && !output_html_file_write_plain("<a href=\"%s\">", link->chunk.link))
+		return false;
+
+	/* Output the link body. */
+
+	if (link->first_child != NULL) {
+		if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_LINK, link))
+			return false;
+	} else if (link->chunk.link != NULL) {
+		if (!output_html_file_write_plain("%s", link->chunk.link))
+			return false;
+	}
+	
+	/* Output the closing link tag. */
+
+	if (link->chunk.link != NULL && !output_html_file_write_plain("</a>"))
+		return false;
+
+	return true;
+}
+
+
+/**
+ * Write out an inline reference.
+ *
+ * \param *reference		The reference to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_inline_reference(struct manual_data *reference)
+{
+	struct manual_data *target = NULL;
+	struct filename *sourcename = NULL, *targetname = NULL, *filename = NULL;
+	char *link = NULL;
+
+	if (reference == NULL)
+		return false;
+
+	/* Confirm that this is a reference. */
+
+	if (reference->type != MANUAL_DATA_OBJECT_TYPE_REFERENCE) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_REFERENCE),
+				manual_data_find_object_name(reference->type));
+		return false;
+	}
+
+	/* Find the target object. */
+
+	target = manual_ids_find_node(output_html_id_database, reference);
+
+	/* Establish the relative link, if external. */
+
+	if (manual_data_nodes_share_file(reference, target, MODES_TYPE_HTML) == false) {
+		sourcename = manual_data_get_node_filename(reference, output_html_root_filename, MODES_TYPE_HTML);
+		if (sourcename == NULL)
+			return false;
+
+		targetname = manual_data_get_node_filename(target, output_html_root_filename, MODES_TYPE_HTML);
+		if (targetname == NULL) {
+			filename_destroy(sourcename);
+			return false;
+		}
+
+		filename = filename_get_relative(sourcename, targetname);
+		filename_destroy(sourcename);
+		filename_destroy(targetname);
+		if (filename == NULL)
+			return false;
+
+		link = filename_convert(filename, FILENAME_PLATFORM_LINUX, 0);
+		filename_destroy(filename);
+	}
+
+	/* Output the opening link tag. */
+
+	if (target != NULL && !output_html_file_write_plain("<a href=\"%s#%s\">", (link == NULL) ? "" : link, (target->chapter.id == NULL) ? "" : target->chapter.id))
+		return false;
+
+	/* Output the link body. */
+
+	if (reference->first_child != NULL) {
+		if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_REFERENCE, reference))
+			return false;
+	} else {
+		if (!output_html_write_title(target))
+			return false;
+	}
+	
+	/* Output the closing link tag. */
+
+	if (target != NULL && !output_html_file_write_plain("</a>"))
+		return false;
+
+	return true;
+}
+
+
+/**
+ * Write out the title of a node.
+ *
+ * \param *node			The node whose title is to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_title(struct manual_data *node)
+{
+	char *number;
+
+	if (node == NULL || node->title == NULL)
+		return false;
+
+	number = manual_data_get_node_number(node);
+
+	if (number != NULL) {
+		if (!output_html_file_write_text(number)) {
+			free(number);
+			return false;
+		}
+
+		free(number);
+
+		if (!output_html_file_write_text(" "))
+			return false;
+	}
+
+	return output_html_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, node->title);
+}
+
 
 /**
  * Convert an entity into an HTML representation.

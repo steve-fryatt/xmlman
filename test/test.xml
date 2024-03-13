@@ -39,11 +39,11 @@ handle large, variable amounts of data or   multiple documents.</p>
 
 <p>The aim of this guide is to give some help to those who are competent in C but have not used it when writing for the RISC&nbsp;OS desktop. It will also introduce the use of SFLib, which may be of interest to those writing Wimp software using OSLib.</p>
 
-<p>Many thanks to all those on the <link href="https://www.riscosopen.org/forum/">ROOL Forums</link> who have answered my questions about the DDE and offered suggestions while I&rsquo;ve worked on this guide.</p>
+<p>Many thanks to all those on the <link href="https://www.riscosopen.org/forum/">ROOL Forums</link> who have answered my questions about the DDE and offered suggestions while I&rsquo;ve worked on this guide. And here's an anonymous link: <link href="https://www.stevefryatt.org.uk/" /></p>
 
-<p>Let&rsquo;s include a link to an anonymous chapter <ref id="chap-start-basic" />, as well as <ref id="sect-start-basic-reg">a link to a chapter</ref> by some custom text and a link <ref id="chap-file-structure">to a chapter in another file</ref>.</p>
+<p>Let&rsquo;s include a link to an anonymous chapter <ref id="chap-start-basic" />, as well as <ref id="sect-start-basic-reg">a link to a chapter</ref> by some custom text and a link <ref id="chap-file-structure">to a chapter in another file</ref>. And a <ref id="really-local">local link for StrongHelp</ref>!</p>
 
-<section>
+<section id="really-local">
 <title>Nested to Level 2</title>
 
 <p>Here we are at a lower level?</p>

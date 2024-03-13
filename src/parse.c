@@ -57,6 +57,7 @@ static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *par
 static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct manual_data *chapter);
 static struct manual_data *parse_section(struct parse_xml_block *parser);
 static struct manual_data *parse_block_object(struct parse_xml_block *parser);
+static struct manual_data *parse_empty_block_object(struct parse_xml_block *parser);
 
 static void parse_unknown(struct parse_xml_block *parser);
 static void parse_resources(struct parse_xml_block *parser, struct manual_data_resources *resources);
@@ -810,6 +811,21 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 			break;
 
 		case PARSE_XML_RESULT_TAG_EMPTY:
+			element = parse_xml_get_element(parser);
+
+			switch (element) {
+			case PARSE_ELEMENT_LINK:
+			case PARSE_ELEMENT_REF:
+				item = parse_empty_block_object(parser);
+				parse_link_item(&tail, new_block, item);
+				break;
+			case PARSE_ELEMENT_NONE:
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
+				parse_unknown(parser);
+				break;
+			}
 			break;
 
 		case PARSE_XML_RESULT_TAG_END:
@@ -831,6 +847,60 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
 	
 	msg_report(MSG_PARSE_POP, "Block", parse_element_find_tag(type));
+
+	return new_block;
+}
+
+
+/**
+ * Process an empty block object (REF, LINK), returning a pointer to the root
+ * of the new data structure.
+ *
+ * \param *parser	Pointer to the parser to use.
+ * \return		Pointer to the new data structure.
+ */
+
+static struct manual_data *parse_empty_block_object(struct parse_xml_block *parser)
+{
+	enum parse_element_type type;
+	struct manual_data *new_block = NULL;
+
+	/* Identify the tag which got us here. */
+
+	type = parse_xml_get_element(parser);
+
+	msg_report(MSG_PARSE_PUSH, "Empty Block", parse_element_find_tag(type));
+
+	/* Create the block object. */
+
+	switch (type) {
+	case PARSE_ELEMENT_LINK:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_LINK);
+		break;
+	case PARSE_ELEMENT_REF:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_REFERENCE);
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type));
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	if (new_block == NULL) {
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	/* Read attributes where applicable. */
+
+	switch (type) {
+	case PARSE_ELEMENT_LINK:
+		new_block->chunk.link = parse_xml_get_attribute_text(parser, "href");
+		break;
+	case PARSE_ELEMENT_REF:
+		new_block->chunk.id = parse_xml_get_attribute_text(parser, "id");
+		break;
+	}
 
 	return new_block;
 }
