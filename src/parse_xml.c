@@ -957,6 +957,7 @@ static void parse_xml_read_element_attributes(struct parse_xml_block *instance, 
 		strncpy(instance->attributes[instance->attribute_count].name, name, PARSE_XML_MAX_NAME_LEN);
 		instance->attributes[instance->attribute_count].start = start;
 		instance->attributes[instance->attribute_count].length = length;
+		instance->attributes[instance->attribute_count].parser->current_mode = PARSE_XML_RESULT_START;
 		instance->attributes[instance->attribute_count].parser->file_pointer = start;
 		instance->attributes[instance->attribute_count].parser->eof = quote;
 

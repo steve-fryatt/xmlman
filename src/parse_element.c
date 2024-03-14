@@ -76,7 +76,7 @@ static struct parse_element_definition parse_element_tags[] = {
 	{PARSE_ELEMENT_CHAPTER,		"chapter"},
 	{PARSE_ELEMENT_INDEX,		"index"},
 	{PARSE_ELEMENT_MANUAL,		"manual"},
-	{PARSE_ELEMENT_NONE,		""}
+	{PARSE_ELEMENT_NONE,		"*none*"}
 };
 
 

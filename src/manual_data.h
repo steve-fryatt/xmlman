@@ -66,6 +66,8 @@ enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_RESOURCE_IMAGE,
 	MANUAL_DATA_OBJECT_TYPE_RESOURCE_DOWNLOAD,
 
+	MANUAL_DATA_OBJECT_TYPE_SINGLE_LEVEL_ATTRIBUTE,
+
 	MANUAL_DATA_OBJECT_TYPE_TEXT,
 	MANUAL_DATA_OBJECT_TYPE_ENTITY,
 };
@@ -154,7 +156,7 @@ struct manual_data_chunk {
 		/**
 		 * Pointer to the target link text, or NULL if none has been set.
 		 */
-		char				*link;
+		struct manual_data		*link;
 	};
 
 	union {

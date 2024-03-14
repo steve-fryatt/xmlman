@@ -724,7 +724,7 @@ static bool output_text_write_inline_link(struct output_text_line *line, int col
 	if (link->first_child != NULL && !output_text_line_add_text(line, column, " ["))
 		return false;
 
-	if (link->chunk.link != NULL && !output_text_line_add_text(line, column, link->chunk.link))
+	if (link->chunk.link != NULL && !output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_SINGLE_LEVEL_ATTRIBUTE, link->chunk.link))
 		return false;
 
 	if (link->first_child != NULL && !output_text_line_add_text(line, column, "]"))

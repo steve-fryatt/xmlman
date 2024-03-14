@@ -654,7 +654,7 @@ static bool output_strong_write_inline_link(struct manual_data *link)
 		if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_LINK, link))
 			return false;
 	} else if (link->chunk.link != NULL) {
-		if (!output_strong_file_write_plain("%s", link->chunk.link))
+		if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_SINGLE_LEVEL_ATTRIBUTE, link->chunk.link))
 			return false;
 	}
 	

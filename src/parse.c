@@ -63,7 +63,8 @@ static struct manual_data *parse_empty_block_object(struct parse_xml_block *pars
 static void parse_unknown(struct parse_xml_block *parser);
 static void parse_resources(struct parse_xml_block *parser, struct manual_data_resources *resources);
 static void parse_mode_resources(struct parse_xml_block *parser, struct manual_data_mode *resources);
-static bool parse_fetch_single_chunk(struct parse_xml_block *parser, char *buffer, size_t length);
+static struct manual_data *parse_single_level_attribute(struct parse_xml_block *parser, char *attribute);
+static bool parse_fetch_single_level_block(struct parse_xml_block *parser, char *buffer, size_t length);
 static void parse_link_item(struct manual_data **previous, struct manual_data *parent, struct manual_data *item);
 
 /**
@@ -745,7 +746,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 
 	switch (type) {
 	case PARSE_ELEMENT_LINK:
-		new_block->chunk.link = parse_xml_get_attribute_text(parser, "href");
+		new_block->chunk.link = parse_single_level_attribute(parser, "href");
 
 		if (parse_xml_test_boolean_attribute(parser, "external", "true", "false"))
 			new_block->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_LINK_EXTERNAL;
@@ -902,7 +903,13 @@ static struct manual_data *parse_empty_block_object(struct parse_xml_block *pars
 
 	switch (type) {
 	case PARSE_ELEMENT_LINK:
-		new_block->chunk.link = parse_xml_get_attribute_text(parser, "href");
+		new_block->chunk.link = parse_single_level_attribute(parser, "href");
+
+		if (parse_xml_test_boolean_attribute(parser, "external", "true", "false"))
+			new_block->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_LINK_EXTERNAL;
+
+		if (parse_xml_test_boolean_attribute(parser, "flatten", "true", "false"))
+			new_block->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_LINK_FLATTEN;
 		break;
 	case PARSE_ELEMENT_REF:
 		new_block->chunk.id = parse_xml_get_attribute_text(parser, "id");
@@ -1023,11 +1030,11 @@ static void parse_resources(struct parse_xml_block *parser, struct manual_data_r
 				}
 				break;
 			case PARSE_ELEMENT_DOWNLOADS:
-				if (parse_fetch_single_chunk(parser, buffer, PARSE_MAX_LEAFNAME))
+				if (parse_fetch_single_level_block(parser, buffer, PARSE_MAX_LEAFNAME))
 					resources->downloads = filename_make(buffer, FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
 				break;
 			case PARSE_ELEMENT_IMAGES:
-				if (parse_fetch_single_chunk(parser, buffer, PARSE_MAX_LEAFNAME))
+				if (parse_fetch_single_level_block(parser, buffer, PARSE_MAX_LEAFNAME))
 					resources->images = filename_make(buffer, FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
 				break;
 			case PARSE_ELEMENT_NONE:
@@ -1104,11 +1111,11 @@ static void parse_mode_resources(struct parse_xml_block *parser, struct manual_d
 
 			switch (element) {
 			case PARSE_ELEMENT_FILENAME:
-				if (parse_fetch_single_chunk(parser, buffer, PARSE_MAX_LEAFNAME))
+				if (parse_fetch_single_level_block(parser, buffer, PARSE_MAX_LEAFNAME))
 					resources->filename = filename_make(buffer, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
 				break;
 			case PARSE_ELEMENT_FOLDER:
-				if (parse_fetch_single_chunk(parser, buffer, PARSE_MAX_LEAFNAME))
+				if (parse_fetch_single_level_block(parser, buffer, PARSE_MAX_LEAFNAME))
 					resources->folder = filename_make(buffer, FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
 				break;
 			case PARSE_ELEMENT_NONE:
@@ -1139,11 +1146,103 @@ static void parse_mode_resources(struct parse_xml_block *parser, struct manual_d
 	msg_report(MSG_PARSE_POP, "Mode Resources", parse_element_find_tag(type));
 }
 
+/**
+ * Parse a single level attribute from the current element, returning
+ * a linked list of chunks.
+ *
+ * \param *parser	Pointer to the parser to use.
+ * \param *attribute	The name of the attribute to parse.
+ * \return		Pointer to the top-level Single Level Attribute chunk.
+ */
+
+
+static struct manual_data *parse_single_level_attribute(struct parse_xml_block *parser, char *attribute)
+{
+	bool done = false;
+	struct parse_xml_block *attribute_parser;
+	enum parse_xml_result result;
+	enum parse_element_type type;
+	struct manual_data *new_block = NULL, *tail = NULL, *item = NULL;
+
+	attribute_parser = parse_xml_get_attribute_parser(parser, attribute);
+	if (attribute_parser == NULL)
+		return NULL;
+
+	/* Identify the tag which got us here. */
+
+	type = parse_xml_get_element(attribute_parser);
+
+	msg_report(MSG_PARSE_PUSH, "Block", parse_element_find_tag(type));
+
+	/* Create the block object. */
+
+	switch (type) {
+	case PARSE_ELEMENT_NONE:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_SINGLE_LEVEL_ATTRIBUTE);
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type));
+		parse_xml_set_error(attribute_parser);
+		return NULL;
+	}
+
+	if (new_block == NULL) {
+		parse_xml_set_error(attribute_parser);
+		return NULL;
+	}
+
+	/* Process the content within the new object. */
+
+	do {
+		result = parse_xml_read_next_chunk(attribute_parser);
+
+		switch (result) {
+		case PARSE_XML_RESULT_TEXT:
+		case PARSE_XML_RESULT_WHITESPACE:
+			item = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TEXT);
+			if (item == NULL) {
+				result = parse_xml_set_error(attribute_parser);
+				msg_report(MSG_DATA_MALLOC_FAIL);
+				continue;
+			}
+			item->chunk.text = parse_xml_get_text(attribute_parser);
+			encoding_flatten_whitespace(item->chunk.text);
+			parse_link_item(&tail, new_block, item);
+			break;
+
+		case PARSE_XML_RESULT_TAG_ENTITY:
+			item = manual_data_create(MANUAL_DATA_OBJECT_TYPE_ENTITY);
+			if (item == NULL) {
+				result = parse_xml_set_error(attribute_parser);
+				msg_report(MSG_DATA_MALLOC_FAIL);
+				continue;
+			}
+			item->chunk.entity = parse_xml_get_entity(attribute_parser);
+			parse_link_item(&tail, new_block, item);
+			break;
+
+		case PARSE_XML_RESULT_COMMENT:
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
+			break;
+		}
+	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
+	
+	msg_report(MSG_PARSE_POP, "Block", parse_element_find_tag(type));
+
+	return new_block;
+}
+
+
+
+
 
 /**
  * Fetch a single block from the XML, up to the end of a non-nested tag pair.
  * There must be no tags within the block, and only the default entities will
- * be processed.
+ * be processed. The content is returned as plain text in a supplied buffer.
  *
  * \param *parser	Pointer to the parser to use.
  * \param *buffer	Pointer to a buffer to take the text.
@@ -1151,7 +1250,7 @@ static void parse_mode_resources(struct parse_xml_block *parser, struct manual_d
  * \return		True if successful; false on failure.
  */
 
-static bool parse_fetch_single_chunk(struct parse_xml_block *parser, char *buffer, size_t length)
+static bool parse_fetch_single_level_block(struct parse_xml_block *parser, char *buffer, size_t length)
 {
 	bool done = false;
 	size_t end = 0;
