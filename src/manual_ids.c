@@ -216,9 +216,9 @@ struct manual_data *manual_ids_find_node(struct manual_data *node)
 
 	switch (node->type) {
 	case MANUAL_DATA_OBJECT_TYPE_REFERENCE:
-		msg_report(MSG_ID_BAD_REFERENCE, manual_data_find_object_name(node->type));
 		break;
 	default:
+		msg_report(MSG_ID_BAD_REFERENCE, manual_data_find_object_name(node->type));
 		return false;
 	}
 
