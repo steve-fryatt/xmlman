@@ -50,31 +50,27 @@ struct manual_ids *manual_ids_create(void);
 
 /**
  * Dump a manual IDs index instance to the log.
- *
- * \param *instance	The ID index instance to dump.
  */
 
-void manual_ids_dump(struct manual_ids *instance);
+void manual_ids_dump();
 
 /**
  * Add a node to an index of IDs.
  *
- * \param *instance	The ID index instance to add the node to.
  * \param *node		The node to add to the index.
  * \return		True if successful; False on error.
  */
 
-bool manual_ids_add_node(struct manual_ids *instance, struct manual_data *node);
+bool manual_ids_add_node(struct manual_data *node);
 
 /**
  * Given a reference node, find the node that it refers to.
  *
- * \param *instance	The ID index instance to search in.
  * \param *node		The reference node to start from.
  * \return		The target node, or NULL.
  */
 
-struct manual_data *manual_ids_find_node(struct manual_ids *instance, struct manual_data *node);
+struct manual_data *manual_ids_find_node(struct manual_data *node);
 
 #endif
 

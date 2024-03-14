@@ -39,27 +39,19 @@
 
 /* Static Function Prototypes. */
 
-static void parse_link_node(struct manual_data *node, struct manual_data *parent, struct manual_ids *id_index);
+static void parse_link_node(struct manual_data *node, struct manual_data *parent);
 
 /**
  * Link a node and its children, connecting the previous and parent node
  * references.
  *
  * \param *root		The root node to link from.
- * \return		An ID Index instance, or NULL on failure..
  */
 
-struct manual_ids *parse_link(struct manual_data *root)
+void parse_link(struct manual_data *root)
 {
-	struct manual_ids *id_index;
-
-	id_index = manual_ids_create();
-	if (id_index == NULL)
-		return NULL;
-
-	parse_link_node(root, NULL, id_index);
-
-	return id_index;
+	manual_ids_create();
+	parse_link_node(root, NULL);
 }
 
 /**
@@ -67,10 +59,9 @@ struct manual_ids *parse_link(struct manual_data *root)
  *
  * \param *node		Pointer to the node to link.
  * \param *parent	Pointer to the node's parent.
- * \param *id_index	ID Index instance to store node IDs in.
  */
 
-static void parse_link_node(struct manual_data *node, struct manual_data *parent, struct manual_ids *id_index)
+static void parse_link_node(struct manual_data *node, struct manual_data *parent)
 {
 	struct manual_data	*previous = NULL;
 	int			index = 1;
@@ -86,7 +77,7 @@ static void parse_link_node(struct manual_data *node, struct manual_data *parent
 		case MANUAL_DATA_OBJECT_TYPE_INDEX:
 		case MANUAL_DATA_OBJECT_TYPE_SECTION:
 			if (node->chapter.id != NULL)
-				manual_ids_add_node(id_index, node);
+				manual_ids_add_node(node);
 			break;
 		default:
 			break;
@@ -111,7 +102,7 @@ static void parse_link_node(struct manual_data *node, struct manual_data *parent
 		/* Process any child nodes. */
 
 		if (node->first_child != NULL)
-			parse_link_node(node->first_child, node, id_index);
+			parse_link_node(node->first_child, node);
 
 		/* Move on to the next sibling. */
 

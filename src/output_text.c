@@ -84,14 +84,6 @@ static int output_text_page_width = 77;
 
 static struct filename *output_text_root_filename;
 
-/**
- * The ID database to use for the active file.
- * 
- * TODO -- This should probably be improved.
- */
-
-static struct manual_ids *output_text_id_database;
-
 /* Static Function Prototypes. */
 
 static bool output_text_write_manual(struct manual_data *chapter, struct filename *folder);
@@ -138,7 +130,6 @@ bool output_text(struct manual *document, struct filename *filename, enum encodi
 	/* Write the manual file content. */
 
 	output_text_root_filename = filename_make(OUTPUT_TEXT_ROOT_FILENAME, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
-	output_text_id_database = document->id_index;
 
 	result = output_text_write_manual(document->manual, filename);
 
@@ -766,7 +757,7 @@ static bool output_text_write_inline_reference(struct output_text_line *line, in
 
 	/* Find the target object. */
 
-	target = manual_ids_find_node(output_text_id_database, reference);
+	target = manual_ids_find_node(reference);
 
 	/* Write the reference text. */
 

@@ -77,14 +77,6 @@
 
 static struct filename *output_strong_root_filename;
 
-/**
- * The ID database to use for the active file.
- * 
- * TODO -- This should probably be improved.
- */
-
-static struct manual_ids *output_strong_id_database;
-
 /* Static Function Prototypes. */
 
 static bool output_strong_write_manual(struct manual_data *manual);
@@ -136,7 +128,6 @@ bool output_strong(struct manual *document, struct filename *filename, enum enco
 	/* Write the manual content. */
 
 	output_strong_root_filename = filename_make(OUTPUT_STRONG_ROOT_FILENAME, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
-	output_strong_id_database = document->id_index;
 
 	result = output_strong_write_manual(document->manual);
 
@@ -701,7 +692,7 @@ static bool output_strong_write_inline_reference(struct manual_data *reference)
 
 	/* Find the target object. */
 
-	target = manual_ids_find_node(output_strong_id_database, reference);
+	target = manual_ids_find_node(reference);
 
 	/* Output the opening link tag. */
 

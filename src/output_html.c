@@ -78,14 +78,6 @@
 
 static struct filename *output_html_root_filename;
 
-/**
- * The ID database to use for the active file.
- * 
- * TODO -- This should probably be improved.
- */
-
-static struct manual_ids *output_html_id_database;
-
 
 /* Static Function Prototypes. */
 
@@ -135,7 +127,6 @@ bool output_html(struct manual *document, struct filename *folder, enum encoding
 	/* Write the manual file content. */
 
 	output_html_root_filename = filename_make(OUTPUT_HTML_ROOT_FILENAME, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
-	output_html_id_database = document->id_index;
 
 	result = output_html_write_manual(document->manual, folder);
 
@@ -834,7 +825,7 @@ static bool output_html_write_inline_reference(struct manual_data *reference)
 
 	/* Find the target object. */
 
-	target = manual_ids_find_node(output_html_id_database, reference);
+	target = manual_ids_find_node(reference);
 
 	/* Establish the relative link, if external. */
 

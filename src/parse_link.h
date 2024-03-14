@@ -39,10 +39,9 @@
  * references.
  *
  * \param *root		The root node to link from.
- * \return		An ID Index instance, or NULL on failure..
  */
 
-struct manual_ids *parse_link(struct manual_data *root);
+void parse_link(struct manual_data *root);
 
 #endif
 

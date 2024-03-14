@@ -49,7 +49,6 @@ struct manual *manual_create(struct manual_data *node)
 		return NULL;
 
 	document->manual = node;
-	document->id_index = NULL;
 
 	return document;
 }

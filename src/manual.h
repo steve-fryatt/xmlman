@@ -43,12 +43,6 @@ struct manual {
 	 */
 
 	struct manual_data	*manual;
-
-	/**
-	 * The ID Index instance for the manual.
-	 */
-
-	struct manual_ids	*id_index;
 };
 
 /**

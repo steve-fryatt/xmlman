@@ -133,8 +133,8 @@ struct manual *parse_document(char *filename)
 	if (document == NULL)
 		return NULL;
 
-	document->id_index = parse_link(manual);
-	manual_ids_dump(document->id_index);
+	parse_link(manual);
+	manual_ids_dump();
 
 	return document;
 } 
