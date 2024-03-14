@@ -71,6 +71,19 @@ enum manual_data_object_type {
 };
 
 /**
+ * Flags relating to objects.
+ */
+
+enum manual_data_object_flags {
+	MANUAL_DATA_OBJECT_FLAGS_NONE = 0,
+
+	/* Flags relating to Links */
+
+	MANUAL_DATA_OBJECT_FLAGS_LINK_EXTERNAL = 1,
+	MANUAL_DATA_OBJECT_FLAGS_LINK_FLATTEN = 2
+};
+
+/**
  * Resource data for a data output mode.
  */
 
@@ -127,6 +140,11 @@ struct manual_data_resources {
  */
 
 struct manual_data_chunk {
+	/**
+	 * Flags relating to the object.
+	 */
+	enum manual_data_object_flags flags;
+
 	union {
 		/**
 		 * Pointer to the target object's ID, or NULL if none has been set.

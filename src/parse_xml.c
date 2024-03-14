@@ -50,6 +50,13 @@
 #define PARSE_XML_MAX_ATTRIBUTES 10
 
 /**
+ * The maximum length of an attribute value which we process
+ * in the parser (eg. boolean values.)
+ */
+
+#define PARSE_XML_MAX_ATTRIBUTE_VAL_LEN 64
+
+/**
  * Structure to hold details of an attribute.
  */
 
@@ -478,6 +485,45 @@ size_t parse_xml_copy_attribute_text(struct parse_xml_block *instance, const cha
 	return parse_xml_copy_text_to_buffer(instance, attribute->start, attribute->length, buffer, length);
 }
 
+/**
+ * Parse an attribute as if it is a boolean value; not present is false.
+ * 
+ * Errors result in PARSE_XML_RESULT_ERROR being set.
+ * 
+ * \param *instance	Pointer to the instance to be used.
+ * \param *name		The name of the attribute to be matched.
+ * \param *value_true	The value which is considered true.
+ * \param *value_false	The value which is considered false.
+ * \return		TRUE or FALSE.
+ */
+
+bool parse_xml_test_boolean_attribute(struct parse_xml_block *instance, const char *name, char *value_true, char *value_false)
+{
+	struct parse_xml_attribute *attribute;
+	char buffer[PARSE_XML_MAX_ATTRIBUTE_VAL_LEN];
+
+	if (instance == NULL || instance->file == NULL) {
+		if (instance != NULL)
+			instance->current_mode = PARSE_XML_RESULT_ERROR;
+		return false;
+	}
+
+	attribute = parse_xml_find_attribute(instance, name);
+	if (attribute == NULL)
+		return false;
+
+	parse_xml_copy_text_to_buffer(instance, attribute->start, attribute->length, buffer, PARSE_XML_MAX_ATTRIBUTE_VAL_LEN);
+
+	if (strcmp(buffer, value_true) == 0)
+		return true;
+	else if (strcmp(buffer, value_false) == 0)
+		return false;
+
+	msg_report(MSG_BAD_ATTRIBUTE_VALUE, buffer, attribute->name);
+	instance->current_mode = PARSE_XML_RESULT_ERROR;
+
+	return false;
+}
 
 /**
  * Locate an attribute for the current entity.
@@ -602,7 +648,8 @@ static void parse_xml_read_text(struct parse_xml_block *instance, char c)
 	bool whitespace = true;
 
 	if (instance == NULL || instance->file == NULL) {
-		instance->current_mode = PARSE_XML_RESULT_ERROR;
+		if (instance != NULL)
+			instance->current_mode = PARSE_XML_RESULT_ERROR;
 		return;
 	}
 
@@ -648,7 +695,8 @@ static void parse_xml_read_markup(struct parse_xml_block *instance, char c)
 	/* Tags must start with a <; we shouldn't be here otherwise. */
 
 	if (c != '<' || instance == NULL || instance->file == NULL) {
-		instance->current_mode = PARSE_XML_RESULT_ERROR;
+		if (instance != NULL)
+			instance->current_mode = PARSE_XML_RESULT_ERROR;
 		return;
 	}
 
@@ -689,7 +737,8 @@ static void parse_xml_read_element(struct parse_xml_block *instance, char c)
 	int len = 0;
 
 	if (instance == NULL || instance->file == NULL) {
-		instance->current_mode = PARSE_XML_RESULT_ERROR;
+		if (instance != NULL)
+			instance->current_mode = PARSE_XML_RESULT_ERROR;
 		return;
 	}
 
@@ -811,7 +860,8 @@ static void parse_xml_read_element_attributes(struct parse_xml_block *instance, 
 	char name[PARSE_XML_MAX_NAME_LEN], quote = '\0';
 
 	if (instance == NULL || instance->file == NULL) {
-		instance->current_mode = PARSE_XML_RESULT_ERROR;
+		if (instance != NULL)
+			instance->current_mode = PARSE_XML_RESULT_ERROR;
 		return;
 	}
 
@@ -927,7 +977,8 @@ static void parse_xml_read_comment(struct parse_xml_block *instance)
 	int c, dashes = 0;
 
 	if (instance == NULL || instance->file == NULL) {
-		instance->current_mode = PARSE_XML_RESULT_ERROR;
+		if (instance != NULL)
+			instance->current_mode = PARSE_XML_RESULT_ERROR;
 		return;
 	}
 
@@ -968,7 +1019,8 @@ static void parse_xml_read_entity(struct parse_xml_block *instance, char c)
 	/* Entities must start with &; we shouldn't be here otherwise! */
 
 	if (c != '&' || instance == NULL || instance->file == NULL) {
-		instance->current_mode = PARSE_XML_RESULT_ERROR;
+		if (instance != NULL)
+			instance->current_mode = PARSE_XML_RESULT_ERROR;
 		return;
 	}
 

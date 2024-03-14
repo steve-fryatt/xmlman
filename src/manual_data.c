@@ -140,17 +140,17 @@ struct manual_data *manual_data_create(enum manual_data_object_type type)
 		data->chapter.resources = NULL;
 		break;
 
-	case MANUAL_DATA_OBJECT_TYPE_TEXT:
-		data->chunk.id = NULL; // .link should also be NULL.
-		data->chunk.text = NULL;
-		break;
-
 	case MANUAL_DATA_OBJECT_TYPE_ENTITY:
+		data->chunk.flags = MANUAL_DATA_OBJECT_FLAGS_NONE;
 		data->chunk.id = NULL; // .link should also be NULL.
 		data->chunk.entity = MANUAL_ENTITY_NONE;
 		break;
 
+	case MANUAL_DATA_OBJECT_TYPE_TEXT:
 	default:
+		data->chunk.flags = MANUAL_DATA_OBJECT_FLAGS_NONE;
+		data->chunk.id = NULL; // .link should also be NULL.
+		data->chunk.text = NULL;
 		break;
 	}
 

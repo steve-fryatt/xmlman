@@ -714,6 +714,11 @@ static bool output_text_write_inline_link(struct output_text_line *line, int col
 	if (link->first_child != NULL && !output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_LINK, link))
 		return false;
 
+	/* If there was link text, and flatten was applied, don't output the link itself. */
+
+	if (link->first_child != NULL && (link->chunk.flags & MANUAL_DATA_OBJECT_FLAGS_LINK_FLATTEN))
+		return true;
+
 	/* Write the link information. */
 
 	if (link->first_child != NULL && !output_text_line_add_text(line, column, " ["))

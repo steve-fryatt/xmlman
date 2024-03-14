@@ -777,7 +777,13 @@ static bool output_html_write_inline_link(struct manual_data *link)
 
 	/* Output the opening link tag. */
 
-	if (link->chunk.link != NULL && !output_html_file_write_plain("<a href=\"%s\">", link->chunk.link))
+	if (link->chunk.link != NULL && !output_html_file_write_plain("<a href=\"%s\"", link->chunk.link))
+		return false;
+
+	if ((link->chunk.flags & MANUAL_DATA_OBJECT_FLAGS_LINK_EXTERNAL) && !output_html_file_write_plain(" class=\"external\""))
+		return false;
+
+	if (link->chunk.link != NULL && !output_html_file_write_plain(">"))
 		return false;
 
 	/* Output the link body. */

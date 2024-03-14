@@ -159,6 +159,20 @@ char *parse_xml_get_attribute_text(struct parse_xml_block *instance, const char 
 size_t parse_xml_copy_attribute_text(struct parse_xml_block *instance, const char *name, char *buffer, size_t length);
 
 /**
+ * Parse an attribute as if it is a boolean value; not present is false.
+ * 
+ * Errors result in PARSE_XML_RESULT_ERROR being set.
+ * 
+ * \param *instance	Pointer to the instance to be used.
+ * \param *name		The name of the attribute to be matched.
+ * \param *value_true	The value which is considered true.
+ * \param *value_false	The value which is considered false.
+ * \return		TRUE or FALSE.
+ */
+
+bool parse_xml_test_boolean_attribute(struct parse_xml_block *instance, const char *name, char *value_true, char *value_false);
+
+/**
  * Read the details of the current entity parsed from
  * the file.
  * 

@@ -30,6 +30,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "encoding.h"
 #include "filename.h"
@@ -745,6 +746,12 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 	switch (type) {
 	case PARSE_ELEMENT_LINK:
 		new_block->chunk.link = parse_xml_get_attribute_text(parser, "href");
+
+		if (parse_xml_test_boolean_attribute(parser, "external", "true", "false"))
+			new_block->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_LINK_EXTERNAL;
+
+		if (parse_xml_test_boolean_attribute(parser, "flatten", "true", "false"))
+			new_block->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_LINK_FLATTEN;
 		break;
 	case PARSE_ELEMENT_REF:
 		new_block->chunk.id = parse_xml_get_attribute_text(parser, "id");
