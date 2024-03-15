@@ -40,7 +40,7 @@
  * The size of the manual IDs hash table.
  */
 
-#define MANUAL_IDS_HASH_SIZE 40
+#define MANUAL_IDS_HASH_SIZE 100
 
 /**
  * An entry in the ID tag index.
@@ -68,22 +68,10 @@ struct manual_ids_entry {
 };
 
 /**
- * An ID Index instance structure.
+ * The ID hash table.
  */
 
-struct manual_ids {
-	/**
-	 * The hash table.
-	 */
-
-	struct manual_ids_entry	*table[MANUAL_IDS_HASH_SIZE];
-};
-
-/**
- * The default instance.
- */
-
-static struct manual_ids *manual_ids_default_instance = NULL;
+struct manual_ids_entry	*manual_ids_table[MANUAL_IDS_HASH_SIZE];
 
 /* Static Function Prototypes. */
 
@@ -91,33 +79,17 @@ static struct manual_ids_entry *manual_ids_find_id(char *id);
 static int manual_ids_get_hash(char *id);
 
 /**
- * Create a new manual IDs index instance.
- *
- * \return		Pointer to the new instance, or NULL on failure.
+ * Initialise the manual IDs index.
  */
 
-struct manual_ids *manual_ids_create(void)
+void manual_ids_initialise(void)
 {
-	struct manual_ids	*new = NULL;
 	int			i;
-
-	/* Allocate memory for the structure. */
-
-	new = malloc(sizeof(struct manual_ids));
-	if (new == NULL)
-		return NULL;
 
 	/* Zero the hash table entries. */
 
 	for (i = 0; i < MANUAL_IDS_HASH_SIZE; i++)
-		new->table[i] = NULL;
-
-	/* Set the default instance. */
-
-	if (manual_ids_default_instance == NULL)
-		manual_ids_default_instance = new;
-
-	return new;
+		manual_ids_table[i] = NULL;
 }
 
 /**
@@ -129,13 +101,10 @@ void manual_ids_dump(void)
 	struct manual_ids_entry	*entry;
 	int			i;
 
-	msg_report(MSG_ID_HASH_DUMP, manual_ids_default_instance);
-
-	if (manual_ids_default_instance == NULL)
-		return;
+	msg_report(MSG_ID_HASH_DUMP);
 
 	for (i = 0; i < MANUAL_IDS_HASH_SIZE; i++) {
-		entry = manual_ids_default_instance->table[i];
+		entry = manual_ids_table[i];
 
 		msg_report(MSG_ID_HASH_LINE, i, entry);
 
@@ -158,7 +127,7 @@ bool manual_ids_add_node(struct manual_data *node)
 	struct manual_ids_entry	*new;
 	int			hash;
 
-	if (manual_ids_default_instance == NULL || node == NULL || node->chapter.id == NULL)
+	if (node == NULL || node->chapter.id == NULL)
 		return false;
 
 	/* Only non-chunk types can have IDs. */
@@ -191,8 +160,8 @@ bool manual_ids_add_node(struct manual_data *node)
 	new->id = node->chapter.id;
 	new->node = node;
 
-	new->next = manual_ids_default_instance->table[hash];
-	manual_ids_default_instance->table[hash] = new;
+	new->next = manual_ids_table[hash];
+	manual_ids_table[hash] = new;
 
 	return true;
 }
@@ -243,11 +212,11 @@ static struct manual_ids_entry *manual_ids_find_id(char *id)
 	struct manual_ids_entry *entry = NULL;
 	int hash;
 
-	if (manual_ids_default_instance == NULL || id == NULL)
+	if (id == NULL)
 		return NULL;
 
 	hash = manual_ids_get_hash(id);
-	entry = manual_ids_default_instance->table[hash];
+	entry = manual_ids_table[hash];
 
 	while (entry != NULL) {
 		if (entry->id != NULL && strcmp(id, entry->id) == 0)

@@ -122,7 +122,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_VERBOSE,	"Parsed Comment.",						false},
 	{MSG_VERBOSE,	"Parsed Entity: &%s;.",						false},
 
-	{MSG_VERBOSE,	"Dumping index table 0x%x",					false},
+	{MSG_VERBOSE,	"Dumping index table",						false},
 	{MSG_VERBOSE,	"Hash entry %d starting at 0x%x",				false},
 	{MSG_VERBOSE,	"- Entry for '%s'",						false},
 	{MSG_ERROR,	"Failed to store duplicate ID '%s'",				false},

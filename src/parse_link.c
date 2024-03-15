@@ -50,7 +50,7 @@ static void parse_link_node(struct manual_data *node, struct manual_data *parent
 
 void parse_link(struct manual_data *root)
 {
-	manual_ids_create();
+	manual_ids_initialise();
 	parse_link_node(root, NULL);
 }
 

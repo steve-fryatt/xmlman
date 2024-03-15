@@ -35,18 +35,10 @@
 #include "manual_data.h"
 
 /**
- * An ID Index instance structure.
+ * Initialise the manual IDs index.
  */
 
-struct manual_ids;
-
-/**
- * Create a new manual IDs index instance.
- *
- * \return		Pointer to the new instance, or NULL on failure.
- */
-
-struct manual_ids *manual_ids_create(void);
+void manual_ids_initialise(void);
 
 /**
  * Dump a manual IDs index instance to the log.
