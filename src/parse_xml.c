@@ -88,6 +88,12 @@ struct parse_xml_block {
 	long file_pointer;
 
 	/**
+	 * The file pointer for the most recent line count, to avoid double
+	 * counting new lines.
+	 */
+	long line_count_file_pointer;
+
+	/**
 	 * The end of file character for the instance.
 	 */
 	int eof;
@@ -158,6 +164,7 @@ static struct parse_xml_block *parse_xml_initialise(void)
 	new->current_mode = PARSE_XML_RESULT_ERROR;
 
 	new->file_pointer = 0;
+	new->line_count_file_pointer = 0;
 	new->eof = EOF;
 	new->line_count = 0;
 
@@ -1121,14 +1128,19 @@ static bool parse_xml_match_ahead(struct parse_xml_block *instance, const char *
 static int parse_xml_getc(struct parse_xml_block *instance)
 {
 	char c;
+	long fp;
 
 	if (instance == NULL || instance->file == NULL)
 		return instance->eof;
 
 	c = fgetc(instance->file);
 
-	if (c == '\n')
+	fp = ftell(instance->file);
+
+	if (c == '\n' && fp > instance->line_count_file_pointer) {
 		msg_set_line(++(instance->line_count));
+		instance->line_count_file_pointer = fp;
+	}
 
 	return c;
 }
