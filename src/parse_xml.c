@@ -166,7 +166,7 @@ static struct parse_xml_block *parse_xml_initialise(void)
 	new->file_pointer = 0;
 	new->line_count_file_pointer = 0;
 	new->eof = EOF;
-	new->line_count = 0;
+	new->line_count = 1;
 
 	new->text_block_start = 0;
 	new->text_block_length = 0;

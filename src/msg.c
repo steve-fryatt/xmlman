@@ -112,6 +112,7 @@ static struct msg_data msg_messages[] = {
 
 	{MSG_VERBOSE,	"Push %s Object (%s).",						false},
 	{MSG_VERBOSE,	"Pop %s Object (%s).",						false},
+	{MSG_VERBOSE,	"Adding implied paragraph.",					false},
 
 	{MSG_VERBOSE,	"Parser Set Error!",						false},
 	{MSG_VERBOSE,	"Parsed Text.",							false},
@@ -136,10 +137,10 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Failed to open source document '%s'",				false},
 	{MSG_ERROR,	"Source document '%s' did not parse with XML Reader",		false},
 	{MSG_WARNING,	"Unexpected '<%s>' element found in <%s> node",			true},
-	{MSG_WARNING,	"Unexpected '<%s>' closing element in block",			true},
+	{MSG_WARNING,	"Unexpected '<%s>' closing element in <%s> node",		true},
 	{MSG_ERROR,	"Unexpected stack entry type found",				false},
 	{MSG_WARNING,	"Unexpected XML result %s found in %s",				true},
-	{MSG_WARNING,	"Attempt to add unexpected block of type %s",			false},
+	{MSG_WARNING,	"Attempt to add unexpected block of type '%s' within %s",	true},
 	{MSG_ERROR,	"Attempt to push incorrect %s block on to stack (expected %s)",	false},
 	{MSG_ERROR,	"Missing '%s' attribute",					false},
 	{MSG_ERROR,	"Duplicate <%s> tag in <%s>",					true},
