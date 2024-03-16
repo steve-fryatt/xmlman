@@ -271,6 +271,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 			case PARSE_ELEMENT_TITLE:
 				if ((*manual)->title == NULL) {
 					(*manual)->title = parse_block_object(parser);
+					parse_link_item(NULL, *manual, (*manual)->title);
 				} else {
 					msg_report(MSG_DUPLICATE_TAG, "title", "manual");
 					parse_xml_set_error(parser);
@@ -281,6 +282,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 				if (resources != NULL) {
 					if (resources->summary == NULL) {
 						resources->summary = parse_block_object(parser);
+						parse_link_item(NULL, *manual, resources->summary);
 					} else {
 						msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
 						parse_xml_set_error(parser);
@@ -401,9 +403,8 @@ static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *par
 		return NULL;
 	}
 
-	/* Link the chapter object to its parent. */
+	/* Store the chapter's filename. */
 
-	new_chapter->parent = parent;
 	new_chapter->chapter.filename = filename_make(filename, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
 
 	return new_chapter;
@@ -479,6 +480,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 			case PARSE_ELEMENT_TITLE:
 				if (new_chapter->title == NULL) {
 					new_chapter->title = parse_block_object(parser);
+					parse_link_item(NULL, new_chapter, new_chapter->title);
 				} else {
 					msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
 					parse_xml_set_error(parser);
@@ -489,6 +491,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 				if (resources != NULL) {
 					if (resources->summary == NULL) {
 						resources->summary = parse_block_object(parser);
+						parse_link_item(NULL, new_chapter, resources->summary);
 					} else {
 						msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
 						parse_xml_set_error(parser);
@@ -595,6 +598,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 			case PARSE_ELEMENT_TITLE:
 				if (new_section->title == NULL) {
 					new_section->title = parse_block_object(parser);
+					parse_link_item(NULL, new_section, new_section->title);
 				} else {
 					msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
 					parse_xml_set_error(parser);
@@ -605,6 +609,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 				if (resources != NULL) {
 					if (resources->summary == NULL) {
 						resources->summary = parse_block_object(parser);
+						parse_link_item(NULL, new_section, resources->summary);
 					} else {
 						msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
 						parse_xml_set_error(parser);
@@ -747,6 +752,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 	switch (type) {
 	case PARSE_ELEMENT_LINK:
 		new_block->chunk.link = parse_single_level_attribute(parser, "href");
+		parse_link_item(NULL, new_block, new_block->chunk.link);
 
 		if (parse_xml_test_boolean_attribute(parser, "external", "true", "false"))
 			new_block->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_LINK_EXTERNAL;
@@ -904,6 +910,7 @@ static struct manual_data *parse_empty_block_object(struct parse_xml_block *pars
 	switch (type) {
 	case PARSE_ELEMENT_LINK:
 		new_block->chunk.link = parse_single_level_attribute(parser, "href");
+		parse_link_item(NULL, new_block, new_block->chunk.link);
 
 		if (parse_xml_test_boolean_attribute(parser, "external", "true", "false"))
 			new_block->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_LINK_EXTERNAL;
@@ -1331,6 +1338,9 @@ static bool parse_fetch_single_level_block(struct parse_xml_block *parser, char 
 
 /**
  * Link a new manual data block on to the end of a chain.
+ * The parent's first child will only be set if previous isn't
+ * NULL -- as in, if we're configuring a chain. Otherwise this
+ * is assumed to be a stand-alone item like a title.
  *
  * \param **previous	Pointer to the pointer to the chain tail.
  * \param *parent	Pointer to the item's parent.
@@ -1349,7 +1359,7 @@ static void parse_link_item(struct manual_data **previous, struct manual_data *p
 
 	if (previous != NULL && *previous != NULL)
 		(*previous)->next = item;
-	else if (parent != NULL)
+	else if (previous != NULL && parent != NULL)
 		parent->first_child = item;
 
 	if (previous != NULL)
