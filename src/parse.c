@@ -61,6 +61,7 @@ static struct manual_data *parse_list(struct parse_xml_block *parser);
 static struct manual_data *parse_table(struct parse_xml_block *parser);
 static struct manual_data *parse_table_column_set(struct parse_xml_block *parser);
 static struct manual_data *parse_table_row(struct parse_xml_block *parser);
+static struct manual_data *parse_code_block(struct parse_xml_block *parser);
 static struct manual_data *parse_block_collection_object(struct parse_xml_block *parser);
 static struct manual_data *parse_block_object(struct parse_xml_block *parser);
 static struct manual_data *parse_empty_block_object(struct parse_xml_block *parser);
@@ -648,6 +649,10 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 				item = parse_table(parser);
 				parse_link_item(&tail, new_section, item);
 				break;
+			case PARSE_ELEMENT_CODE:
+				item = parse_code_block(parser);
+				parse_link_item(&tail, new_section, item);
+				break;
 			case PARSE_ELEMENT_NONE:
 				break;
 			default:
@@ -1044,6 +1049,107 @@ static struct manual_data *parse_table_row(struct parse_xml_block *parser)
 	msg_report(MSG_PARSE_POP, "Table Row", parse_element_find_tag(type));
 
 	return new_table_row;
+}
+
+
+/**
+ * Process a code block object (CODE at a SECTION level), returning a pointer to
+ * the root of the new data structure.
+ *
+ * \param *parser	Pointer to the parser to use.
+ * \return		Pointer to the new data structure.
+ */
+
+static struct manual_data *parse_code_block(struct parse_xml_block *parser)
+{
+	bool done = false;
+	enum parse_xml_result result;
+	enum parse_element_type type, element;
+	struct manual_data *new_code_block = NULL, *tail = NULL, *item = NULL;
+	struct manual_data_resources *resources;
+
+	/* Identify the tag which got us here. */
+
+	type = parse_xml_get_element(parser);
+
+	msg_report(MSG_PARSE_PUSH, "Code Block", parse_element_find_tag(type));
+
+	/* Create the new code block object. */
+
+	switch (type) {
+	case PARSE_ELEMENT_CODE:
+		new_code_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK);
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type), "Code Block");
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	if (new_code_block == NULL) {
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	/* Read the code block id. */
+
+	new_code_block->chapter.id = parse_xml_get_attribute_text(parser, "id");
+
+	/* Read the code block title. */
+
+	new_code_block->title = parse_multi_level_attribute(parser, "title");
+	parse_link_item(NULL, new_code_block, new_code_block->title);
+
+	/* Parse the code block contents. */
+
+	do {
+		result = parse_xml_read_next_chunk(parser);
+
+		switch (result) {
+		case PARSE_XML_RESULT_TEXT:
+		case PARSE_XML_RESULT_WHITESPACE:
+			item = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TEXT);
+			if (item == NULL) {
+				result = parse_xml_set_error(parser);
+				msg_report(MSG_DATA_MALLOC_FAIL);
+				continue;
+			}
+			item->chunk.text = parse_xml_get_text(parser);
+			parse_link_item(&tail, new_code_block, item);
+			break;
+
+		case PARSE_XML_RESULT_TAG_ENTITY:
+			item = manual_data_create(MANUAL_DATA_OBJECT_TYPE_ENTITY);
+			if (item == NULL) {
+				result = parse_xml_set_error(parser);
+				msg_report(MSG_DATA_MALLOC_FAIL);
+				continue;
+			}
+			item->chunk.entity = parse_xml_get_entity(parser);
+			parse_link_item(&tail, new_code_block, item);
+			break;
+
+		case PARSE_XML_RESULT_TAG_END:
+			element = parse_xml_get_element(parser);
+
+			if (element == type)
+				done = true;
+			else if (element != PARSE_ELEMENT_NONE)
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+			break;
+
+		case PARSE_XML_RESULT_COMMENT:
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
+			break;
+		}
+	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
+
+	msg_report(MSG_PARSE_POP, "Code Block", parse_element_find_tag(type));
+
+	return new_code_block;
 }
 
 /**

@@ -137,6 +137,7 @@ bool manual_ids_add_node(struct manual_data *node)
 	case MANUAL_DATA_OBJECT_TYPE_INDEX:
 	case MANUAL_DATA_OBJECT_TYPE_SECTION:
 	case MANUAL_DATA_OBJECT_TYPE_TABLE:
+	case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
 		break;
 	default:
 		msg_report(MSG_ID_BAD_TARGET, manual_data_find_object_name(node->type));

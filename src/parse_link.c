@@ -77,6 +77,7 @@ static void parse_link_node(struct manual_data *node, struct manual_data *parent
 		case MANUAL_DATA_OBJECT_TYPE_INDEX:
 		case MANUAL_DATA_OBJECT_TYPE_SECTION:
 		case MANUAL_DATA_OBJECT_TYPE_TABLE:
+		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
 			if (node->chapter.id != NULL)
 				manual_ids_add_node(node);
 			break;

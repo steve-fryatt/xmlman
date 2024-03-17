@@ -78,6 +78,7 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN,			"Table Column"},
 	{MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_SET,		"Table Column Set"},
 	{MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_DEFINITION,	"Table Column Definition"},
+	{MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK,			"Code Block"},
 	{MANUAL_DATA_OBJECT_TYPE_PARAGRAPH,			"Paragraph"},
 	{MANUAL_DATA_OBJECT_TYPE_CITATION,			"Citation"},
 	{MANUAL_DATA_OBJECT_TYPE_CODE,				"Code"},
@@ -153,6 +154,10 @@ struct manual_data *manual_data_create(enum manual_data_object_type type)
 	case MANUAL_DATA_OBJECT_TYPE_TABLE:
 		data->chapter.id = NULL;
 		data->chapter.columns = NULL;
+		break;
+
+	case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+		data->chapter.id = NULL;
 		break;
 
 	case MANUAL_DATA_OBJECT_TYPE_ENTITY:
