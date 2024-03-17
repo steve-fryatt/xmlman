@@ -69,6 +69,7 @@ static struct parse_element_definition parse_element_tags[] = {
 	{PARSE_ELEMENT_PARAGRAPH,	"p"},
 	{PARSE_ELEMENT_OL,		"ol"},
 	{PARSE_ELEMENT_UL,		"ul"},
+	{PARSE_ELEMENT_COLDEF,		"coldef"},
 	{PARSE_ELEMENT_COLUMNS,		"columns"},
 	{PARSE_ELEMENT_TABLE,		"table"},
 	{PARSE_ELEMENT_SECTION,		"section"},

@@ -59,6 +59,8 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 static struct manual_data *parse_section(struct parse_xml_block *parser);
 static struct manual_data *parse_list(struct parse_xml_block *parser);
 static struct manual_data *parse_table(struct parse_xml_block *parser);
+static struct manual_data *parse_table_column_set(struct parse_xml_block *parser);
+static struct manual_data *parse_table_row(struct parse_xml_block *parser);
 static struct manual_data *parse_block_collection_object(struct parse_xml_block *parser);
 static struct manual_data *parse_block_object(struct parse_xml_block *parser);
 static struct manual_data *parse_empty_block_object(struct parse_xml_block *parser);
@@ -66,6 +68,7 @@ static struct manual_data *parse_empty_block_object(struct parse_xml_block *pars
 static void parse_unknown(struct parse_xml_block *parser);
 static void parse_resources(struct parse_xml_block *parser, struct manual_data_resources *resources);
 static void parse_mode_resources(struct parse_xml_block *parser, struct manual_data_mode *resources);
+static struct manual_data *parse_multi_level_attribute(struct parse_xml_block *parser, char *attribute);
 static struct manual_data *parse_single_level_attribute(struct parse_xml_block *parser, char *attribute);
 static bool parse_fetch_single_level_block(struct parse_xml_block *parser, char *buffer, size_t length);
 static void parse_link_item(struct manual_data **previous, struct manual_data *parent, struct manual_data *item);
@@ -641,6 +644,10 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 				item = parse_list(parser);
 				parse_link_item(&tail, new_section, item);
 				break;
+			case PARSE_ELEMENT_TABLE:
+				item = parse_table(parser);
+				parse_link_item(&tail, new_section, item);
+				break;
 			case PARSE_ELEMENT_NONE:
 				break;
 			default:
@@ -694,7 +701,7 @@ static struct manual_data *parse_list(struct parse_xml_block *parser)
 
 	msg_report(MSG_PARSE_PUSH, "List", parse_element_find_tag(type));
 
-	/* Create the new section object. */
+	/* Create the new list object. */
 
 	switch (type) {
 	case PARSE_ELEMENT_OL:
@@ -775,36 +782,42 @@ static struct manual_data *parse_table(struct parse_xml_block *parser)
 	bool done = false;
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
-	struct manual_data *new_list = NULL, *tail = NULL, *item = NULL;
+	struct manual_data *new_table = NULL, *tail = NULL, *item = NULL;
 	struct manual_data_resources *resources;
 
 	/* Identify the tag which got us here. */
 
 	type = parse_xml_get_element(parser);
 
-	msg_report(MSG_PARSE_PUSH, "List", parse_element_find_tag(type));
+	msg_report(MSG_PARSE_PUSH, "Table", parse_element_find_tag(type));
 
-	/* Create the new section object. */
+	/* Create the new table object. */
 
 	switch (type) {
-	case PARSE_ELEMENT_OL:
-		new_list = manual_data_create(MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST);
-		break;
-	case PARSE_ELEMENT_UL:
-		new_list = manual_data_create(MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST);
+	case PARSE_ELEMENT_TABLE:
+		new_table = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TABLE);
 		break;
 	default:
-		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type), "List");
+		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type), "Table");
 		parse_xml_set_error(parser);
 		return NULL;
 	}
 
-	if (new_list == NULL) {
+	if (new_table == NULL) {
 		parse_xml_set_error(parser);
 		return NULL;
 	}
 
-	/* Parse the list contents. */
+	/* Read the table id. */
+
+	new_table->chapter.id = parse_xml_get_attribute_text(parser, "id");
+
+	/* Read the table title. */
+
+	new_table->title = parse_multi_level_attribute(parser, "title");
+	parse_link_item(NULL, new_table, new_table->title);
+
+	/* Parse the table contents. */
 
 	do {
 		result = parse_xml_read_next_chunk(parser);
@@ -814,9 +827,18 @@ static struct manual_data *parse_table(struct parse_xml_block *parser)
 			element = parse_xml_get_element(parser);
 
 			switch (element) {
-			case PARSE_ELEMENT_LI:
-				item = parse_block_collection_object(parser);
-				parse_link_item(&tail, new_list, item);
+			case PARSE_ELEMENT_COLUMNS:
+				if (new_table->chapter.columns == NULL) {
+					new_table->chapter.columns = parse_table_column_set(parser);
+					parse_link_item(NULL, new_table, new_table->chapter.columns);
+				} else {
+					msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
+					parse_xml_set_error(parser);
+				}
+				break;
+			case PARSE_ELEMENT_ROW:
+				item = parse_table_row(parser);
+				parse_link_item(&tail, new_table, item);
 				break;
 			case PARSE_ELEMENT_NONE:
 				break;
@@ -846,9 +868,182 @@ static struct manual_data *parse_table(struct parse_xml_block *parser)
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
 
-	msg_report(MSG_PARSE_POP, "List", parse_element_find_tag(type));
+	msg_report(MSG_PARSE_POP, "Table", parse_element_find_tag(type));
 
-	return new_list;
+	return new_table;
+}
+
+
+/**
+ * Process a table column set object (COLUMNS), returning a pointer to
+ * the root of the new data structure.
+ *
+ * \param *parser	Pointer to the parser to use.
+ * \return		Pointer to the new data structure.
+ */
+
+static struct manual_data *parse_table_column_set(struct parse_xml_block *parser)
+{
+	bool done = false;
+	enum parse_xml_result result;
+	enum parse_element_type type, element;
+	struct manual_data *new_table_column_set = NULL, *tail = NULL, *item = NULL;
+	struct manual_data_resources *resources;
+
+	/* Identify the tag which got us here. */
+
+	type = parse_xml_get_element(parser);
+
+	msg_report(MSG_PARSE_PUSH, "Table Column Set", parse_element_find_tag(type));
+
+	/* Create the new table column set object. */
+
+	switch (type) {
+	case PARSE_ELEMENT_COLUMNS:
+		new_table_column_set = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_SET);
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type), "Table Column Set");
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	if (new_table_column_set == NULL) {
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	/* Parse the table column set contents. */
+
+	do {
+		result = parse_xml_read_next_chunk(parser);
+
+		switch (result) {
+		case PARSE_XML_RESULT_TAG_START:
+			element = parse_xml_get_element(parser);
+
+			switch (element) {
+			case PARSE_ELEMENT_COLDEF:
+				item = parse_block_object(parser);
+				parse_link_item(&tail, new_table_column_set, item);
+				break;
+			case PARSE_ELEMENT_NONE:
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
+				parse_unknown(parser);
+				break;
+			}
+			break;
+
+		case PARSE_XML_RESULT_TAG_END:
+			element = parse_xml_get_element(parser);
+
+			if (element == type)
+				done = true;
+			else if (element != PARSE_ELEMENT_NONE)
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+			break;
+
+		case PARSE_XML_RESULT_WHITESPACE:
+		case PARSE_XML_RESULT_COMMENT:
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
+			break;
+		}
+	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
+
+	msg_report(MSG_PARSE_POP, "Table Column Set", parse_element_find_tag(type));
+
+	return new_table_column_set;
+}
+
+/**
+ * Process a table row object (ROW), returning a pointer to the root
+ * of the new data structure.
+ *
+ * \param *parser	Pointer to the parser to use.
+ * \return		Pointer to the new data structure.
+ */
+
+static struct manual_data *parse_table_row(struct parse_xml_block *parser)
+{
+	bool done = false;
+	enum parse_xml_result result;
+	enum parse_element_type type, element;
+	struct manual_data *new_table_row = NULL, *tail = NULL, *item = NULL;
+	struct manual_data_resources *resources;
+
+	/* Identify the tag which got us here. */
+
+	type = parse_xml_get_element(parser);
+
+	msg_report(MSG_PARSE_PUSH, "Table Row", parse_element_find_tag(type));
+
+	/* Create the new table row object. */
+
+	switch (type) {
+	case PARSE_ELEMENT_ROW:
+		new_table_row = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TABLE_ROW);
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type), "Table Row");
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	if (new_table_row == NULL) {
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	/* Parse the table row contents. */
+
+	do {
+		result = parse_xml_read_next_chunk(parser);
+
+		switch (result) {
+		case PARSE_XML_RESULT_TAG_START:
+			element = parse_xml_get_element(parser);
+
+			switch (element) {
+			case PARSE_ELEMENT_COL:
+				item = parse_block_object(parser);
+				parse_link_item(&tail, new_table_row, item);
+				break;
+			case PARSE_ELEMENT_NONE:
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
+				parse_unknown(parser);
+				break;
+			}
+			break;
+
+		case PARSE_XML_RESULT_TAG_END:
+			element = parse_xml_get_element(parser);
+
+			if (element == type)
+				done = true;
+			else if (element != PARSE_ELEMENT_NONE)
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+			break;
+
+		case PARSE_XML_RESULT_WHITESPACE:
+		case PARSE_XML_RESULT_COMMENT:
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
+			break;
+		}
+	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
+
+	msg_report(MSG_PARSE_POP, "Table Row", parse_element_find_tag(type));
+
+	return new_table_row;
 }
 
 /**
@@ -938,7 +1133,7 @@ static struct manual_data *parse_block_collection_object(struct parse_xml_block 
 }
 
 /**
- * Process a block object (P, TITLE, SUMMARY), returning a pointer to the root
+ * Process a block object (P, TITLE, SUMMARY, COL, COLDEF), returning a pointer to the root
  * of the new data structure.
  *
  * \param *parser	Pointer to the parser to use.
@@ -961,6 +1156,9 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 	/* Create the block object. */
 
 	switch (type) {
+	case PARSE_ELEMENT_NONE:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_MULTI_LEVEL_ATTRIBUTE);
+		break;
 	case PARSE_ELEMENT_PARAGRAPH:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH);
 		break;
@@ -969,6 +1167,12 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 		break;
 	case PARSE_ELEMENT_SUMMARY:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_SUMMARY);
+		break;
+	case PARSE_ELEMENT_COL:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN);
+		break;
+	case PARSE_ELEMENT_COLDEF:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_DEFINITION);
 		break;
 	case PARSE_ELEMENT_CITE:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_CITATION);
@@ -1427,8 +1631,29 @@ static void parse_mode_resources(struct parse_xml_block *parser, struct manual_d
 }
 
 /**
- * Parse a single level attribute from the current element, returning
- * a linked list of chunks.
+ * Parse a multi-level attribute (ie. one which can contain tags and entities)
+ * from the current element, returning a linked list of chunks.
+ *
+ * \param *parser	Pointer to the parser to use.
+ * \param *attribute	The name of the attribute to parse.
+ * \return		Pointer to the top-level Single Level Attribute chunk.
+ */
+
+
+static struct manual_data *parse_multi_level_attribute(struct parse_xml_block *parser, char *attribute)
+{
+	struct parse_xml_block *attribute_parser;
+
+	attribute_parser = parse_xml_get_attribute_parser(parser, attribute);
+	if (attribute_parser == NULL)
+		return NULL;
+
+	return parse_block_object(attribute_parser);
+}
+
+/**
+ * Parse a single level attribute (ie. one which can contain only entities) from
+ * the current element, returning  a linked list of chunks.
  *
  * \param *parser	Pointer to the parser to use.
  * \param *attribute	The name of the attribute to parse.
@@ -1514,9 +1739,6 @@ static struct manual_data *parse_single_level_attribute(struct parse_xml_block *
 
 	return new_block;
 }
-
-
-
 
 
 /**
