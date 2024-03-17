@@ -41,6 +41,7 @@
 
 /* Static Function Prototypes. */
 
+static void output_debug_write_node(struct manual_data *parent, struct manual_data *node, int depth, bool *indent);
 static void output_debug_write_text(enum manual_data_object_type type, struct manual_data *text);
 static char *output_debug_get_text(char *text);
 
@@ -61,61 +62,70 @@ bool output_debug(struct manual *document, struct filename *filename, enum encod
 	if (document == NULL || document->manual == NULL)
 		return false;
 
-	manual = document->manual;
-
-	/* Output the manual heading and title. */
-
-	printf("*** Found Manual ***\n");
-
-	output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, manual->title);
-
-	/* Output the chapter details. */
-
-	chapter = manual->first_child;
-
-	while (chapter != NULL) {
-		printf("* Found Chapter *\n");
-
-		output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, chapter->title);
-
-		printf("Processed: %d\n", chapter->chapter.processed);
-
-		if (chapter->chapter.id != NULL)
-			printf("Chapter ID '%s'\n", chapter->chapter.id);
-
-		/* Output the section details. */
-
-		section = chapter->first_child;
-	
-		while (section != NULL) {
-			printf("** Found Section **\n");
-
-			output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, section->title);
-
-			if (section->chapter.id != NULL)
-				printf("Section ID '%s'\n", section->chapter.id);
-
-			/* Output the block details. */
-
-			block = section->first_child;
-
-			while (block != NULL) {
-				printf("*** Found Block **\n");
-
-				output_debug_write_text(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH, block);
-
-				block = block->next;
-			}
-
-			section = section->next;
-		}
-
-		chapter = chapter->next;
-	}
+	output_debug_write_node(NULL, document->manual, 0, NULL);
 
 	return true;
 }
 
+
+static void output_debug_write_node(struct manual_data *parent, struct manual_data *node, int depth, bool *indent)
+{
+	int i;
+	bool *new_indent = NULL;
+	struct manual_data *previous = NULL;
+
+	/* Copy the depth info. */
+
+	new_indent = malloc(depth + 1);
+	if (new_indent == NULL)
+		return;
+
+	for (i = 0; i < depth; i++)
+		new_indent[i] = indent[i];
+
+
+	/* Output the child nodes at depth + 1. */
+
+	while (node != NULL) {
+		if (depth > 0) {
+			for (i = 0; i < depth - 1; i++)
+				printf(" %c ", (indent[i] == true) ? '|' : ' ');
+
+			printf(" %c ", (previous == NULL) ? '*' : '+');
+		}
+
+		printf("\033[1;36m%s\033[0m (%d) [Parent %s, Previous %s]\n",
+				manual_data_find_object_name(node->type),
+				node->index,
+				(node->parent == parent) ? "\033[1;32mOK\033[0m" : "\033[1;31mBad\033[0m",
+				(node->previous == previous) ? "\033[1;32mOK\033[0m" : "\033[1;31mBad\033[0m");
+
+		if (depth > 0)
+			new_indent[depth - 1] = (node->next != NULL) ? true : false;
+
+		if (node->title != NULL)
+			output_debug_write_node(node, node->title, depth + 1, new_indent);
+
+		if ((node->type == MANUAL_DATA_OBJECT_TYPE_MANUAL || node->type == MANUAL_DATA_OBJECT_TYPE_CHAPTER ||
+				node->type == MANUAL_DATA_OBJECT_TYPE_INDEX || node->type == MANUAL_DATA_OBJECT_TYPE_SECTION) &&
+				node->chapter.resources != NULL && node->chapter.resources->summary != NULL)
+			output_debug_write_node(node, node->chapter.resources->summary, depth + 1, new_indent);
+
+		if (node->type == MANUAL_DATA_OBJECT_TYPE_LINK && node->chunk.link != NULL)
+			output_debug_write_node(node, node->chunk.link, depth + 1, new_indent);
+
+		if (node->type == MANUAL_DATA_OBJECT_TYPE_TABLE && node->chapter.columns != NULL)
+			output_debug_write_node(node, node->chapter.columns, depth + 1, new_indent);
+
+		if (node->first_child != NULL)
+			output_debug_write_node(node, node->first_child, depth + 1, new_indent);
+
+		previous = node;
+		node = node->next;
+	}
+
+	free(new_indent);
+}
 
 static void output_debug_write_text(enum manual_data_object_type type, struct manual_data *text)
 {
