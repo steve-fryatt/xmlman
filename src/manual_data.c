@@ -359,8 +359,14 @@ struct filename *manual_data_get_node_filename(struct manual_data *node, struct 
 			if (resources == NULL)
 				break;
 
-			if (resources->filename != NULL)
+			/* Collect only the leaf filename. */
+
+			if (resources->filename != NULL && filename_is_empty(filename))
 				filename_prepend(filename, resources->filename, 0);
+
+			/* Collect any folders that we find, including the
+			 * default filename if another hasn't been found.
+			 */
 
 			if (resources->folder != NULL) {
 				if (root != NULL && filename_is_empty(filename))
