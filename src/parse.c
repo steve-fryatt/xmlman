@@ -57,12 +57,12 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *parser, struct manual_data *parent);
 static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct manual_data *chapter);
 static struct manual_data *parse_section(struct parse_xml_block *parser);
+static struct manual_data *parse_block_collection_object(struct parse_xml_block *parser);
 static struct manual_data *parse_list(struct parse_xml_block *parser);
 static struct manual_data *parse_table(struct parse_xml_block *parser);
 static struct manual_data *parse_table_column_set(struct parse_xml_block *parser);
 static struct manual_data *parse_table_row(struct parse_xml_block *parser);
 static struct manual_data *parse_code_block(struct parse_xml_block *parser);
-static struct manual_data *parse_block_collection_object(struct parse_xml_block *parser);
 static struct manual_data *parse_block_object(struct parse_xml_block *parser);
 static struct manual_data *parse_empty_block_object(struct parse_xml_block *parser);
 
@@ -683,6 +683,107 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 	return new_section;
 }
 
+/**
+ * Process a block collection object (LI), returning a pointer to the root
+ * of the new data structure.
+ * 
+ * Items allowed in a block collection are the same as those allowed in a
+ * section, aside from the section admin ones.
+ *
+ * \param *parser	Pointer to the parser to use.
+ * \return		Pointer to the new data structure.
+ */
+
+static struct manual_data *parse_block_collection_object(struct parse_xml_block *parser)
+{
+	bool done = false;
+	enum parse_xml_result result;
+	enum parse_element_type type, element;
+	struct manual_data *new_block = NULL, *tail = NULL, *item = NULL;
+
+	/* Identify the tag which got us here. */
+
+	type = parse_xml_get_element(parser);
+
+	msg_report(MSG_PARSE_PUSH, "Block Collection", parse_element_find_tag(type));
+
+	/* Create the block object. */
+
+	switch (type) {
+	case PARSE_ELEMENT_LI:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_LIST_ITEM);
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type), "Block Collection");
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	if (new_block == NULL) {
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	/* Process the content within the new object. */
+
+	do {
+		result = parse_xml_read_next_chunk(parser);
+
+		switch (result) {
+		case PARSE_XML_RESULT_TAG_START:
+			element = parse_xml_get_element(parser);
+
+			switch (element) {
+			case PARSE_ELEMENT_PARAGRAPH:
+				item = parse_block_object(parser);
+				parse_link_item(&tail, new_block, item);
+				break;
+			case PARSE_ELEMENT_OL:
+			case PARSE_ELEMENT_UL:
+				item = parse_list(parser);
+				parse_link_item(&tail, new_block, item);
+				break;
+			case PARSE_ELEMENT_TABLE:
+				item = parse_table(parser);
+				parse_link_item(&tail, new_block, item);
+				break;
+			case PARSE_ELEMENT_CODE:
+				item = parse_code_block(parser);
+				parse_link_item(&tail, new_block, item);
+				break;
+			case PARSE_ELEMENT_NONE:
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
+				parse_unknown(parser);
+				break;
+			}
+			break;
+
+		case PARSE_XML_RESULT_TAG_END:
+			element = parse_xml_get_element(parser);
+
+			if (element == type)
+				done = true;
+			else if (element != PARSE_ELEMENT_NONE)
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+			break;
+
+		case PARSE_XML_RESULT_WHITESPACE:
+		case PARSE_XML_RESULT_COMMENT:
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
+			break;
+		}
+	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
+	
+	msg_report(MSG_PARSE_POP, "Block Collection", parse_element_find_tag(type));
+
+	return new_block;
+
+}
 
 /**
  * Process a list object (OL, UL), returning a pointer to the root
@@ -1150,92 +1251,6 @@ static struct manual_data *parse_code_block(struct parse_xml_block *parser)
 	msg_report(MSG_PARSE_POP, "Code Block", parse_element_find_tag(type));
 
 	return new_code_block;
-}
-
-/**
- * Process a block collection object (LI), returning a pointer to the root
- * of the new data structure.
- *
- * \param *parser	Pointer to the parser to use.
- * \return		Pointer to the new data structure.
- */
-
-static struct manual_data *parse_block_collection_object(struct parse_xml_block *parser)
-{
-	bool done = false;
-	enum parse_xml_result result;
-	enum parse_element_type type, element;
-	struct manual_data *new_block = NULL, *tail = NULL, *item = NULL;
-
-	/* Identify the tag which got us here. */
-
-	type = parse_xml_get_element(parser);
-
-	msg_report(MSG_PARSE_PUSH, "Block Collection", parse_element_find_tag(type));
-
-	/* Create the block object. */
-
-	switch (type) {
-	case PARSE_ELEMENT_LI:
-		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_LIST_ITEM);
-		break;
-	default:
-		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type), "Block Collection");
-		parse_xml_set_error(parser);
-		return NULL;
-	}
-
-	if (new_block == NULL) {
-		parse_xml_set_error(parser);
-		return NULL;
-	}
-
-	/* Process the content within the new object. */
-
-	do {
-		result = parse_xml_read_next_chunk(parser);
-
-		switch (result) {
-		case PARSE_XML_RESULT_TAG_START:
-			element = parse_xml_get_element(parser);
-
-			switch (element) {
-			case PARSE_ELEMENT_PARAGRAPH:
-				item = parse_block_object(parser);
-				parse_link_item(&tail, new_block, item);
-				break;
-			case PARSE_ELEMENT_NONE:
-				break;
-			default:
-				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
-				parse_unknown(parser);
-				break;
-			}
-			break;
-
-		case PARSE_XML_RESULT_TAG_END:
-			element = parse_xml_get_element(parser);
-
-			if (element == type)
-				done = true;
-			else if (element != PARSE_ELEMENT_NONE)
-				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
-			break;
-
-		case PARSE_XML_RESULT_WHITESPACE:
-		case PARSE_XML_RESULT_COMMENT:
-			break;
-
-		default:
-			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
-			break;
-		}
-	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
-	
-	msg_report(MSG_PARSE_POP, "Block Collection", parse_element_find_tag(type));
-
-	return new_block;
-
 }
 
 /**
