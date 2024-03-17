@@ -149,6 +149,10 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Resource fields can only contain non-entity characters",	true},
 	{MSG_ERROR,	"Unexpected value \"%s\" found in '%s' attribute",		true},
 
+	{MSG_ERROR,	"Missing columns definition in table",				true},
+	{MSG_ERROR,	"No columns in table definition",				true},
+	{MSG_ERROR,	"Too many columns in table row",				true},
+
 	{MSG_ERROR,	"Attempt to add content into unexpected stack location %d",	false},
 
 	{MSG_ERROR,	"Unknown element '<%s>'",					true},

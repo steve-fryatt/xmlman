@@ -886,9 +886,10 @@ static struct manual_data *parse_list(struct parse_xml_block *parser)
 static struct manual_data *parse_table(struct parse_xml_block *parser)
 {
 	bool done = false;
+	int column_count, defined_columns = 0;
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
-	struct manual_data *new_table = NULL, *tail = NULL, *item = NULL;
+	struct manual_data *new_table = NULL, *tail = NULL, *item = NULL, *row = NULL, *column = NULL;
 	struct manual_data_resources *resources;
 
 	/* Identify the tag which got us here. */
@@ -973,6 +974,49 @@ static struct manual_data *parse_table(struct parse_xml_block *parser)
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
+
+	/* Count the number of column definitions. */
+
+	if (new_table->chapter.columns == NULL || new_table->chapter.columns->first_child == NULL) {
+		msg_report(MSG_TABLE_MISSING_COLDEF);
+		parse_xml_set_error(parser);
+		return new_table;
+	}
+
+	column = new_table->chapter.columns->first_child;
+
+	while (column != NULL) {
+		defined_columns++;
+		column = column->next;
+	}
+
+	if (defined_columns == 0) {
+		msg_report(MSG_TABLE_EMPTY_COLDEF);
+		parse_xml_set_error(parser);
+		return new_table;
+	}
+
+	/* Confirm that no row contains more columns than defined. */
+
+	row = new_table->first_child;
+
+	while (row != NULL) {
+		column = row->first_child;
+		column_count = 0;
+
+		while (column != NULL) {
+			column_count++;
+			column = column->next;
+		}
+
+		if (column_count > defined_columns) {
+			msg_report(MSG_TABLE_TOO_MANY_COLS);
+			parse_xml_set_error(parser);
+			return new_table;
+		}
+
+		row = row->next;
+	}
 
 	msg_report(MSG_PARSE_POP, "Table", parse_element_find_tag(type));
 
