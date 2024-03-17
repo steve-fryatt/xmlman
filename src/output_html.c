@@ -89,6 +89,7 @@ static bool output_html_write_foot(struct manual_data *manual);
 static bool output_html_write_heading(struct manual_data *node, int level);
 static bool output_html_write_block_collection_object(struct manual_data *object);
 static bool output_html_write_list(struct manual_data *object);
+static bool output_html_write_table(struct manual_data *object);
 static bool output_html_write_code_block(struct manual_data *object);
 static bool output_html_write_paragraph(struct manual_data *object);
 static bool output_html_write_reference(struct manual_data *source, struct manual_data *target, char *text);
@@ -392,6 +393,18 @@ static bool output_html_write_section_object(struct manual_data *object, int lev
 					return false;
 				break;
 
+			case MANUAL_DATA_OBJECT_TYPE_TABLE:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_html_write_table(block))
+					return false;
+				break;
+
 			case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
 					msg_report(MSG_UNEXPECTED_CHUNK,
@@ -620,6 +633,11 @@ static bool output_html_write_block_collection_object(struct manual_data *object
 				return false;
 			break;
 
+		case MANUAL_DATA_OBJECT_TYPE_TABLE:
+			if (!output_html_write_table(block))
+				return false;
+			break;
+
 		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
 			if (!output_html_write_code_block(block))
 				return false;
@@ -647,7 +665,7 @@ static bool output_html_write_block_collection_object(struct manual_data *object
 
 static bool output_html_write_list(struct manual_data *object)
 {
-	struct manual_data *block;
+	struct manual_data *item;
 
 	if (object == NULL)
 		return false;
@@ -673,10 +691,10 @@ static bool output_html_write_list(struct manual_data *object)
 		return false;
 
 
-	block = object->first_child;
+	item = object->first_child;
 
-	while (block != NULL) {
-		switch (block->type) {
+	while (item != NULL) {
+		switch (item->type) {
 		case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
 			if (!output_html_file_write_newline())
 				return false;
@@ -684,7 +702,7 @@ static bool output_html_write_list(struct manual_data *object)
 			if (!output_html_file_write_plain("<li>"))
 				return false;
 
-			if (!output_html_write_block_collection_object(block))
+			if (!output_html_write_block_collection_object(item))
 				return false;
 
 			if (!output_html_file_write_plain("</li>"))
@@ -693,15 +711,144 @@ static bool output_html_write_list(struct manual_data *object)
 
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK,
-					manual_data_find_object_name(block->type),
+					manual_data_find_object_name(item->type),
 					manual_data_find_object_name(object->type));
 			break;
 		}
 
-		block = block->next;
+		item = item->next;
 	}
 
 	if (!output_html_file_write_plain((object->type == MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST) ? "</ol>" : "</ul>"))
+		return false;
+
+	return true;
+}
+
+/**
+ * Process the contents of a table and write it out.
+ *
+ * \param *object		The object to process.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_table(struct manual_data *object)
+{
+	struct manual_data *column_set, *column, *row;
+
+	if (object == NULL)
+		return false;
+
+	/* Confirm that this is a table. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_TABLE:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_TABLE),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Output the table. */
+
+	if (!output_html_file_write_newline() || !output_html_file_write_plain("<table>"))
+		return false;
+
+	/* Write the table headings. */
+
+	column_set = object->chapter.columns;
+	if (column_set->type != MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_SET) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_SET),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	if (!output_html_file_write_newline() || !output_html_file_write_plain("<tr>"))
+		return false;
+
+	column = column_set->first_child;
+
+	while (column != NULL) {
+		switch (column->type) {
+		case MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_DEFINITION:
+			if (!output_html_file_write_plain("<th>"))
+				return false;
+
+			if (!output_html_write_text(column->type, column))
+				return false;
+
+			if (!output_html_file_write_plain("</th>"))
+				return false;
+
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(column->type),
+					manual_data_find_object_name(column_set->type));
+			break;
+		}
+
+		column = column->next;
+	}
+
+	if (!output_html_file_write_plain("</tr>"))
+		return false;
+
+	/* Write the table rows. */
+
+	row = object->first_child;
+
+	while (row != NULL) {
+		switch (row->type) {
+		case MANUAL_DATA_OBJECT_TYPE_TABLE_ROW:
+			column = row->first_child;
+
+			if (!output_html_file_write_newline() || !output_html_file_write_plain("<tr>"))
+				return false;
+
+			while (column != NULL) {
+				switch (column->type) {
+				case MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN:
+					if (!output_html_file_write_plain("<td>"))
+						return false;
+
+					if (!output_html_write_text(column->type, column))
+						return false;
+
+					if (!output_html_file_write_plain("</td>"))
+						return false;
+
+					break;
+
+				default:
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(column->type),
+							manual_data_find_object_name(row->type));
+					break;
+				}
+
+				column = column->next;
+			}
+
+			if (!output_html_file_write_plain("</tr>"))
+				return false;
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(row->type),
+					manual_data_find_object_name(object->type));
+			break;
+		}
+
+		row = row->next;
+	}
+
+	/* Close the table. */
+
+	if (!output_html_file_write_newline() || !output_html_file_write_plain("</table>"))
 		return false;
 
 	return true;
