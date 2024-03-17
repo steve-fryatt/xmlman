@@ -83,10 +83,12 @@ static struct filename *output_html_root_filename;
 
 static bool output_html_write_manual(struct manual_data *manual, struct filename *folder);
 static bool output_html_write_file(struct manual_data *object, struct filename *folder);
-static bool output_html_write_object(struct manual_data *object, int level, bool root);
+static bool output_html_write_section_object(struct manual_data *object, int level, bool root);
 static bool output_html_write_head(struct manual_data *manual);
 static bool output_html_write_foot(struct manual_data *manual);
-static bool output_html_write_heading(struct manual_data *node, int level, bool include_id);
+static bool output_html_write_heading(struct manual_data *node, int level);
+static bool output_html_write_block_collection_object(struct manual_data *object);
+static bool output_html_write_list(struct manual_data *object);
 static bool output_html_write_paragraph(struct manual_data *object);
 static bool output_html_write_reference(struct manual_data *source, struct manual_data *target, char *text);
 static bool output_html_write_text(enum manual_data_object_type type, struct manual_data *text);
@@ -250,7 +252,7 @@ static bool output_html_write_file(struct manual_data *object, struct filename *
 
 	/* Output the object. */
 
-	if (!output_html_write_object(object, OUTPUT_HTML_BASE_LEVEL, true)) {
+	if (!output_html_write_section_object(object, OUTPUT_HTML_BASE_LEVEL, true)) {
 		output_html_file_close();
 		filename_destroy(foldername);
 		filename_destroy(filename);
@@ -281,7 +283,7 @@ static bool output_html_write_file(struct manual_data *object, struct filename *
  * \return			True if successful; False on error.
  */
 
-static bool output_html_write_object(struct manual_data *object, int level, bool root)
+static bool output_html_write_section_object(struct manual_data *object, int level, bool root)
 {
 	struct manual_data *block;
 	struct manual_data_mode *resources = NULL;
@@ -318,7 +320,7 @@ static bool output_html_write_object(struct manual_data *object, int level, bool
 		if (!root && !output_html_file_write_newline())
 			return false;
 
-		if (!output_html_write_heading(object, level, !root))
+		if (!output_html_write_heading(object, level))
 			return false;
 	}
 
@@ -350,12 +352,17 @@ static bool output_html_write_object(struct manual_data *object, int level, bool
 	} else {
 		block = object->first_child;
 
+		/* If changing this switch, note the analogous list in
+		 * output_html_write_block_collection_object() which
+		 * covers similar block level objects.
+		 */
+
 		while (block != NULL) {
 			switch (block->type) {
 			case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 			case MANUAL_DATA_OBJECT_TYPE_INDEX:
 			case MANUAL_DATA_OBJECT_TYPE_SECTION:
-				if (!output_html_write_object(block, level + 1, false))
+				if (!output_html_write_section_object(block, level + 1, false))
 					return false;
 				break;
 
@@ -368,6 +375,12 @@ static bool output_html_write_object(struct manual_data *object, int level, bool
 				}
 
 				if (!output_html_write_paragraph(block))
+					return false;
+				break;
+
+			case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
+			case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+				if (!output_html_write_list(block))
 					return false;
 				break;
 
@@ -408,7 +421,7 @@ static bool output_html_write_head(struct manual_data *manual)
 	if (!output_html_file_write_plain("<head>") || !output_html_file_write_newline())
 		return false;
 
-	if (!output_html_write_heading(manual, 0, false))
+	if (!output_html_write_heading(manual, 0))
 		return false;
 
 	if (!output_html_file_write_plain("</head>") || !output_html_file_write_newline() || !output_html_file_write_newline())
@@ -449,11 +462,10 @@ static bool output_html_write_foot(struct manual_data *manual)
  *
  * \param *node			The node for which to write the title.
  * \param level			The level to write the title at.
- * \param include_id		True to include the object ID, if specified.
  * \return			True if successful; False on error.
  */
 
-static bool output_html_write_heading(struct manual_data *node, int level, bool include_id)
+static bool output_html_write_heading(struct manual_data *node, int level)
 {
 	char	buffer[OUTPUT_HTML_TITLE_TAG_BLOCK_LEN];
 
@@ -487,7 +499,7 @@ static bool output_html_write_heading(struct manual_data *node, int level, bool 
 
 	/* Include the ID in the opening tag, if required. */
 
-	if (include_id && node->chapter.id != NULL) {
+	if (level > 0 && node->chapter.id != NULL) {
 		if (!output_html_file_write_plain(" id=\""))
 			return false;
 
@@ -518,6 +530,159 @@ static bool output_html_write_heading(struct manual_data *node, int level, bool 
 }
 
 /**
+ * Process the contents of a block collection and write it out.
+ * A block collection must be nested within a parent block object
+ * which can take its content directly if there is only one chunk
+ * within.
+ *
+ * \param *object		The object to process.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_block_collection_object(struct manual_data *object)
+{
+	struct manual_data *block;
+
+	if (object == NULL || object->first_child == NULL)
+		return true;
+
+	/* Confirm that this is a suitable object. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_LIST_ITEM),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Write out the block contents. */
+
+	block = object->first_child;
+
+	/* If changing this switch, note the analogous list in
+		* output_html_write_section_object() which covers similar
+		* block level objects.
+		*/
+
+	while (block != NULL) {
+		switch (block->type) {
+		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+			/* If this is the only item in the collection, write it directly
+			 * within the parent tags instead of making a paragraph out of it. */
+			if (block->previous == NULL && block->next == NULL) {
+				if (!output_html_write_text(block->type, block))
+					return false;
+			} else if (block->previous == NULL) {
+				if (!output_html_file_write_plain("<p style=\"margin-top: 0;\">"))
+					return false;
+				if (!output_html_write_text(block->type, block))
+					return false;
+				if (!output_html_file_write_plain("</p>"))
+					return false;
+			} else if (block->next == NULL) {
+				if (!output_html_file_write_plain("<p style=\"margin-bottom: 0;\">"))
+					return false;
+				if (!output_html_write_text(block->type, block))
+					return false;
+				if (!output_html_file_write_plain("</p>"))
+					return false;
+			} else {
+				if (!output_html_write_paragraph(block))
+					return false;
+			}
+			break;
+
+		case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
+		case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+			if (!output_html_write_list(block))
+				return false;
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(block->type),
+					manual_data_find_object_name(object->type));
+			break;
+		}
+
+		block = block->next;
+	}
+
+	return true;
+}
+
+/**
+ * Process the contents of a list and write it out.
+ *
+ * \param *object		The object to process.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_list(struct manual_data *object)
+{
+	struct manual_data *block;
+
+	if (object == NULL)
+		return false;
+
+	/* Confirm that this is a list. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
+	case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Output the list. */
+
+	if (!output_html_file_write_newline())
+		return false;
+
+	if (!output_html_file_write_plain((object->type == MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST) ? "<ol>" : "<ul>"))
+		return false;
+
+
+	block = object->first_child;
+
+	while (block != NULL) {
+		switch (block->type) {
+		case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
+			if (!output_html_file_write_newline())
+				return false;
+
+			if (!output_html_file_write_plain("<li>"))
+				return false;
+
+			if (!output_html_write_block_collection_object(block))
+				return false;
+
+			if (!output_html_file_write_plain("</li>"))
+				return false;
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(block->type),
+					manual_data_find_object_name(object->type));
+			break;
+		}
+
+		block = block->next;
+	}
+
+	if (!output_html_file_write_plain((object->type == MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST) ? "</ol>" : "</ul>"))
+		return false;
+
+	return true;
+}
+
+/**
  * Write a paragraph block to the output.
  *
  * \param *object		The object to be written.
@@ -529,7 +694,7 @@ static bool output_html_write_paragraph(struct manual_data *object)
 	if (object == NULL)
 		return false;
 
-	/* Confirm that this is an index, chapter or section. */
+	/* Confirm that this is a paragraph or summary . */
 
 	if (object->type != MANUAL_DATA_OBJECT_TYPE_PARAGRAPH && object->type != MANUAL_DATA_OBJECT_TYPE_SUMMARY) {
 		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_PARAGRAPH),
