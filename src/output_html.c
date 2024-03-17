@@ -89,6 +89,7 @@ static bool output_html_write_foot(struct manual_data *manual);
 static bool output_html_write_heading(struct manual_data *node, int level);
 static bool output_html_write_block_collection_object(struct manual_data *object);
 static bool output_html_write_list(struct manual_data *object);
+static bool output_html_write_code_block(struct manual_data *object);
 static bool output_html_write_paragraph(struct manual_data *object);
 static bool output_html_write_reference(struct manual_data *source, struct manual_data *target, char *text);
 static bool output_html_write_text(enum manual_data_object_type type, struct manual_data *text);
@@ -380,7 +381,26 @@ static bool output_html_write_section_object(struct manual_data *object, int lev
 
 			case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
 			case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
 				if (!output_html_write_list(block))
+					return false;
+				break;
+
+			case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_html_write_code_block(block))
 					return false;
 				break;
 
@@ -600,6 +620,11 @@ static bool output_html_write_block_collection_object(struct manual_data *object
 				return false;
 			break;
 
+		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+			if (!output_html_write_code_block(block))
+				return false;
+			break;
+
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK,
 					manual_data_find_object_name(block->type),
@@ -677,6 +702,63 @@ static bool output_html_write_list(struct manual_data *object)
 	}
 
 	if (!output_html_file_write_plain((object->type == MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST) ? "</ol>" : "</ul>"))
+		return false;
+
+	return true;
+}
+
+/**
+ * Process the contents of a code block and write it out.
+ *
+ * \param *object		The object to process.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_code_block(struct manual_data *object)
+{
+	if (object == NULL)
+		return false;
+
+	/* Confirm that this is a code block. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Output the code block. */
+
+	if (!output_html_file_write_newline())
+		return false;
+
+	if (!output_html_file_write_plain("<div class=\"codeblock\"><pre>"))
+		return false;
+
+	if (!output_html_write_text(object->type, object))
+		return false;
+
+	if (!output_html_file_write_plain("</pre>"))
+		return false;
+
+	if (object->title != NULL) {
+		if (!output_html_file_write_newline())
+			return false;
+
+		if (!output_html_file_write_plain("<div class=\"caption\">"))
+			return false;
+
+		if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_MULTI_LEVEL_ATTRIBUTE, object->title))
+			return false;
+
+		if (!output_html_file_write_plain("</div>"))
+			return false;
+	}
+
+	if (!output_html_file_write_plain("</div>"))
 		return false;
 
 	return true;
