@@ -33,6 +33,16 @@
 #include <stdbool.h>
 #include "filename.h"
 
+/**
+ * Set the column width to the available space.
+ */
+
+#define OUTPUT_TEXT_LINE_FULL_WIDTH (-1)
+
+/**
+ * An output text line instance.
+ */
+
 struct output_text_line;
 
 /**
@@ -53,10 +63,11 @@ void output_text_line_close(void);
 /**
  * Create a new text line output instance.
  *
+ * \param page_width	The page width, in characters.
  * \return		Pointer to the new line block, or NULL on failure.
  */
 
-struct output_text_line *output_text_line_create(void);
+struct output_text_line *output_text_line_create(int page_width);
 
 /**
  * Destroy a text line output instance.
@@ -101,11 +112,12 @@ bool output_text_line_add_text(struct output_text_line *line, int column, char *
  * Write a block to the output.
  *
  * \param *line		The current line instance.
+ * \param pre		Is this preformatted text?
  * \param title		True to underline the text.
  * \return		True on success; False on error.
  */
 
-bool output_text_line_write(struct output_text_line *line, bool title);
+bool output_text_line_write(struct output_text_line *line, bool pre, bool title);
 
 /**
  * Write a line ending sequence to the output.

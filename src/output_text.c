@@ -86,6 +86,7 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 static bool output_text_write_head(struct manual_data *manual);
 static bool output_text_write_foot(struct manual_data *manual);
 static bool output_text_write_heading(struct manual_data *node, int indent);
+static bool output_text_write_code_block(struct manual_data *object, int indent);
 static bool output_text_write_paragraph(struct manual_data *object, struct output_text_line *paragraph_line);
 static bool output_text_write_reference(struct manual_data *target, struct output_text_line *paragraph_line);
 static bool output_text_write_text(struct output_text_line *line, int column, enum manual_data_object_type type, struct manual_data *text);
@@ -354,11 +355,11 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 
 	/* Create a paragraph for output. */
 
-	paragraph_line = output_text_line_create();
+	paragraph_line = output_text_line_create(output_text_page_width);
 	if (paragraph_line == NULL)
 		return false;
 
-	if (!output_text_line_add_column(paragraph_line, content_indent, output_text_page_width - content_indent)) {
+	if (!output_text_line_add_column(paragraph_line, content_indent, OUTPUT_TEXT_LINE_FULL_WIDTH)) {
 		output_text_line_destroy(paragraph_line);
 		return false;
 	}
@@ -405,6 +406,20 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 				}
 
 				if (!output_text_write_paragraph(block, paragraph_line)) {
+					output_text_line_destroy(paragraph_line);
+					return false;
+				}
+				break;
+
+			case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_text_write_code_block(block, content_indent)) {
 					output_text_line_destroy(paragraph_line);
 					return false;
 				}
@@ -490,11 +505,11 @@ static bool output_text_write_heading(struct manual_data *node, int indent)
 		return false;
 	}
 
-	line = output_text_line_create();
+	line = output_text_line_create(output_text_page_width);
 	if (line == NULL)
 		return false;
 
-	if (!output_text_line_add_column(line, indent, output_text_page_width - indent)) {
+	if (!output_text_line_add_column(line, indent, OUTPUT_TEXT_LINE_FULL_WIDTH)) {
 		output_text_line_destroy(line);
 		return false;
 	}
@@ -509,12 +524,73 @@ static bool output_text_write_heading(struct manual_data *node, int indent)
 		return false;
 	}
 
-	if (!output_text_line_write(line, true)) {
+	if (!output_text_line_write(line, false, true)) {
 		output_text_line_destroy(line);
 		return false;
 	}
 
 	output_text_line_destroy(line);
+
+	return true;
+}
+
+/**
+ * Write a code block to the output.
+ *
+ * \param *object		The object to be written.
+ * \param *paragraph_line	The paragraph line instance to use.
+ * \return			True if successful; False on failure.
+ */
+
+static bool output_text_write_code_block(struct manual_data *object, int indent)
+{
+	struct output_text_line *paragraph_line;
+
+	if (object == NULL)
+		return false;
+
+	/* Confirm that this is an index, chapter or section. */
+
+	if (object->type != MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Write a newline above the block. */
+
+	if (!output_text_line_write_newline()) 
+		return false;
+
+	/* Create a paragraph for output. */
+
+	paragraph_line = output_text_line_create(output_text_page_width);
+	if (paragraph_line == NULL)
+		return false;
+
+	if (!output_text_line_add_column(paragraph_line, indent + OUTPUT_TEXT_BLOCK_INDENT, OUTPUT_TEXT_LINE_FULL_WIDTH)) {
+		output_text_line_destroy(paragraph_line);
+		return false;
+	}
+
+	if (!output_text_line_reset(paragraph_line)) {
+		output_text_line_destroy(paragraph_line);
+		return false;
+	}
+
+	/* Output the block. */
+
+	if (!output_text_write_text(paragraph_line, 0, object->type, object)) {
+		output_text_line_destroy(paragraph_line);
+		return false;
+	}
+
+	if (!output_text_line_write(paragraph_line, true, false)) {
+		output_text_line_destroy(paragraph_line);
+		return false;
+	}
+
+	output_text_line_destroy(paragraph_line);
 
 	return true;
 }
@@ -551,7 +627,7 @@ static bool output_text_write_paragraph(struct manual_data *object, struct outpu
 	if (!output_text_write_text(paragraph_line, 0, object->type, object))
 		return false;
 
-	if (!output_text_line_write(paragraph_line, false))
+	if (!output_text_line_write(paragraph_line, false, false))
 		return false;
 
 	return true;
@@ -601,7 +677,7 @@ static bool output_text_write_reference(struct manual_data *target, struct outpu
 
 	free(link);
 
-	if (!output_text_line_write(paragraph_line, false))
+	if (!output_text_line_write(paragraph_line, false, false))
 		return false;
 
 	return true;

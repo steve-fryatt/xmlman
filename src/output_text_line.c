@@ -91,9 +91,24 @@ struct output_text_line_column {
  */
 
 struct output_text_line {
+	/**
+	 * The number of columns in the current page.
+	 */
+	int				page_width;
+
+	/**
+	 * The linked list of columns in the line.
+	 */
 	struct output_text_line_column	*columns;
 
+	/**
+	 * The right-most column to have been written in the line.
+	*/
 	int				position;
+
+	/**
+	 * Is the current line completely written to the output?
+	 */
 	bool				complete;
 };
 
@@ -117,8 +132,8 @@ static FILE *output_text_line_handle = NULL;
 static bool output_text_line_add_column_text(struct output_text_line_column *column, char *text);
 static bool output_text_line_update_column_memory(struct output_text_line_column *column);
 static struct output_text_line_column* output_text_line_find_column(struct output_text_line *line, int column);
-static bool output_text_line_write_line(struct output_text_line *line, bool underline);
-static bool output_text_line_write_column(struct output_text_line_column *column);
+static bool output_text_line_write_line(struct output_text_line *line, bool pre, bool underline);
+static bool output_text_line_write_column(struct output_text_line_column *column, bool pre);
 static bool output_text_line_write_column_underline(struct output_text_line_column *column);
 static bool output_text_line_pad_to_column(struct output_text_line_column *column);
 static bool output_text_line_write_char(struct output_text_line *line, int c);
@@ -157,10 +172,11 @@ void output_text_line_close(void)
 /**
  * Create a new text line output instance.
  *
+ * \param page_width	The page width, in characters.
  * \return		Pointer to the new line block, or NULL on failure.
  */
 
-struct output_text_line *output_text_line_create(void)
+struct output_text_line *output_text_line_create(int page_width)
 {
 	struct output_text_line		*line = NULL;
 
@@ -171,6 +187,7 @@ struct output_text_line *output_text_line_create(void)
 	}
 
 	line->columns = NULL;
+	line->page_width = page_width;
 
 	return line;
 }
@@ -230,8 +247,8 @@ bool output_text_line_add_column(struct output_text_line *line, int margin, int 
 
 	column = malloc(sizeof(struct output_text_line_column));
 	if (column == NULL) {
-		return false;
 		msg_report(MSG_TEXT_LINE_COL_MEM);
+		return false;
 	}
 
 	/* Find the previous column data. */
@@ -256,7 +273,12 @@ bool output_text_line_add_column(struct output_text_line *line, int margin, int 
 		column->start = previous->start + previous->width + margin;
 
 	column->parent = line;
-	column->width = width;
+	column->width = (width < 0) ? line->page_width - column->start : width;
+
+	if (column->start + column->width > line->page_width) {
+		msg_report(MSG_TEXT_LINE_TOO_WIDE);
+		return false;
+	}
 
 	column->text = NULL;
 	column->size = 0;
@@ -461,11 +483,12 @@ static struct output_text_line_column* output_text_line_find_column(struct outpu
  * Write a block to the output.
  *
  * \param *line		The current line instance.
+ * \param pre		Is this preformatted text?
  * \param title		True to underline the text.
  * \return		True on success; False on error.
  */
 
-bool output_text_line_write(struct output_text_line *line, bool title)
+bool output_text_line_write(struct output_text_line *line, bool pre, bool title)
 {
 	if (line == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_REF);
@@ -475,12 +498,12 @@ bool output_text_line_write(struct output_text_line *line, bool title)
 	do {
 		line->complete = true;
 
-		if (!output_text_line_write_line(line, false))
+		if (!output_text_line_write_line(line, pre, false))
 			return false;
 	} while (line->complete == false);
 
 	if (title == true) {
-		if (!output_text_line_write_line(line, true))
+		if (!output_text_line_write_line(line, pre, true))
 			return false;
 	}
 
@@ -491,11 +514,12 @@ bool output_text_line_write(struct output_text_line *line, bool title)
  * Write one line from the current block to the output.
  *
  * \param *line		The current line instance.
+ * \param pre		Is this preformatted text?
  * \param underline	True to output an underline; False to output content.
  * \return		True on success; False on error.
  */
 
-static bool output_text_line_write_line(struct output_text_line *line, bool underline)
+static bool output_text_line_write_line(struct output_text_line *line, bool pre, bool underline)
 {
 	struct output_text_line_column	*column = NULL;
 
@@ -513,7 +537,7 @@ static bool output_text_line_write_line(struct output_text_line *line, bool unde
 			if (!output_text_line_write_column_underline(column))
 				return false;
 		} else {
-			if (!output_text_line_write_column(column))
+			if (!output_text_line_write_column(column, pre))
 				return false;
 		}
 
@@ -529,14 +553,15 @@ static bool output_text_line_write_line(struct output_text_line *line, bool unde
  * Write one column from a line to the output.
  *
  * \param *column	The current column instance.
+ * \param pre		Is this preformatted text?
  * \return		True on success; False on error.
  */
 
-static bool output_text_line_write_column(struct output_text_line_column *column)
+static bool output_text_line_write_column(struct output_text_line_column *column, bool pre)
 {
-	int		width, breakpoint, c;
-	char		*scan_ptr;
-	bool		hyphenate = false, complete = false;
+	int	width, breakpoint, c;
+	char	*scan_ptr;
+	bool	hyphenate = false, skip = false, complete = false;
 
 	if (column == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_COL_REF);
@@ -555,7 +580,7 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 
 	c = encoding_parse_utf8_string(&scan_ptr);
 
-	while (c != '\0' && width <= column->width) {
+	while (c != '\0' && c != '\n' && width <= column->width) {
 		width++;
 
 		/* If this is a possible breakpoint... */
@@ -563,7 +588,7 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 		if (c == ' ' || c == '-') {
 			/* If the first character of the column is a space, we skip it. */
 
-			if (c == ' ' && width == 1) {
+			if (pre == false && c == ' ' && width == 1) {
 				width = 0;
 				column->write_ptr = scan_ptr;
 			}
@@ -578,7 +603,7 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 
 	/* If there's nothing to output, flag the column as complete and exit. */
 
-	if (width == 0) {
+	if (c != '\n' && width == 0) {
 		column->write_ptr = NULL;
 		return true;
 	}
@@ -590,11 +615,20 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 		complete = true;
 	}
 
+	/* This is a forced line termination. Update the breakpoint and step
+	 * past the terminator.
+	 */
+
+	if (c == '\n') {
+		breakpoint = width;
+		skip = true;
+	}
+
 	/* No breakpoint was found, and the line isn't done. Drop the
 	 * last character to make space for a hyphen.
 	 */
 
-	if (breakpoint == 0) {
+	else if (breakpoint == 0) {
 		breakpoint = width - 1;
 		hyphenate = true;
 	}
@@ -627,6 +661,11 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 			return false;
 	} while (c != '\0');
 
+	/* Skip past any terminating newline. */
+
+	if (skip)
+		encoding_parse_utf8_string(&(column->write_ptr));
+
 	/* If the line is to be hyphenated, write the hyphen. */
 
 	if (hyphenate && !output_text_line_write_char(column->parent, '-'))
@@ -651,7 +690,7 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 
 static bool output_text_line_write_column_underline(struct output_text_line_column *column)
 {
-	int		i;
+	int i;
 
 	if (column == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_COL_REF);
@@ -738,7 +777,7 @@ bool output_text_line_write_newline(void)
 
 static bool output_text_line_write_char(struct output_text_line *line, int unicode)
 {
-	char	buffer[ENCODING_CHAR_BUF_LEN];
+	char buffer[ENCODING_CHAR_BUF_LEN];
 
 	if (line == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_REF);
