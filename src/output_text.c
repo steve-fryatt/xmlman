@@ -87,7 +87,7 @@ static struct filename *output_text_root_filename;
 /* Static Function Prototypes. */
 
 static bool output_text_write_manual(struct manual_data *chapter, struct filename *folder);
-static bool output_text_write_file(struct manual_data *object, struct filename *folder);
+static bool output_text_write_file(struct manual_data *object, struct filename *folder, bool single_file);
 static bool output_text_write_object(struct manual_data *object, int indent);
 static bool output_text_write_head(struct manual_data *manual);
 static bool output_text_write_foot(struct manual_data *manual);
@@ -149,6 +149,7 @@ bool output_text(struct manual *document, struct filename *filename, enum encodi
 static bool output_text_write_manual(struct manual_data *manual, struct filename *folder)
 {
 	struct manual_data *object;
+	bool single_file = false;
 
 	if (manual == NULL || folder == NULL)
 		return true;
@@ -160,6 +161,10 @@ static bool output_text_write_manual(struct manual_data *manual, struct filename
 				manual_data_find_object_name(manual->type));
 		return false;
 	}
+
+	/* Identify whether output is destined for a single file. */
+
+	single_file = !manual_data_find_filename_data(manual, MODES_TYPE_TEXT);
 
 	/* Initialise the manual queue. */
 
@@ -174,7 +179,7 @@ static bool output_text_write_manual(struct manual_data *manual, struct filename
 		if (object == NULL)
 			continue;
 
-		if (!output_text_write_file(object, folder))
+		if (!output_text_write_file(object, folder, single_file))
 			return false;
 	} while (object != NULL);
 
@@ -187,10 +192,11 @@ static bool output_text_write_manual(struct manual_data *manual, struct filename
  *
  * \param *object	The object to process.
  * \param *folder	The folder into which to write the manual.
+ * \param single_file	TRUE if the output is intended to go into a single file.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-static bool output_text_write_file(struct manual_data *object, struct filename *folder)
+static bool output_text_write_file(struct manual_data *object, struct filename *folder, bool single_file)
 {
 	struct filename *filename = NULL, *foldername = NULL;
 
@@ -211,9 +217,15 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 		return false;
 	}
 
-	/* Find the file and folder names. */
+	/* Find the file and folder names. If the output is destined for a single file,
+	 * we just start with an empty filename and prepend the supplied path; otherwise
+	 * we find a leaf from the manual data.
+	 */
 
-	filename = manual_data_get_node_filename(object, output_text_root_filename, MODES_TYPE_TEXT);
+	if (single_file == true)
+		filename = filename_make(NULL, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_NONE);
+	else
+		filename = manual_data_get_node_filename(object, output_text_root_filename, MODES_TYPE_TEXT);
 	if (filename == NULL)
 		return false;
 
@@ -323,9 +335,14 @@ static bool output_text_write_object(struct manual_data *object, int indent)
 		return false;
 	}
 
-	/* Write out the object heading. */
+	/* Write out the object heading.
+	 *
+	 * Don't do this for a manual, as the file will already have a heading
+	 * above it with the title. For sub-files, we do, as the chapter/section
+	 * heading won't be the same.
+	 */
 
-	if (object->title != NULL) {
+	if (object->type != MANUAL_DATA_OBJECT_TYPE_MANUAL && object->title != NULL) {
 		if (!output_text_line_write_newline())
 			return false;
 

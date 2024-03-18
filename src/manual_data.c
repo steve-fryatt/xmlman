@@ -325,9 +325,57 @@ char *manual_data_get_node_number(struct manual_data *node)
 	return text;
 }
 
+/**
+ * Search a node and its children for any filename data associated with
+ * a given manual type.
+ *
+ * \param *node		The node to search down from.
+ * \param type		The target output type to search for.
+ * \return		True if filename data was found; otherwise false.
+ */
+
+bool manual_data_find_filename_data(struct manual_data *node, enum modes_type type)
+{
+	struct manual_data_mode *resources = NULL;
+
+	if (node == NULL)
+		return false;
+
+	while (node != NULL) {
+		switch (node->type) {
+		case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+		case MANUAL_DATA_OBJECT_TYPE_INDEX:
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			resources = modes_find_resources(node->chapter.resources, type);
+			if (resources == NULL)
+				break;
+
+			/* If there is any filename data, our quest is over. */
+
+			if (resources->filename != NULL || resources->folder != NULL)
+				return true;
+
+			/* If there are any child nodes, search them for more sections. */
+
+			if (node->first_child != NULL && manual_data_find_filename_data(node->first_child, type))
+				return true;
+
+			break;
+
+		default:
+			break;
+		}
+
+
+		node = node->next;
+	}
+
+	return false;
+}
 
 /**
- * Return a filename for a node, given a default  root filename and the
+ * Return a filename for a node, given a default root filename and the
  * target output type.
  *
  * \param *node		The node to return a filename for.

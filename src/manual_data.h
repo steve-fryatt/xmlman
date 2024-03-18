@@ -320,6 +320,17 @@ char *manual_data_get_node_number(struct manual_data *node);
 #include "modes.h"
 
 /**
+ * Search a node and its children for any filename data associated with
+ * a given manual type.
+ *
+ * \param *node		The node to search down from.
+ * \param type		The target output type to search for.
+ * \return		True if filename data was found; otherwise false.
+ */
+
+bool manual_data_find_filename_data(struct manual_data *node, enum modes_type type);
+
+/**
  * Return a filename for a node, given a default  root filename and the
  * target output type.
  *
