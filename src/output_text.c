@@ -47,12 +47,6 @@
 /* Static constants. */
 
 /**
- * The base indent for section nesting.
- */
-
-#define OUTPUT_TEXT_BASE_INDENT 0
-
-/**
  * The number of characters to indent each new block by.
  */
  
@@ -63,7 +57,7 @@
  * limiting the depth to which they can be nested.
  */
 
-#define OUTPUT_TEXT_MAX_SECTION_INDENT 10
+#define OUTPUT_TEXT_MAX_SECTION_LEVEL 5
 
 /**
  * The root filename used when writing into an empty folder.
@@ -88,7 +82,7 @@ static struct filename *output_text_root_filename;
 
 static bool output_text_write_manual(struct manual_data *chapter, struct filename *folder);
 static bool output_text_write_file(struct manual_data *object, struct filename *folder, bool single_file);
-static bool output_text_write_object(struct manual_data *object, int indent);
+static bool output_text_write_object(struct manual_data *object, bool root, int level);
 static bool output_text_write_head(struct manual_data *manual);
 static bool output_text_write_foot(struct manual_data *manual);
 static bool output_text_write_heading(struct manual_data *node, int indent);
@@ -272,7 +266,7 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 
 	/* Output the object. */
 
-	if (!output_text_write_object(object, OUTPUT_TEXT_BASE_INDENT)) {
+	if (!output_text_write_object(object, true, 0)) {
 		output_text_line_close();
 		filename_destroy(foldername);
 		filename_destroy(filename);
@@ -297,14 +291,14 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
  * Process the contents of an index, chapter or section block and write it out.
  *
  * \param *object	The object to process.
- * \param indent	The indent to write the section at.
- * \param *folder	The folder being written within.
- * \param in_line	True if the section is being written inline; otherwise False.
+ * \param root		True if the object is at the root of a file.
+ * \param indent	The level to write the section at, starting from 0.
  * \return		True if successful; False on error.
  */
 
-static bool output_text_write_object(struct manual_data *object, int indent)
+static bool output_text_write_object(struct manual_data *object, bool root, int level)
 {
+	int			title_indent = 0, content_indent = 0;
 	struct manual_data	*block;
 	struct manual_data_mode *resources = NULL;
 	struct output_text_line *paragraph_line;
@@ -328,11 +322,19 @@ static bool output_text_write_object(struct manual_data *object, int indent)
 
 	resources = modes_find_resources(object->chapter.resources, MODES_TYPE_TEXT);
 
-	/* Check that the nesting depth is OK. */
+	/* Check that the nesting depth is OK and sort out the indents. */
 
-	if (indent > OUTPUT_TEXT_MAX_SECTION_INDENT) {
-		msg_report(MSG_TOO_DEEP, indent);
+	if (level > OUTPUT_TEXT_MAX_SECTION_LEVEL) {
+		msg_report(MSG_TOO_DEEP, level);
 		return false;
+	}
+
+	if (level > 0) {
+		title_indent = level * OUTPUT_TEXT_BLOCK_INDENT;
+		content_indent = level * OUTPUT_TEXT_BLOCK_INDENT;
+	} else {
+		title_indent = 0;
+		content_indent = OUTPUT_TEXT_BLOCK_INDENT;
 	}
 
 	/* Write out the object heading.
@@ -346,7 +348,7 @@ static bool output_text_write_object(struct manual_data *object, int indent)
 		if (!output_text_line_write_newline())
 			return false;
 
-		if (!output_text_write_heading(object, indent))
+		if (!output_text_write_heading(object, title_indent))
 			return false;
 	}
 
@@ -356,7 +358,7 @@ static bool output_text_write_object(struct manual_data *object, int indent)
 	if (paragraph_line == NULL)
 		return false;
 
-	if (!output_text_line_add_column(paragraph_line, indent, output_text_page_width - indent)) {
+	if (!output_text_line_add_column(paragraph_line, content_indent, output_text_page_width - content_indent)) {
 		output_text_line_destroy(paragraph_line);
 		return false;
 	}
@@ -365,8 +367,7 @@ static bool output_text_write_object(struct manual_data *object, int indent)
 	 * write the objects which fall within it.
 	 */
 
-	if (resources != NULL && (indent > OUTPUT_TEXT_BASE_INDENT) &&
-			(resources->filename != NULL || resources->folder != NULL)) {
+	if (resources != NULL && !root && (resources->filename != NULL || resources->folder != NULL)) {
 		if (object->chapter.resources->summary != NULL &&
 				!output_text_write_paragraph(object->chapter.resources->summary, paragraph_line)) {
 			output_text_line_destroy(paragraph_line);
@@ -389,7 +390,7 @@ static bool output_text_write_object(struct manual_data *object, int indent)
 			case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 			case MANUAL_DATA_OBJECT_TYPE_INDEX:
 			case MANUAL_DATA_OBJECT_TYPE_SECTION:
-				if (!output_text_write_object(block, indent + OUTPUT_TEXT_BLOCK_INDENT)) {
+				if (!output_text_write_object(block, false, (object->type == MANUAL_DATA_OBJECT_TYPE_SECTION) ? level + 1 : level)) {
 					output_text_line_destroy(paragraph_line);
 					return false;
 				}
