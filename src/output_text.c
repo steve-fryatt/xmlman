@@ -391,7 +391,7 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 			case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 			case MANUAL_DATA_OBJECT_TYPE_INDEX:
 			case MANUAL_DATA_OBJECT_TYPE_SECTION:
-				if (!output_text_write_object(block, false, (object->type == MANUAL_DATA_OBJECT_TYPE_SECTION) ? level + 1 : level)) {
+				if (!output_text_write_object(block, false, (block->type == MANUAL_DATA_OBJECT_TYPE_SECTION) ? level + 1 : level)) {
 					output_text_line_destroy(paragraph_line);
 					return false;
 				}
