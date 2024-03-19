@@ -47,43 +47,58 @@ struct output_text_line_column {
 	/**
 	 * The parent output line.
 	 */
-	struct output_text_line		*parent;
+	struct output_text_line			*parent;
+
+	/**
+	 * Configuration flags for the column.
+	 */
+	enum output_text_line_column_flags	flags;
+
+	/**
+	 * The requested left margin for the column, in characters.
+	 */
+	int					requested_margin;
+
+	/**
+	 * The requested width of the column, in characters.
+	 */
+	int					requested_width;
 
 	/**
 	 * The left-hand starting position of the line, in characters.
 	 */
-	int				start;
+	int					start;
 
 	/**
 	 * The width of the column, in characters.
 	 */
-	int				width;
+	int					width;
 
 	/**
 	 * The column's text buffer.
 	 */
-	char				*text;
+	char					*text;
 
 	/**
 	 * The size of the column's text buffer.
 	 */
-	size_t				size;
+	size_t					size;
 
 	/**
 	 * Pointer to the current position in the text during the
 	 * write-out operation, or NULL on completion.
 	 */
-	char				*write_ptr;
+	char					*write_ptr;
 
 	/**
 	 * The current maximum written width, in charaters.
 	 */
-	int				written_width;
+	int					written_width;
 
 	/**
 	 * Pointer to the next column structure, or NULL.
 	 */
-	struct output_text_line_column	*next;
+	struct output_text_line_column		*next;
 };
 
 /**
@@ -136,6 +151,7 @@ static bool output_text_line_write_line(struct output_text_line *line, bool pre,
 static bool output_text_line_write_column(struct output_text_line_column *column, bool pre);
 static bool output_text_line_write_column_underline(struct output_text_line_column *column);
 static bool output_text_line_pad_to_column(struct output_text_line_column *column);
+static bool output_text_line_pad_to_position(struct output_text_line *line, int position);
 static bool output_text_line_write_char(struct output_text_line *line, int c);
 
 
@@ -267,19 +283,11 @@ bool output_text_line_add_column(struct output_text_line *line, int margin, int 
 
 	/* Initialise the column data. */
 
-	if (previous == NULL)
-		column->start = margin;
-	else
-		column->start = previous->start + previous->width + margin;
-
+	column->requested_margin = margin;
+	column->requested_width = width;
 	column->parent = line;
-	column->width = (width < 0) ? line->page_width - column->start : width;
-
-	if (column->start + column->width > line->page_width) {
-		msg_report(MSG_TEXT_LINE_TOO_WIDE);
-		return false;
-	}
-
+	column->flags = OUTPUT_TEXT_LINE_COLUMN_FLAGS_NONE;
+	column->width = 0;
 	column->text = NULL;
 	column->size = 0;
 	column->write_ptr = NULL;
@@ -287,6 +295,33 @@ bool output_text_line_add_column(struct output_text_line *line, int margin, int 
 	column->next = NULL;
 
 	return output_text_line_update_column_memory(column);
+}
+
+/**
+ * Set the flags for a column in a line.
+ *
+ * \param *line		The current line instance.
+ * \param column	The index of the column to update.
+ * \param flags		The new column flags.
+ * \return		True on success; False on error.
+ */
+
+bool output_text_line_set_column_flags(struct output_text_line *line, int column, enum output_text_line_column_flags flags)
+{
+	struct output_text_line_column	*col = NULL;
+
+	if (line == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_REF);
+		return false;
+	}
+
+	col = output_text_line_find_column(line, column);
+	if (col == NULL)
+		return false;
+
+	col->flags = flags;
+
+	return true;
 }
 
 /**
@@ -298,16 +333,59 @@ bool output_text_line_add_column(struct output_text_line *line, int margin, int 
 
 bool output_text_line_reset(struct output_text_line *line)
 {
-	struct output_text_line_column	*column = NULL;
+	struct output_text_line_column	*column = NULL, *previous = NULL;
+	int used_width = 0, free_width = 0, auto_width = 0, auto_columns = 0;
 
 	if (line == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_REF);
 		return false;
 	}
 
+	/* Count up the known column widths. */
+
 	column = line->columns;
 
 	while (column != NULL) {
+		used_width += column->requested_margin;
+		if (column->requested_width >= 0)
+			used_width += column->requested_width;
+		else
+			auto_columns++;
+
+		column = column->next;
+	}
+
+	free_width = line->page_width - used_width;
+	auto_width = free_width / auto_columns;
+
+	/* Assign the positions and widths. */
+
+	column = line->columns;
+
+	while (column != NULL) {
+		/* Set the start position. */
+
+		if (previous == NULL)
+			column->start = column->requested_margin;
+		else
+			column->start = previous->start + previous->width + column->requested_margin;
+
+		/* Set the width. */
+
+		if (column->requested_width >= 0) {
+			column->width = column->requested_width;
+		} else {
+			column->width = (auto_columns > 1) ? auto_width : free_width;
+			free_width -= auto_width;
+		}
+
+		if (column->start + column->width > line->page_width) {
+			msg_report(MSG_TEXT_LINE_TOO_WIDE);
+			return false;
+		}
+
+		/* Initialise the write pointer and written width count. */
+
 		column->write_ptr = column->text;
 
 		if (column->text != NULL && column->size > 0)
@@ -315,6 +393,7 @@ bool output_text_line_reset(struct output_text_line *line)
 
 		column->written_width = 0;
 
+		previous = column;
 		column = column->next;
 	}
 
@@ -335,8 +414,8 @@ bool output_text_line_add_text(struct output_text_line *line, int column, char *
 	struct output_text_line_column	*col = NULL;
 
 	if (line == NULL) {
-		return false;
 		msg_report(MSG_TEXT_LINE_BAD_REF);
+		return false;
 	}
 
 	col = output_text_line_find_column(line, column);
@@ -643,6 +722,14 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 	if (!output_text_line_pad_to_column(column))
 		return false;
 
+	if (column->flags & OUTPUT_TEXT_LINE_COLUMN_FLAGS_RIGHT) {
+		if (!output_text_line_pad_to_position(column->parent, column->start + (column->width - breakpoint)))
+			return false;
+	} else if (column->flags & OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE) {
+		if (!output_text_line_pad_to_position(column->parent, column->start + (column->width - breakpoint) / 2))
+			return false;
+	}
+
 	do {
 		c = (breakpoint-- > 0) ? encoding_parse_utf8_string(&(column->write_ptr)) : '\0';
 
@@ -729,8 +816,25 @@ static bool output_text_line_pad_to_column(struct output_text_line_column *colum
 		return false;
 	}
 
-	while (column->parent->position < column->start) {
-		if (!output_text_line_write_char(column->parent, ' '))
+	return output_text_line_pad_to_position(column->parent, column->start);
+}
+
+/**
+ * Pad a line out to a given position, using spaces.
+ *
+ * \param *line		The line instance to pad.
+ * \return		True if successful; False on error.
+ */
+
+static bool output_text_line_pad_to_position(struct output_text_line *line, int position)
+{
+	if (line == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_REF);
+		return false;
+	}
+
+	while (line->position < position) {
+		if (!output_text_line_write_char(line, ' '))
 			return false;
 	}
 

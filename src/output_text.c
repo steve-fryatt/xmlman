@@ -590,6 +590,40 @@ static bool output_text_write_code_block(struct manual_data *object, int indent)
 		return false;
 	}
 
+	if (object->title == NULL) {
+		output_text_line_destroy(paragraph_line);
+		return true;
+	}
+
+	/* Write a newline above the title. */
+
+	if (!output_text_line_write_newline()) 
+		return false;
+
+	/* Centre the title. */
+
+	if (!output_text_line_set_column_flags(paragraph_line, 0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE)) {
+		output_text_line_destroy(paragraph_line);
+		return false;
+	}
+
+	if (!output_text_line_reset(paragraph_line)) {
+		output_text_line_destroy(paragraph_line);
+		return false;
+	}
+
+	/* Output the title. */
+
+	if (!output_text_write_text(paragraph_line, 0, MANUAL_DATA_OBJECT_TYPE_MULTI_LEVEL_ATTRIBUTE, object->title)) {
+		output_text_line_destroy(paragraph_line);
+		return false;
+	}
+
+	if (!output_text_line_write(paragraph_line, true, false)) {
+		output_text_line_destroy(paragraph_line);
+		return false;
+	}
+
 	output_text_line_destroy(paragraph_line);
 
 	return true;

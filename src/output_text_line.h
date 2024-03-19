@@ -40,6 +40,17 @@
 #define OUTPUT_TEXT_LINE_FULL_WIDTH (-1)
 
 /**
+ * Flags relating to output line columns.
+ */
+
+enum output_text_line_column_flags {
+	OUTPUT_TEXT_LINE_COLUMN_FLAGS_NONE = 0,
+	OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE = 1,
+	OUTPUT_TEXT_LINE_COLUMN_FLAGS_RIGHT = 2,
+	UTPUT_TEXT_LINE_COLUMN_FLAGS_FILL_WIDTH = 4
+};
+
+/**
  * An output text line instance.
  */
 
@@ -87,6 +98,17 @@ void output_text_line_destroy(struct output_text_line *line);
  */
 
 bool output_text_line_add_column(struct output_text_line *line, int margin, int width);
+
+/**
+ * Set the flags for a column in a line.
+ *
+ * \param *line		The current line instance.
+ * \param column	The index of the column to update.
+ * \param flags		The new column flags.
+ * \return		True on success; False on error.
+ */
+
+bool output_text_line_set_column_flags(struct output_text_line *line, int column, enum output_text_line_column_flags flags);
 
 /**
  * Reset a line instance ready for a new block to be built.
