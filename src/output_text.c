@@ -614,7 +614,7 @@ static bool output_text_write_code_block(struct manual_data *object, int indent)
 
 	/* Output the title. */
 
-	if (!output_text_write_text(paragraph_line, 0, MANUAL_DATA_OBJECT_TYPE_MULTI_LEVEL_ATTRIBUTE, object->title)) {
+	if (!output_text_write_title(paragraph_line, 0, object)) {
 		output_text_line_destroy(paragraph_line);
 		return false;
 	}

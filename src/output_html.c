@@ -764,7 +764,7 @@ static bool output_html_write_table(struct manual_data *object)
 
 	/* Output the table. */
 
-	if (!output_html_file_write_newline() || !output_html_file_write_plain("<table>"))
+	if (!output_html_file_write_newline() || !output_html_file_write_plain("<div class=\"table\"><table>"))
 		return false;
 
 	/* Write the table headings. */
@@ -863,6 +863,27 @@ static bool output_html_write_table(struct manual_data *object)
 	if (!output_html_file_write_newline() || !output_html_file_write_plain("</table>"))
 		return false;
 
+	/* Write the title. */
+
+	if (object->title != NULL) {
+		if (!output_html_file_write_newline())
+			return false;
+
+		if (!output_html_file_write_plain("<div class=\"caption\">"))
+			return false;
+
+		if (!output_html_write_title(object))
+			return false;
+
+		if (!output_html_file_write_plain("</div>"))
+			return false;
+	}
+
+	/* Close the outer DIV. */
+
+	if (!output_html_file_write_plain("</div>"))
+		return false;
+
 	return true;
 }
 
@@ -910,7 +931,7 @@ static bool output_html_write_code_block(struct manual_data *object)
 		if (!output_html_file_write_plain("<div class=\"caption\">"))
 			return false;
 
-		if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_MULTI_LEVEL_ATTRIBUTE, object->title))
+		if (!output_html_write_title(object))
 			return false;
 
 		if (!output_html_file_write_plain("</div>"))

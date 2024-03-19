@@ -922,6 +922,8 @@ static struct manual_data *parse_table(struct parse_xml_block *parser)
 	/* Read the table title. */
 
 	new_table->title = parse_multi_level_attribute(parser, "title");
+	if (new_table->title != NULL && new_table->title->type == MANUAL_DATA_OBJECT_TYPE_MULTI_LEVEL_ATTRIBUTE)
+		new_table->title->type = MANUAL_DATA_OBJECT_TYPE_TITLE;
 	parse_link_item(NULL, new_table, new_table->title);
 
 	/* Parse the table contents. */
@@ -1243,6 +1245,8 @@ static struct manual_data *parse_code_block(struct parse_xml_block *parser)
 	/* Read the code block title. */
 
 	new_code_block->title = parse_multi_level_attribute(parser, "title");
+	if (new_code_block->title != NULL && new_code_block->title->type == MANUAL_DATA_OBJECT_TYPE_MULTI_LEVEL_ATTRIBUTE)
+		new_code_block->title->type = MANUAL_DATA_OBJECT_TYPE_TITLE;
 	parse_link_item(NULL, new_code_block, new_code_block->title);
 
 	/* Parse the code block contents. */
