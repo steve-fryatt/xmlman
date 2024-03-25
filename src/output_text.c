@@ -86,8 +86,10 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 static bool output_text_write_head(struct manual_data *manual);
 static bool output_text_write_foot(struct manual_data *manual);
 static bool output_text_write_heading(struct manual_data *node, int indent);
+static bool output_text_write_block_collection_object(struct manual_data *object, struct output_text_line *paragraph_line, int column);
+static bool output_text_write_list(struct manual_data *object, int indent, int level);
 static bool output_text_write_code_block(struct manual_data *object, int indent);
-static bool output_text_write_paragraph(struct manual_data *object, struct output_text_line *paragraph_line);
+static bool output_text_write_paragraph(struct manual_data *object, struct output_text_line *paragraph_line, int column);
 static bool output_text_write_reference(struct manual_data *target, struct output_text_line *paragraph_line);
 static bool output_text_write_text(struct output_text_line *line, int column, enum manual_data_object_type type, struct manual_data *text);
 static bool output_text_write_inline_link(struct output_text_line *line, int column, struct manual_data *link);
@@ -370,7 +372,7 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 
 	if (resources != NULL && !root && (resources->filename != NULL || resources->folder != NULL)) {
 		if (object->chapter.resources->summary != NULL &&
-				!output_text_write_paragraph(object->chapter.resources->summary, paragraph_line)) {
+				!output_text_write_paragraph(object->chapter.resources->summary, paragraph_line, 0)) {
 			output_text_line_destroy(paragraph_line);
 			return false;
 		}
@@ -405,7 +407,22 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 					break;
 				}
 
-				if (!output_text_write_paragraph(block, paragraph_line)) {
+				if (!output_text_write_paragraph(block, paragraph_line, 0)) {
+					output_text_line_destroy(paragraph_line);
+					return false;
+				}
+				break;
+
+			case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
+			case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_text_write_list(block, content_indent, 0)) {
 					output_text_line_destroy(paragraph_line);
 					return false;
 				}
@@ -535,6 +552,188 @@ static bool output_text_write_heading(struct manual_data *node, int indent)
 }
 
 /**
+ * Process the contents of a block collection and write it out.
+ * A block collection must be nested within a parent block object
+ * which can take its content directly if there is only one chunk
+ * within.
+ *
+ * \param *object		The object to process.
+ * \param *paragraph_line	The paragraph line instance to use.
+ * \param column		The column to write the object into.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_text_write_block_collection_object(struct manual_data *object, struct output_text_line *paragraph_line, int column)
+{
+	struct manual_data *block;
+
+	if (object == NULL || object->first_child == NULL)
+		return true;
+
+	/* Confirm that this is a suitable object. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_LIST_ITEM),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Write out the block contents. */
+
+	block = object->first_child;
+
+	/* If changing this switch, note the analogous list in
+	 * output_html_write_section_object() which covers similar
+	 * block level objects.
+	 */
+
+	while (block != NULL) {
+		/* The line for the first block should come pre-configured from
+		 * the caller, with content set up. Otherwise, reset the line
+		 * and put a newline out to separate the blocks in the collection.
+		 */
+
+		if (block->previous != NULL) {
+			if (!output_text_line_reset(paragraph_line))
+				return false;
+			if (!output_text_line_write_newline()) 
+				return false;
+		}
+
+		switch (block->type) {
+		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+			if (!output_text_write_text(paragraph_line, column, block->type, block))
+				return false;
+
+			if (!output_text_line_write(paragraph_line, false, false))
+				return false;
+			break;
+
+		case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
+		case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+			if (!output_text_write_list(block, 6, 4))
+				return false;
+			break;
+
+		case MANUAL_DATA_OBJECT_TYPE_TABLE:
+	//		if (!output_html_write_table(block))
+	//			return false;
+			break;
+
+		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+	//		if (!output_html_write_code_block(block))
+	//			return false;
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(block->type),
+					manual_data_find_object_name(object->type));
+			break;
+		}
+
+		block = block->next;
+	}
+
+	return true;
+}
+
+/**
+ * Write the contents of a list to the output.
+ *
+ * \param *object		The object to process.
+ * \param indent		The indent for the start of the labels.
+ * \param level			The list nesting level.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_text_write_list(struct manual_data *object, int indent, int level)
+{
+	struct manual_data *item;
+	struct output_text_line	*line;
+
+	if (object == NULL)
+		return false;
+
+	/* Confirm that this is a list. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
+	case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Output the list. */
+
+	line = output_text_line_create(output_text_page_width);
+	if (line == NULL)
+		return false;
+
+	if (!output_text_line_add_column(line, indent, 1)) {
+		output_text_line_destroy(line);
+		return false;
+	}
+
+	if (!output_text_line_add_column(line, 1, OUTPUT_TEXT_LINE_FULL_WIDTH)) {
+		output_text_line_destroy(line);
+		return false;
+	}
+
+	/* If the list isn't nested in a list item, output a blank line
+	 * above it.
+	 */
+
+	if (object->parent != NULL &&
+			object->parent->type != MANUAL_DATA_OBJECT_TYPE_LIST_ITEM &&
+			!output_text_line_write_newline()) {
+		output_text_line_destroy(line);
+		return false;
+	}
+
+	item = object->first_child;
+
+	while (item != NULL) {
+		switch (item->type) {
+		case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
+			if (!output_text_line_reset(line)) {
+				output_text_line_destroy(line);
+				return false;
+			}
+
+			if (!output_text_line_add_text(line, 0, "*")) {
+				output_text_line_destroy(line);
+				return false;
+			}
+
+			if (!output_text_write_block_collection_object(item, line, 1)) {
+				output_text_line_destroy(line);
+				return false;
+			}
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(item->type),
+					manual_data_find_object_name(object->type));
+			break;
+		}
+
+		item = item->next;
+	}
+
+	output_text_line_destroy(line);
+
+	return true;
+}
+
+/**
  * Write a code block to the output.
  *
  * \param *object		The object to be written.
@@ -634,10 +833,11 @@ static bool output_text_write_code_block(struct manual_data *object, int indent)
  *
  * \param *object		The object to be written.
  * \param *paragraph_line	The paragraph line instance to use.
+ * \param column		The column to write the object into.
  * \return			True if successful; False on failure.
  */
 
-static bool output_text_write_paragraph(struct manual_data *object, struct output_text_line *paragraph_line)
+static bool output_text_write_paragraph(struct manual_data *object, struct output_text_line *paragraph_line, int column)
 {
 	if (object == NULL)
 		return false;
@@ -658,7 +858,7 @@ static bool output_text_write_paragraph(struct manual_data *object, struct outpu
 	if (!output_text_line_write_newline()) 
 		return false;
 
-	if (!output_text_write_text(paragraph_line, 0, object->type, object))
+	if (!output_text_write_text(paragraph_line, column, object->type, object))
 		return false;
 
 	if (!output_text_line_write(paragraph_line, false, false))
