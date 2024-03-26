@@ -180,6 +180,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Missing line instance reference",				false},
 	{MSG_ERROR,	"Missing column instance reference",				false},
 	{MSG_ERROR,	"Line columns too wide for page",				false},
+	{MSG_ERROR,	"Line not reset before adding text",				false},
 	{MSG_ERROR,	"No line ending selected",					false},
 
 	{MSG_INFO,	"Opening image file '%s' for output", 				false},

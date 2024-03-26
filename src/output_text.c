@@ -85,16 +85,16 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 static bool output_text_write_object(struct manual_data *object, bool root, int level);
 static bool output_text_write_head(struct manual_data *manual);
 static bool output_text_write_foot(struct manual_data *manual);
-static bool output_text_write_heading(struct manual_data *node, int indent);
-static bool output_text_write_block_collection_object(struct manual_data *object, struct output_text_line *paragraph_line, int column);
-static bool output_text_write_list(struct manual_data *object, int indent, int level);
-static bool output_text_write_code_block(struct manual_data *object, int indent);
-static bool output_text_write_paragraph(struct manual_data *object, struct output_text_line *paragraph_line, int column);
-static bool output_text_write_reference(struct manual_data *target, struct output_text_line *paragraph_line);
-static bool output_text_write_text(struct output_text_line *line, int column, enum manual_data_object_type type, struct manual_data *text);
-static bool output_text_write_inline_link(struct output_text_line *line, int column, struct manual_data *link);
-static bool output_text_write_inline_reference(struct output_text_line *line, int column, struct manual_data *reference);
-static bool output_text_write_title(struct output_text_line *line, int column, struct manual_data *node);
+static bool output_text_write_heading(struct manual_data *node, int column);
+static bool output_text_write_block_collection_object(struct manual_data *object, int column, int level);
+static bool output_text_write_list(struct manual_data *object, int column, int level);
+static bool output_text_write_code_block(struct manual_data *object, int column);
+static bool output_text_write_paragraph(struct manual_data *object, int column, bool last_item);
+static bool output_text_write_reference(struct manual_data *target);
+static bool output_text_write_text(int column, enum manual_data_object_type type, struct manual_data *text);
+static bool output_text_write_inline_link(int column, struct manual_data *link);
+static bool output_text_write_inline_reference(int column, struct manual_data *reference);
+static bool output_text_write_title(int column, struct manual_data *node);
 static const char *output_text_convert_entity(enum manual_entity_type entity);
 
 /**
@@ -245,7 +245,16 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 		return false;
 	}
 
-	if (!output_text_line_open(filename)) {
+	if (!output_text_line_open(filename, output_text_page_width)) {
+		filename_destroy(foldername);
+		filename_destroy(filename);
+		return false;
+	}
+
+	/* Set up a default column on the top level line. */
+
+	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH)) {
+		output_text_line_close();
 		filename_destroy(foldername);
 		filename_destroy(filename);
 		return false;
@@ -301,10 +310,8 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 
 static bool output_text_write_object(struct manual_data *object, bool root, int level)
 {
-	int			title_indent = 0, content_indent = 0;
 	struct manual_data	*block;
 	struct manual_data_mode *resources = NULL;
-	struct output_text_line *paragraph_line;
 
 	if (object == NULL || object->first_child == NULL)
 		return true;
@@ -332,13 +339,18 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 		return false;
 	}
 
-	if (level > 0) {
-		title_indent = level * OUTPUT_TEXT_BLOCK_INDENT;
-		content_indent = level * OUTPUT_TEXT_BLOCK_INDENT;
-	} else {
-		title_indent = 0;
-		content_indent = OUTPUT_TEXT_BLOCK_INDENT;
-	}
+	/* If this isn't the root level, indent everything now, before
+	 * the object heading is written.
+	 */
+
+	if (!output_text_line_pop())
+		return false;
+
+	if (!output_text_line_push(level * OUTPUT_TEXT_BLOCK_INDENT))
+		return false;
+
+	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
+			return false;
 
 	/* Write out the object heading.
 	 *
@@ -351,19 +363,23 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 		if (!output_text_line_write_newline())
 			return false;
 
-		if (!output_text_write_heading(object, title_indent))
+		if (!output_text_write_heading(object, 0))
 			return false;
 	}
 
-	/* Create a paragraph for output. */
+	/* If this is the root level, indent everything now, after the
+	 * object heading has been written.
+	 */
 
-	paragraph_line = output_text_line_create(output_text_page_width);
-	if (paragraph_line == NULL)
-		return false;
+	if (level == 0) {
+		if (!output_text_line_pop())
+			return false;
 
-	if (!output_text_line_add_column(paragraph_line, content_indent, OUTPUT_TEXT_LINE_FULL_WIDTH)) {
-		output_text_line_destroy(paragraph_line);
-		return false;
+		if (!output_text_line_push(level * OUTPUT_TEXT_BLOCK_INDENT))
+			return false;
+
+		if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
+			return false;
 	}
 
 	/* If this is a separate file, queue it for writing later. Otherwise,
@@ -372,15 +388,11 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 
 	if (resources != NULL && !root && (resources->filename != NULL || resources->folder != NULL)) {
 		if (object->chapter.resources->summary != NULL &&
-				!output_text_write_paragraph(object->chapter.resources->summary, paragraph_line, 0)) {
-			output_text_line_destroy(paragraph_line);
+				!output_text_write_paragraph(object->chapter.resources->summary, 0, true))
 			return false;
-		}
 
-		if (!output_text_line_write_newline() || !output_text_write_reference(object, paragraph_line)) {
-			output_text_line_destroy(paragraph_line);
+		if (!output_text_line_write_newline() || !output_text_write_reference(object))
 			return false;
-		}
 
 		manual_queue_add_node(object);
 
@@ -393,10 +405,8 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 			case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 			case MANUAL_DATA_OBJECT_TYPE_INDEX:
 			case MANUAL_DATA_OBJECT_TYPE_SECTION:
-				if (!output_text_write_object(block, false, (block->type == MANUAL_DATA_OBJECT_TYPE_SECTION) ? level + 1 : level)) {
-					output_text_line_destroy(paragraph_line);
+				if (!output_text_write_object(block, false, (block->type == MANUAL_DATA_OBJECT_TYPE_SECTION) ? level + 1 : level))
 					return false;
-				}
 				break;
 
 			case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
@@ -407,10 +417,8 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 					break;
 				}
 
-				if (!output_text_write_paragraph(block, paragraph_line, 0)) {
-					output_text_line_destroy(paragraph_line);
+				if (!output_text_write_paragraph(block, 0, true))
 					return false;
-				}
 				break;
 
 			case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
@@ -422,10 +430,8 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 					break;
 				}
 
-				if (!output_text_write_list(block, content_indent, 0)) {
-					output_text_line_destroy(paragraph_line);
+				if (!output_text_write_list(block, 0, 0))
 					return false;
-				}
 				break;
 
 			case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
@@ -436,10 +442,8 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 					break;
 				}
 
-				if (!output_text_write_code_block(block, content_indent)) {
-					output_text_line_destroy(paragraph_line);
+				if (!output_text_write_code_block(block, 0))
 					return false;
-				}
 				break;
 
 			default:
@@ -452,8 +456,6 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 			block = block->next;
 		}
 	}
-
-	output_text_line_destroy(paragraph_line);
 
 	return true;
 }
@@ -501,14 +503,12 @@ static bool output_text_write_foot(struct manual_data *manual)
  * Write a node title.
  *
  * \param *node			The node for which to write the title.
- * \param indent		The indent to write the title at.
+ * \param column		The column to write the heading into.
  * \return			True if successful; False on error.
  */
 
-static bool output_text_write_heading(struct manual_data *node, int indent)
+static bool output_text_write_heading(struct manual_data *node, int column)
 {
-	struct output_text_line	*line;
-
 	if (node == NULL || node->title == NULL)
 		return true;
 
@@ -522,31 +522,14 @@ static bool output_text_write_heading(struct manual_data *node, int indent)
 		return false;
 	}
 
-	line = output_text_line_create(output_text_page_width);
-	if (line == NULL)
+	if (!output_text_line_reset())
 		return false;
 
-	if (!output_text_line_add_column(line, indent, OUTPUT_TEXT_LINE_FULL_WIDTH)) {
-		output_text_line_destroy(line);
+	if (!output_text_write_title(column, node))
 		return false;
-	}
 
-	if (!output_text_line_reset(line)) {
-		output_text_line_destroy(line);
+	if (!output_text_line_write(false, true))
 		return false;
-	}
-
-	if (!output_text_write_title(line, 0, node)) {
-		output_text_line_destroy(line);
-		return false;
-	}
-
-	if (!output_text_line_write(line, false, true)) {
-		output_text_line_destroy(line);
-		return false;
-	}
-
-	output_text_line_destroy(line);
 
 	return true;
 }
@@ -558,12 +541,12 @@ static bool output_text_write_heading(struct manual_data *node, int indent)
  * within.
  *
  * \param *object		The object to process.
- * \param *paragraph_line	The paragraph line instance to use.
  * \param column		The column to write the object into.
+ * \param level			The list nesting level, when writing lists.
  * \return			True if successful; False on error.
  */
 
-static bool output_text_write_block_collection_object(struct manual_data *object, struct output_text_line *paragraph_line, int column)
+static bool output_text_write_block_collection_object(struct manual_data *object, int column, int level)
 {
 	struct manual_data *block;
 
@@ -596,25 +579,15 @@ static bool output_text_write_block_collection_object(struct manual_data *object
 		 * and put a newline out to separate the blocks in the collection.
 		 */
 
-		if (block->previous != NULL) {
-			if (!output_text_line_reset(paragraph_line))
-				return false;
-			if (!output_text_line_write_newline()) 
-				return false;
-		}
-
 		switch (block->type) {
 		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
-			if (!output_text_write_text(paragraph_line, column, block->type, block))
-				return false;
-
-			if (!output_text_line_write(paragraph_line, false, false))
+			if (!output_text_write_paragraph(block, column, true))
 				return false;
 			break;
 
 		case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
 		case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
-			if (!output_text_write_list(block, 6, 4))
+			if (!output_text_write_list(block, column, level + 1))
 				return false;
 			break;
 
@@ -624,8 +597,8 @@ static bool output_text_write_block_collection_object(struct manual_data *object
 			break;
 
 		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
-	//		if (!output_html_write_code_block(block))
-	//			return false;
+			if (!output_text_write_code_block(block, column))
+				return false;
 			break;
 
 		default:
@@ -645,15 +618,14 @@ static bool output_text_write_block_collection_object(struct manual_data *object
  * Write the contents of a list to the output.
  *
  * \param *object		The object to process.
- * \param indent		The indent for the start of the labels.
+ * \param column		The column to align the object with.
  * \param level			The list nesting level.
  * \return			True if successful; False on error.
  */
 
-static bool output_text_write_list(struct manual_data *object, int indent, int level)
+static bool output_text_write_list(struct manual_data *object, int column, int level)
 {
 	struct manual_data *item;
-	struct output_text_line	*line;
 
 	if (object == NULL)
 		return false;
@@ -672,50 +644,40 @@ static bool output_text_write_list(struct manual_data *object, int indent, int l
 
 	/* Output the list. */
 
-	line = output_text_line_create(output_text_page_width);
-	if (line == NULL)
+	if (!output_text_line_push_to_column(column, 0))
 		return false;
 
-	if (!output_text_line_add_column(line, indent, 1)) {
-		output_text_line_destroy(line);
+	if (!output_text_line_add_column(0, 1))
 		return false;
-	}
 
-	if (!output_text_line_add_column(line, 1, OUTPUT_TEXT_LINE_FULL_WIDTH)) {
-		output_text_line_destroy(line);
+	if (!output_text_line_add_column(1, OUTPUT_TEXT_LINE_FULL_WIDTH))
 		return false;
-	}
 
 	/* If the list isn't nested in a list item, output a blank line
 	 * above it.
 	 */
 
-	if (object->parent != NULL &&
-			object->parent->type != MANUAL_DATA_OBJECT_TYPE_LIST_ITEM &&
-			!output_text_line_write_newline()) {
-		output_text_line_destroy(line);
+//	if (object->parent != NULL &&
+//			object->parent->type != MANUAL_DATA_OBJECT_TYPE_LIST_ITEM &&
+//			!output_text_line_write_newline())
+//		return false;
+
+	if (!output_text_line_write_newline())
 		return false;
-	}
 
 	item = object->first_child;
 
 	while (item != NULL) {
 		switch (item->type) {
 		case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
-			if (!output_text_line_reset(line)) {
-				output_text_line_destroy(line);
+			if (!output_text_line_reset())
 				return false;
-			}
 
-			if (!output_text_line_add_text(line, 0, "*")) {
-				output_text_line_destroy(line);
+			if (!output_text_line_add_text(0, "*"))
 				return false;
-			}
 
-			if (!output_text_write_block_collection_object(item, line, 1)) {
-				output_text_line_destroy(line);
+			if (!output_text_write_block_collection_object(item, 1, level))
 				return false;
-			}
 			break;
 
 		default:
@@ -728,7 +690,8 @@ static bool output_text_write_list(struct manual_data *object, int indent, int l
 		item = item->next;
 	}
 
-	output_text_line_destroy(line);
+	if (!output_text_line_pop())
+		return false;
 
 	return true;
 }
@@ -737,14 +700,12 @@ static bool output_text_write_list(struct manual_data *object, int indent, int l
  * Write a code block to the output.
  *
  * \param *object		The object to be written.
- * \param *paragraph_line	The paragraph line instance to use.
+ * \param column		The column to align the object with.
  * \return			True if successful; False on failure.
  */
 
-static bool output_text_write_code_block(struct manual_data *object, int indent)
+static bool output_text_write_code_block(struct manual_data *object, int column)
 {
-	struct output_text_line *paragraph_line;
-
 	if (object == NULL)
 		return false;
 
@@ -763,34 +724,26 @@ static bool output_text_write_code_block(struct manual_data *object, int indent)
 
 	/* Create a paragraph for output. */
 
-	paragraph_line = output_text_line_create(output_text_page_width);
-	if (paragraph_line == NULL)
+	if (!output_text_line_push_to_column(column, OUTPUT_TEXT_BLOCK_INDENT))
 		return false;
 
-	if (!output_text_line_add_column(paragraph_line, indent + OUTPUT_TEXT_BLOCK_INDENT, OUTPUT_TEXT_LINE_FULL_WIDTH)) {
-		output_text_line_destroy(paragraph_line);
+	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
 		return false;
-	}
 
-	if (!output_text_line_reset(paragraph_line)) {
-		output_text_line_destroy(paragraph_line);
+	if (!output_text_line_reset())
 		return false;
-	}
 
 	/* Output the block. */
-
-	if (!output_text_write_text(paragraph_line, 0, object->type, object)) {
-		output_text_line_destroy(paragraph_line);
+	if (!output_text_write_text(0, object->type, object))
 		return false;
-	}
 
-	if (!output_text_line_write(paragraph_line, true, false)) {
-		output_text_line_destroy(paragraph_line);
+	if (!output_text_line_write(true, false))
 		return false;
-	}
 
 	if (object->title == NULL) {
-		output_text_line_destroy(paragraph_line);
+		if (!output_text_line_pop())
+			return false;
+
 		return true;
 	}
 
@@ -801,29 +754,22 @@ static bool output_text_write_code_block(struct manual_data *object, int indent)
 
 	/* Centre the title. */
 
-	if (!output_text_line_set_column_flags(paragraph_line, 0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE)) {
-		output_text_line_destroy(paragraph_line);
+	if (!output_text_line_set_column_flags(0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE))
 		return false;
-	}
 
-	if (!output_text_line_reset(paragraph_line)) {
-		output_text_line_destroy(paragraph_line);
+	if (!output_text_line_reset())
 		return false;
-	}
 
 	/* Output the title. */
 
-	if (!output_text_write_title(paragraph_line, 0, object)) {
-		output_text_line_destroy(paragraph_line);
+	if (!output_text_write_title(0, object))
 		return false;
-	}
 
-	if (!output_text_line_write(paragraph_line, true, false)) {
-		output_text_line_destroy(paragraph_line);
+	if (!output_text_line_write(true, false))
 		return false;
-	}
 
-	output_text_line_destroy(paragraph_line);
+	if (!output_text_line_pop())
+		return false;
 
 	return true;
 }
@@ -832,12 +778,12 @@ static bool output_text_write_code_block(struct manual_data *object, int indent)
  * Write a paragraph block to the output.
  *
  * \param *object		The object to be written.
- * \param *paragraph_line	The paragraph line instance to use.
  * \param column		The column to write the object into.
+ * \param last_item		Should the line be written to the output when done?
  * \return			True if successful; False on failure.
  */
 
-static bool output_text_write_paragraph(struct manual_data *object, struct output_text_line *paragraph_line, int column)
+static bool output_text_write_paragraph(struct manual_data *object, int column, bool last_item)
 {
 	if (object == NULL)
 		return false;
@@ -850,18 +796,26 @@ static bool output_text_write_paragraph(struct manual_data *object, struct outpu
 		return false;
 	}
 
+	/* If the current output line is clear, reset it and output the
+	 * pre-paragraph line space. Otherwise, we assume that we're writing
+	 * to a column that's part of something else which has already been
+	 * partly set up.
+	 */
+
+	if (!output_text_line_has_content()) {
+		if (!output_text_line_reset())
+			return false;
+
+		if (!output_text_line_write_newline()) 
+			return false;
+	}
+
 	/* Output the paragraph. */
 
-	if (!output_text_line_reset(paragraph_line))
+	if (!output_text_write_text(column, object->type, object))
 		return false;
 
-	if (!output_text_line_write_newline()) 
-		return false;
-
-	if (!output_text_write_text(paragraph_line, column, object->type, object))
-		return false;
-
-	if (!output_text_line_write(paragraph_line, false, false))
+	if (last_item && !output_text_line_write(false, false))
 		return false;
 
 	return true;
@@ -872,11 +826,10 @@ static bool output_text_write_paragraph(struct manual_data *object, struct outpu
  * Write an internal reference (a link to another page) to the output.
  * 
  * \param *target		The node to be the target of the link.
- * \param *paragraph_line	The paragraph line instance to use.
  * \return			True if successful; False on failure.
  */
 
-static bool output_text_write_reference(struct manual_data *target, struct output_text_line *paragraph_line)
+static bool output_text_write_reference(struct manual_data *target)
 {
 	struct filename *filename = NULL;
 	char *link = NULL;
@@ -894,24 +847,24 @@ static bool output_text_write_reference(struct manual_data *target, struct outpu
 	if (link == NULL)
 		return false;
 
-	if (!output_text_line_reset(paragraph_line)) {
+	if (!output_text_line_reset()) {
 		free(link);
 		return false;
 	}
 
-	if (!output_text_line_add_text(paragraph_line, 0, ">>> ")) {
+	if (!output_text_line_add_text(0, ">>> ")) {
 		free(link);
 		return false;
 	}
 
-	if (!output_text_line_add_text(paragraph_line, 0, link)) {
+	if (!output_text_line_add_text(0, link)) {
 		free(link);
 		return false;
 	}
 
 	free(link);
 
-	if (!output_text_line_write(paragraph_line, false, false))
+	if (!output_text_line_write(false, false))
 		return false;
 
 	return true;
@@ -919,16 +872,15 @@ static bool output_text_write_reference(struct manual_data *target, struct outpu
 
 
 /**
- * Write a block of text to a column in an output line.
+ * Write a block of text to a column in the current output line.
  *
- * \param *line			The line to write to.
  * \param column		The column in the line to write to.
  * \param type			The type of block which is expected.
  * \param *text			The block of text to be written.
  * \return			True if successful; False on error.
  */
 
-static bool output_text_write_text(struct output_text_line *line, int column, enum manual_data_object_type type, struct manual_data *text)
+static bool output_text_write_text(int column, enum manual_data_object_type type, struct manual_data *text)
 {
 	struct manual_data *chunk;
 
@@ -947,59 +899,59 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 	while (chunk != NULL) {
 		switch (chunk->type) {
 		case MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS:
-			output_text_line_add_text(line, column, "/");
-			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, chunk);
-			output_text_line_add_text(line, column, "/");
+			output_text_line_add_text(column, "/");
+			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, chunk);
+			output_text_line_add_text(column, "/");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
-			output_text_line_add_text(line, column, "*");
-			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, chunk);
-			output_text_line_add_text(line, column, "*");
+			output_text_line_add_text(column, "*");
+			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, chunk);
+			output_text_line_add_text(column, "*");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_CITATION:
-			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_CITATION, chunk);
+			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_CITATION, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_CODE:
-			output_text_line_add_text(line, column, "\"");
-			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_CODE, chunk);
-			output_text_line_add_text(line, column, "\"");
+			output_text_line_add_text(column, "\"");
+			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_CODE, chunk);
+			output_text_line_add_text(column, "\"");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_USER_ENTRY:
-			output_text_line_add_text(line, column, "\"");
-			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_USER_ENTRY, chunk);
-			output_text_line_add_text(line, column, "\"");
+			output_text_line_add_text(column, "\"");
+			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_USER_ENTRY, chunk);
+			output_text_line_add_text(column, "\"");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_FILENAME:
-			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_FILENAME, chunk);
+			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_FILENAME, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ICON:
-			output_text_line_add_text(line, column, "'");
-			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_ICON, chunk);
-			output_text_line_add_text(line, column, "'");
+			output_text_line_add_text(column, "'");
+			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_ICON, chunk);
+			output_text_line_add_text(column, "'");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_KEY:
-			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_KEY, chunk);
+			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_KEY, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_LINK:
-			output_text_write_inline_link(line, column, chunk);
+			output_text_write_inline_link(column, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MOUSE:
-			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_MOUSE, chunk);
+			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_MOUSE, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_REFERENCE:
-			output_text_write_inline_reference(line, column, chunk);
+			output_text_write_inline_reference(column, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
-			output_text_line_add_text(line, column, chunk->chunk.text);
+			output_text_line_add_text(column, chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_VARIABLE:
-			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_VARIABLE, chunk);
+			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_VARIABLE, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_WINDOW:
-			output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_WINDOW, chunk);
+			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_WINDOW, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			output_text_line_add_text(line, column, (char *) output_text_convert_entity(chunk->chunk.entity));
+			output_text_line_add_text(column, (char *) output_text_convert_entity(chunk->chunk.entity));
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK,
@@ -1016,15 +968,14 @@ static bool output_text_write_text(struct output_text_line *line, int column, en
 
 
 /**
- * Write an inline link to a column in an output line.
+ * Write an inline link to a column in the current output line.
  *
- * \param *line			The line to write to.
  * \param column		The column in the line to write to.
  * \param *link			The link to be written.
  * \return			True if successful; False on error.
  */
 
-static bool output_text_write_inline_link(struct output_text_line *line, int column, struct manual_data *link)
+static bool output_text_write_inline_link(int column, struct manual_data *link)
 {
 	if (link == NULL)
 		return false;
@@ -1039,7 +990,7 @@ static bool output_text_write_inline_link(struct output_text_line *line, int col
 
 	/* Write the link text. */
 
-	if (link->first_child != NULL && !output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_LINK, link))
+	if (link->first_child != NULL && !output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_LINK, link))
 		return false;
 
 	/* If there was link text, and flatten was applied, don't output the link itself. */
@@ -1049,13 +1000,13 @@ static bool output_text_write_inline_link(struct output_text_line *line, int col
 
 	/* Write the link information. */
 
-	if (link->first_child != NULL && !output_text_line_add_text(line, column, " ["))
+	if (link->first_child != NULL && !output_text_line_add_text(column, " ["))
 		return false;
 
-	if (link->chunk.link != NULL && !output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_SINGLE_LEVEL_ATTRIBUTE, link->chunk.link))
+	if (link->chunk.link != NULL && !output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_SINGLE_LEVEL_ATTRIBUTE, link->chunk.link))
 		return false;
 
-	if (link->first_child != NULL && !output_text_line_add_text(line, column, "]"))
+	if (link->first_child != NULL && !output_text_line_add_text(column, "]"))
 		return false;
 
 	return true;
@@ -1063,15 +1014,14 @@ static bool output_text_write_inline_link(struct output_text_line *line, int col
 
 
 /**
- * Write an inline reference to a column in an output line.
+ * Write an inline reference to a column in the current output line.
  *
- * \param *line			The line to write to.
  * \param column		The column in the line to write to.
  * \param *reference		The reference to be written.
  * \return			True if successful; False on error.
  */
 
-static bool output_text_write_inline_reference(struct output_text_line *line, int column, struct manual_data *reference)
+static bool output_text_write_inline_reference(int column, struct manual_data *reference)
 {
 	struct manual_data *target = NULL;
 	struct filename *filename = NULL;
@@ -1094,7 +1044,7 @@ static bool output_text_write_inline_reference(struct output_text_line *line, in
 
 	/* Write the reference text. */
 
-	if (reference->first_child != NULL && !output_text_write_text(line, column, MANUAL_DATA_OBJECT_TYPE_REFERENCE, reference))
+	if (reference->first_child != NULL && !output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_REFERENCE, reference))
 		return false;
 
 	if (target == NULL)
@@ -1102,14 +1052,14 @@ static bool output_text_write_inline_reference(struct output_text_line *line, in
 
 	/* Write the reference information. */
 
-	if (reference->first_child != NULL && !output_text_line_add_text(line, column, " (see "))
+	if (reference->first_child != NULL && !output_text_line_add_text(column, " (see "))
 		return false;
 
-	if (!output_text_write_title(line, column, target))
+	if (!output_text_write_title(column, target))
 		return false;
 
 	if (manual_data_nodes_share_file(reference, target, MODES_TYPE_TEXT) == false) {
-		if (!output_text_line_add_text(line, column, " in "))
+		if (!output_text_line_add_text(column, " in "))
 			return false;
 
 		filename = manual_data_get_node_filename(target, output_text_root_filename, MODES_TYPE_TEXT);
@@ -1122,7 +1072,7 @@ static bool output_text_write_inline_reference(struct output_text_line *line, in
 		if (link == NULL)
 			return false;
 
-		if (!output_text_line_add_text(line, column, link)) {
+		if (!output_text_line_add_text(column, link)) {
 			free(link);
 			return false;
 		}
@@ -1130,7 +1080,7 @@ static bool output_text_write_inline_reference(struct output_text_line *line, in
 		free(link);
 	}
 
-	if (reference->first_child != NULL && !output_text_line_add_text(line, column, ")"))
+	if (reference->first_child != NULL && !output_text_line_add_text(column, ")"))
 		return false;
 
 	return true;
@@ -1138,15 +1088,14 @@ static bool output_text_write_inline_reference(struct output_text_line *line, in
 
 
 /**
- * Write the title of a node to a column in an output line.
+ * Write the title of a node to a column in the current output line.
  *
- * \param *line			The line to write to.
  * \param column		The column in the line to write to.
  * \param *node			The node whose title is to be written.
  * \return			True if successful; False on error.
  */
 
-static bool output_text_write_title(struct output_text_line *line, int column, struct manual_data *node)
+static bool output_text_write_title(int column, struct manual_data *node)
 {
 	char *number;
 
@@ -1156,18 +1105,18 @@ static bool output_text_write_title(struct output_text_line *line, int column, s
 	number = manual_data_get_node_number(node);
 
 	if (number != NULL) {
-		if (!output_text_line_add_text(line, 0, number)) {
+		if (!output_text_line_add_text(0, number)) {
 			free(number);
 			return false;
 		}
 
 		free(number);
 
-		if (!output_text_line_add_text(line, 0, " "))
+		if (!output_text_line_add_text(0, " "))
 			return false;
 	}
 
-	return output_text_write_text(line, 0, MANUAL_DATA_OBJECT_TYPE_TITLE, node->title);
+	return output_text_write_text(0, MANUAL_DATA_OBJECT_TYPE_TITLE, node->title);
 }
 
 

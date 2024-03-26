@@ -51,19 +51,14 @@ enum output_text_line_column_flags {
 };
 
 /**
- * An output text line instance.
- */
-
-struct output_text_line;
-
-/**
  * Open a file to write the text output to.
  *
  * \param *filename	Pointer to the name of the file to write.
+ * \param page_width	The page width, in characters.
  * \return		True on success; False on failure.
  */
 
-bool output_text_line_open(struct filename *filename);
+bool output_text_line_open(struct filename *filename, int page_width);
 
 /**
  * Close the current text output file.
@@ -72,74 +67,102 @@ bool output_text_line_open(struct filename *filename);
 void output_text_line_close(void);
 
 /**
- * Create a new text line output instance.
- *
- * \param page_width	The page width, in characters.
- * \return		Pointer to the new line block, or NULL on failure.
+ * Push a new output line on to the stack, insetting it the given number
+ * of character positions from the left margin of the line below it on
+ * the stack.
+ * 
+ * \param inset		The number of character positions to inset the line
+ *			from the parent.
+ * \return		TRUE if successful; else FALSE.
  */
 
-struct output_text_line *output_text_line_create(int page_width);
+bool output_text_line_push(int inset);
 
 /**
- * Destroy a text line output instance.
+ * Push a new output line on to the stack, insetting it the given number
+ * of character positions from the left margin of a specified column on
+ * the line below it on the stack.
  *
- * \param *line		The line output instance to destroy.
+ * \param column	The column to align the margin with.
+ * \param inset		The number of character positions to inset the line
+ * 			from the parent column.
+ * \return		TRUE if successful; else FALSE.
  */
 
-void output_text_line_destroy(struct output_text_line *line);
+bool output_text_line_push_to_column(int column, int inset);
 
 /**
- * Add a column to a text line output instance.
+ * Pop a line from the top of the line stack and dispose of it.
  *
- * \paran *line		The line output instance to add to.
+ * \return		TRUE if successful; else FALSE.
+ */
+
+bool output_text_line_pop(void);
+
+/**
+ * Test the line at the top of the stack to see if it has been prepaed.
+ *
+ * \return		TRUE if the line is prepared; else false.
+ */
+
+bool output_text_line_is_prepared(void);
+
+/**
+ * Test the line at the top of the stack to see if it has content.
+ *
+ * \return		TRUE if the line has content; else false.
+ */
+
+bool output_text_line_has_content(void);
+
+/**
+ * Add a column to the text line at the top of the output stack.
+ *
  * \param margin	The margin before the column, in characters.
  * \param width		The width of the column, in characters.
  * \return		TRUE on success; FALSE on failure.
  */
 
-bool output_text_line_add_column(struct output_text_line *line, int margin, int width);
+bool output_text_line_add_column(int margin, int width);
 
 /**
- * Set the flags for a column in a line.
+ * Set the flags for a column in the line at the top of the stack.
  *
- * \param *line		The current line instance.
  * \param column	The index of the column to update.
  * \param flags		The new column flags.
  * \return		True on success; False on error.
  */
 
-bool output_text_line_set_column_flags(struct output_text_line *line, int column, enum output_text_line_column_flags flags);
+bool output_text_line_set_column_flags(int column, enum output_text_line_column_flags flags);
 
 /**
- * Reset a line instance ready for a new block to be built.
+ * Reset the line at the top of the stack, ready for a new block to be built.
  *
- * \param *line		The current line instance.
  * \return		True on success; False on error.
  */
 
-bool output_text_line_reset(struct output_text_line *line);
+bool output_text_line_reset(void);
 
 /**
- * Add text to a column, to be proessed when the line is complete.
+ * Add text to a column at the top of the stack, to be proessed when
+ * the line is complete.
  *
- * \param *line		The current line instance.
  * \param column	The index of the column to add to.
  * \param *text		Pointer to the text to be added.
  * \return		True on success; False on error.
  */
 
-bool output_text_line_add_text(struct output_text_line *line, int column, char *text);
+bool output_text_line_add_text(int column, char *text);
 
 /**
- * Write a block to the output.
+ * Write the line at the top of the stack to the output.
  *
- * \param *line		The current line instance.
  * \param pre		Is this preformatted text?
  * \param title		True to underline the text.
  * \return		True on success; False on error.
  */
 
-bool output_text_line_write(struct output_text_line *line, bool pre, bool title);
+bool output_text_line_write(bool pre, bool title);
 
 /**
  * Write a line ending sequence to the output.
