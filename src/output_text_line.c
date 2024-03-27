@@ -279,7 +279,6 @@ bool output_text_line_push_to_column(int column, int inset)
 
 	if (output_text_line_stack == NULL) {
 		left_margin = output_text_line_stack->left_margin;
-		printf("Top Level,  margin = %d\n", left_margin);
 	} else {
 		col = output_text_line_find_column(output_text_line_stack, column);
 		if (col == NULL) {
@@ -288,7 +287,6 @@ bool output_text_line_push_to_column(int column, int inset)
 		}
 
 		left_margin = col->start;
-		printf("found column, margin = %d\n", left_margin);
 	}
 
 	line = output_text_line_create(output_text_line_page_width, left_margin + inset);
