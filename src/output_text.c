@@ -37,6 +37,7 @@
 
 #include "encoding.h"
 #include "filename.h"
+#include "list_numbers.h"
 #include "manual_data.h"
 #include "manual_ids.h"
 #include "manual_queue.h"
@@ -77,6 +78,12 @@ static int output_text_page_width = 77;
  */
 
 static struct filename *output_text_root_filename;
+
+/**
+ * The bullets that we will use for unordered lists.
+ */
+
+static char *output_text_unordered_list_bullets[] = { "*", "+", ">", NULL };
 
 /* Static Function Prototypes. */
 
@@ -626,6 +633,7 @@ static bool output_text_write_block_collection_object(struct manual_data *object
 static bool output_text_write_list(struct manual_data *object, int column, int level)
 {
 	struct manual_data *item;
+	struct list_numbers *numbers;
 
 	if (object == NULL)
 		return false;
@@ -642,16 +650,30 @@ static bool output_text_write_list(struct manual_data *object, int column, int l
 		return false;
 	}
 
+	/* Set the numbers up. */
+
+	numbers = list_numbers_create_unordered(output_text_unordered_list_bullets, level);
+	if (numbers == NULL) {
+		msg_report(MSG_BAD_LIST_NUMBERS);
+		return false;
+	}
+
 	/* Output the list. */
 
-	if (!output_text_line_push_to_column(column, 0))
+	if (!output_text_line_push_to_column(column, 0)) {
+		list_numbers_destroy(numbers);
 		return false;
+	}
 
-	if (!output_text_line_add_column(0, 1))
+	if (!output_text_line_add_column(0, list_numbers_get_max_length(numbers))) {
+		list_numbers_destroy(numbers);
 		return false;
+	}
 
-	if (!output_text_line_add_column(1, OUTPUT_TEXT_LINE_FULL_WIDTH))
+	if (!output_text_line_add_column(1, OUTPUT_TEXT_LINE_FULL_WIDTH)) {
+		list_numbers_destroy(numbers);
 		return false;
+	}
 
 	/* If the list isn't nested in a list item, output a blank line
 	 * above it.
@@ -662,22 +684,30 @@ static bool output_text_write_list(struct manual_data *object, int column, int l
 //			!output_text_line_write_newline())
 //		return false;
 
-	if (!output_text_line_write_newline())
+	if (!output_text_line_write_newline()) {
+		list_numbers_destroy(numbers);
 		return false;
+	}
 
 	item = object->first_child;
 
 	while (item != NULL) {
 		switch (item->type) {
 		case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
-			if (!output_text_line_reset())
+			if (!output_text_line_reset()) {
+				list_numbers_destroy(numbers);
 				return false;
+			}
 
-			if (!output_text_line_add_text(0, "*"))
+			if (!output_text_line_add_text(0, list_numbers_get_next_entry(numbers))) {
+				list_numbers_destroy(numbers);
 				return false;
+			}
 
-			if (!output_text_write_block_collection_object(item, 1, level))
+			if (!output_text_write_block_collection_object(item, 1, level)) {
+				list_numbers_destroy(numbers);
 				return false;
+			}
 			break;
 
 		default:
@@ -689,6 +719,8 @@ static bool output_text_write_list(struct manual_data *object, int column, int l
 
 		item = item->next;
 	}
+
+	list_numbers_destroy(numbers);
 
 	if (!output_text_line_pop())
 		return false;

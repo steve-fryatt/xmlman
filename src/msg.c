@@ -172,6 +172,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Content chunk not of expected type (found %s in %s)",		false},
 	{MSG_WARNING,	"Entity '&%s;' is not mapped in the selected target output",	false},
 	{MSG_ERROR,	"Sections are nested too deep, at %d levels",			false},
+	{MSG_ERROR,	"Failed to initialise list numbers",				false},
 
 
 	{MSG_ERROR,	"Out of memory creating text output line",			false},

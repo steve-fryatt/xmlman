@@ -1,4 +1,4 @@
-# Copyright 2018-2021, Stephen Fryatt (info@stevefryatt.org.uk)
+# Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
 #
 # This file is part of XmlMan:
 #
@@ -35,6 +35,7 @@ endif
 OBJS := args.o			\
 	encoding.o		\
 	filename.o		\
+	list_numbers.o		\
 	manual.o		\
 	manual_data.o		\
 	manual_entity.o		\

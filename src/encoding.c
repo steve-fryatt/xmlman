@@ -500,12 +500,29 @@ bool encoding_select_line_end(enum encoding_line_end type)
 }
 
 /**
- * Parse a UTF8 string, returning the individual characters in the current
- * target encoding. The supplied string pointer is updated on return, to
- * point to the next character to be processed (but stops on the zero
- * terminator).
- *
+ * Parse a UTF-8 string and return its visible length, in characters.
+ * This should be a constant in all encodings.
+ * 
  * \param *text			Pointer to the the UTF8 string to parse.
+ * \return			The number of characters in the string.
+ */
+
+int encoding_get_utf8_string_length(char *text)
+{
+	int length = 0;
+
+	while (encoding_parse_utf8_string(&text) != 0)
+		length++;
+
+	return length;
+}
+
+/**
+ * Parse a UTF8 string, returning the individual characters in Unicode.
+ * The supplied string pointer is updated on return, to  point to the
+ * next character to be processed (but stops on the zero terminator).
+ *
+ * \param **text		Pointer to the the UTF8 string to parse.
  * \return			The next character in the text.
  */
 
