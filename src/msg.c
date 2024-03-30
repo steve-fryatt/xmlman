@@ -173,7 +173,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_WARNING,	"Entity '&%s;' is not mapped in the selected target output",	false},
 	{MSG_ERROR,	"Sections are nested too deep, at %d levels",			false},
 	{MSG_ERROR,	"Failed to initialise list numbers",				false},
-
+	{MSG_ERROR,	"Too many list items",						false},
 
 	{MSG_ERROR,	"Out of memory creating text output line",			false},
 	{MSG_ERROR,	"Out of memory creating text output column",			false},

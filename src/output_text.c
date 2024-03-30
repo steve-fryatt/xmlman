@@ -633,7 +633,8 @@ static bool output_text_write_block_collection_object(struct manual_data *object
 static bool output_text_write_list(struct manual_data *object, int column, int level)
 {
 	struct manual_data *item;
-	struct list_numbers *numbers;
+	struct list_numbers *numbers = NULL;
+	int entries = 0;
 
 	if (object == NULL)
 		return false;
@@ -650,9 +651,28 @@ static bool output_text_write_list(struct manual_data *object, int column, int l
 		return false;
 	}
 
-	/* Set the numbers up. */
+	/* Set the list numbers or bullets up. */
 
-	numbers = list_numbers_create_unordered(output_text_unordered_list_bullets, level);
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
+		item = object->first_child;
+
+		while (item != NULL) {
+			entries++;
+			item = item->next;
+		}
+
+		numbers = list_numbers_create_ordered(entries, level);
+		break;
+
+	case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+		numbers = list_numbers_create_unordered(output_text_unordered_list_bullets, level);
+		break;
+	
+	default:
+		break;
+	}
+
 	if (numbers == NULL) {
 		msg_report(MSG_BAD_LIST_NUMBERS);
 		return false;

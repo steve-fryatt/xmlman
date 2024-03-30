@@ -54,6 +54,17 @@ struct list_numbers;
 struct list_numbers *list_numbers_create_unordered(char *bullets[], int level);
 
 /**
+ * Create a new ordered list instance at a specific level.
+ * 
+ * \param length	The length of the list, in terms of the number of
+ *			entries.
+ * \param level		The level of the list, for pointer selection.
+ * \return		The new list instance, or NULL on failure.
+ */
+
+struct list_numbers *list_numbers_create_ordered(int length, int level);
+
+/**
  * Destroy a list numbers instance.
  * 
  * \param *instance	The instance to be destroyed.
