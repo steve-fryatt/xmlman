@@ -165,6 +165,16 @@ bool output_text_line_add_text(int column, char *text);
 bool output_text_line_write(bool pre, bool title);
 
 /**
+ * Write a ruleoff to the output, from the current line's left margin to
+ * the extent of the page width.
+ *
+ * \param unicode	The unicode character to use for the ruleoff.
+ * \return		True if successful; False on error.
+ */
+
+bool output_text_line_write_ruleoff(int unicode);
+
+/**
  * Write a line ending sequence to the output.
  *
  * \return		True if successful; False on error.

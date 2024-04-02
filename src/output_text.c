@@ -54,6 +54,12 @@
 #define OUTPUT_TEXT_BLOCK_INDENT 2
 
 /**
+ * No indent from the parent block.
+ */
+
+#define OUTPUT_TEXT_NO_INDENT 0
+
+/**
  * The maximum indent that can be applied to sections (effectively
  * limiting the depth to which they can be nested.
  */
@@ -95,6 +101,7 @@ static bool output_text_write_foot(struct manual_data *manual);
 static bool output_text_write_heading(struct manual_data *node, int column);
 static bool output_text_write_block_collection_object(struct manual_data *object, int column, int level);
 static bool output_text_write_list(struct manual_data *object, int column, int level);
+static bool output_text_write_table(struct manual_data *object, int target_column);
 static bool output_text_write_code_block(struct manual_data *object, int column);
 static bool output_text_write_paragraph(struct manual_data *object, int column, bool last_item);
 static bool output_text_write_reference(struct manual_data *target);
@@ -441,6 +448,18 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 					return false;
 				break;
 
+			case MANUAL_DATA_OBJECT_TYPE_TABLE:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_text_write_table(block, 0))
+					return false;
+				break;
+
 			case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
 					msg_report(MSG_UNEXPECTED_CHUNK,
@@ -599,8 +618,8 @@ static bool output_text_write_block_collection_object(struct manual_data *object
 			break;
 
 		case MANUAL_DATA_OBJECT_TYPE_TABLE:
-	//		if (!output_html_write_table(block))
-	//			return false;
+			if (!output_text_write_table(block, column))
+				return false;
 			break;
 
 		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
@@ -680,7 +699,7 @@ static bool output_text_write_list(struct manual_data *object, int column, int l
 
 	/* Output the list. */
 
-	if (!output_text_line_push_to_column(column, 0)) {
+	if (!output_text_line_push_to_column(column, OUTPUT_TEXT_NO_INDENT)) {
 		list_numbers_destroy(numbers);
 		return false;
 	}
@@ -749,6 +768,186 @@ static bool output_text_write_list(struct manual_data *object, int column, int l
 }
 
 /**
+ * Write the contents of a table to the output.
+ *
+ * \param *object		The object to process.
+ * \param target_column		The column to align the object with.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_text_write_table(struct manual_data *object, int target_column)
+{
+	struct manual_data *column_set, *column, *row;
+	int c;
+
+	if (object == NULL)
+		return false;
+
+	/* Confirm that this is a table. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_TABLE:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_TABLE),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Write a newline above the table. */
+
+	if (!output_text_line_write_newline()) 
+		return false;
+
+	/* Create columns for the table. */
+
+	column_set = object->chapter.columns;
+	if (column_set->type != MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_SET) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_SET),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	if (!output_text_line_push_to_column(target_column, OUTPUT_TEXT_NO_INDENT))
+		return false;
+
+	column = column_set->first_child;
+
+	while (column != NULL) {
+		switch (column->type) {
+		case MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_DEFINITION:
+			if (!output_text_line_add_column((column->previous == NULL) ? 0 : 1, OUTPUT_TEXT_LINE_FULL_WIDTH))
+				return false;
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(column->type),
+					manual_data_find_object_name(column_set->type));
+			break;
+		}
+
+		column = column->next;
+	}
+
+	/* Write the table headings. */
+
+//	if (!output_html_file_write_newline() || !output_html_file_write_plain("<tr>"))
+//		return false;
+
+	if (!output_text_line_reset())
+		return false;
+
+	column = column_set->first_child;
+	c = 0;
+
+	while (column != NULL) {
+		switch (column->type) {
+		case MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_DEFINITION:
+			if (!output_text_write_text(c++, column->type, column))
+				return false;
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(column->type),
+					manual_data_find_object_name(column_set->type));
+			break;
+		}
+
+		column = column->next;
+	}
+
+	if (!output_text_line_write(false, false))
+		return false;
+
+	if (!output_text_line_write_ruleoff('-'))
+		return false;
+
+	/* Write the table rows. */
+
+	row = object->first_child;
+
+	while (row != NULL) {
+		switch (row->type) {
+		case MANUAL_DATA_OBJECT_TYPE_TABLE_ROW:
+			if (!output_text_line_reset())
+				return false;
+
+			column = row->first_child;
+			c = 0;
+
+			while (column != NULL) {
+				switch (column->type) {
+				case MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN:
+					if (!output_text_write_text(c++, column->type, column))
+						return false;
+					break;
+
+				default:
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(column->type),
+							manual_data_find_object_name(row->type));
+					break;
+				}
+
+				column = column->next;
+			}
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(row->type),
+					manual_data_find_object_name(object->type));
+			break;
+		}
+
+		if (!output_text_line_write(false, false))
+			return false;
+
+		row = row->next;
+	}
+
+	if (!output_text_line_pop())
+		return false;
+
+	if (object->title == NULL)
+		return true;
+
+	/* Write a newline above the title. */
+
+	if (!output_text_line_write_newline()) 
+		return false;
+
+	/* Create a single column for the title. */
+
+	if (!output_text_line_push_to_column(target_column, OUTPUT_TEXT_NO_INDENT))
+		return false;
+
+	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
+		return false;
+
+	if (!output_text_line_set_column_flags(0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE))
+		return false;
+
+	if (!output_text_line_reset())
+		return false;
+
+	/* Output the title. */
+
+	if (!output_text_write_title(0, object))
+		return false;
+
+	if (!output_text_line_write(true, false))
+		return false;
+
+	if (!output_text_line_pop())
+		return false;
+
+	return true;
+}
+
+/**
  * Write a code block to the output.
  *
  * \param *object		The object to be written.
@@ -786,6 +985,7 @@ static bool output_text_write_code_block(struct manual_data *object, int column)
 		return false;
 
 	/* Output the block. */
+
 	if (!output_text_write_text(0, object->type, object))
 		return false;
 

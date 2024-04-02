@@ -1041,6 +1041,50 @@ static bool output_text_line_pad_to_position(struct output_text_line *line, int 
 }
 
 /**
+ * Write a ruleoff to the output, from the current line's left margin to
+ * the extent of the page width.
+ *
+ * \param unicode	The unicode character to use for the ruleoff.
+ * \return		True if successful; False on error.
+ */
+
+bool output_text_line_write_ruleoff(int unicode)
+{
+	int position = 0;
+	char buffer[ENCODING_CHAR_BUF_LEN];
+	struct output_text_line *line = output_text_line_stack;
+
+	if (line == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_REF);
+		return false;
+	}
+
+	encoding_write_unicode_char(buffer, ENCODING_CHAR_BUF_LEN, ' ');
+
+	while (position < line->left_margin) {
+		if (fputs(buffer, output_text_line_handle) == EOF) {
+			msg_report(MSG_WRITE_FAILED);
+			return false;
+		}
+
+		position++;
+	}
+
+	encoding_write_unicode_char(buffer, ENCODING_CHAR_BUF_LEN, unicode);
+
+	while (position < line->page_width) {
+		if (fputs(buffer, output_text_line_handle) == EOF) {
+			msg_report(MSG_WRITE_FAILED);
+			return false;
+		}
+
+		position++;
+	}
+
+	return output_text_line_write_newline();
+}
+
+/**
  * Write a line ending sequence to the output.
  *
  * \return		True if successful; False on error.
