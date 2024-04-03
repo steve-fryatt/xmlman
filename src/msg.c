@@ -152,6 +152,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Missing columns definition in table",				true},
 	{MSG_ERROR,	"No columns in table definition",				true},
 	{MSG_ERROR,	"Too many columns in table row",				true},
+	{MSG_ERROR,	"Can't start <%s> with <%s>",					true},
 
 	{MSG_ERROR,	"Attempt to add content into unexpected stack location %d",	false},
 
@@ -183,6 +184,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Line columns too wide for page",				false},
 	{MSG_ERROR,	"Line not reset before adding text",				false},
 	{MSG_ERROR,	"No line ending selected",					false},
+	{MSG_ERROR,	"Line already has content for block level %s",			false},
 
 	{MSG_INFO,	"Opening image file '%s' for output", 				false},
 	{MSG_ERROR,	"Failed to convert to Filecore name",				false},

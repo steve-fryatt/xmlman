@@ -670,6 +670,13 @@ static bool output_text_write_list(struct manual_data *object, int column, int l
 		return false;
 	}
 
+	/* If the current output line has content, we can't add to it. */
+
+	if (output_text_line_has_content()) {
+		msg_report(MSG_TEXT_LINE_NOT_EMPTY, manual_data_find_object_name(object->type));
+		return false;
+	}
+
 	/* Set the list numbers or bullets up. */
 
 	switch (object->type) {
@@ -791,6 +798,13 @@ static bool output_text_write_table(struct manual_data *object, int target_colum
 	default:
 		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_TABLE),
 				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* If the current output line has content, we can't add to it. */
+
+	if (output_text_line_has_content()) {
+		msg_report(MSG_TEXT_LINE_NOT_EMPTY, manual_data_find_object_name(object->type));
 		return false;
 	}
 
@@ -965,6 +979,13 @@ static bool output_text_write_code_block(struct manual_data *object, int column)
 	if (object->type != MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK) {
 		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK),
 				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* If the current output line has content, we can't add to it. */
+
+	if (output_text_line_has_content()) {
+		msg_report(MSG_TEXT_LINE_NOT_EMPTY, manual_data_find_object_name(object->type));
 		return false;
 	}
 

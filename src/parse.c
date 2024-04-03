@@ -740,14 +740,32 @@ static struct manual_data *parse_block_collection_object(struct parse_xml_block 
 				break;
 			case PARSE_ELEMENT_OL:
 			case PARSE_ELEMENT_UL:
+				if (tail == NULL) {
+					msg_report(MSG_BAD_BLOCK_COLLECTION_START,
+							parse_element_find_tag(type), parse_element_find_tag(element));
+					parse_xml_set_error(parser);
+					return NULL;
+				}
 				item = parse_list(parser);
 				parse_link_item(&tail, new_block, item);
 				break;
 			case PARSE_ELEMENT_TABLE:
+				if (tail == NULL) {
+					msg_report(MSG_BAD_BLOCK_COLLECTION_START,
+							parse_element_find_tag(type), parse_element_find_tag(element));
+					parse_xml_set_error(parser);
+					return NULL;
+				}
 				item = parse_table(parser);
 				parse_link_item(&tail, new_block, item);
 				break;
 			case PARSE_ELEMENT_CODE:
+				if (tail == NULL) {
+					msg_report(MSG_BAD_BLOCK_COLLECTION_START,
+							parse_element_find_tag(type), parse_element_find_tag(element));
+					parse_xml_set_error(parser);
+					return NULL;
+				}
 				item = parse_code_block(parser);
 				parse_link_item(&tail, new_block, item);
 				break;
