@@ -84,7 +84,7 @@ static int manual_ids_get_hash(char *id);
 
 void manual_ids_initialise(void)
 {
-	int			i;
+	int i;
 
 	/* Zero the hash table entries. */
 

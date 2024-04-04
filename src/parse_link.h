@@ -1,4 +1,4 @@
-/* Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -39,9 +39,10 @@
  * references.
  *
  * \param *root		The root node to link from.
+ * \return		True if successful; False on error.
  */
 
-void parse_link(struct manual_data *root);
+bool parse_link(struct manual_data *root);
 
 #endif
 

@@ -39,19 +39,20 @@
 
 /* Static Function Prototypes. */
 
-static void parse_link_node(struct manual_data *node, struct manual_data *parent);
+static bool parse_link_node(struct manual_data *node, struct manual_data *parent);
 
 /**
  * Link a node and its children, connecting the previous and parent node
  * references.
  *
  * \param *root		The root node to link from.
+ * \return		True if successful; False on error.
  */
 
-void parse_link(struct manual_data *root)
+bool parse_link(struct manual_data *root)
 {
 	manual_ids_initialise();
-	parse_link_node(root, NULL);
+	return parse_link_node(root, NULL);
 }
 
 /**
@@ -59,12 +60,15 @@ void parse_link(struct manual_data *root)
  *
  * \param *node		Pointer to the node to link.
  * \param *parent	Pointer to the node's parent.
+ * \return		True if successful; False on failure.
  */
 
-static void parse_link_node(struct manual_data *node, struct manual_data *parent)
+static bool parse_link_node(struct manual_data *node, struct manual_data *parent)
 {
 	struct manual_data	*previous = NULL;
 	int			index = 1;
+	bool			success = true;
+
 
 	while (node != NULL) {
 		node->previous = previous;
@@ -78,8 +82,8 @@ static void parse_link_node(struct manual_data *node, struct manual_data *parent
 		case MANUAL_DATA_OBJECT_TYPE_SECTION:
 		case MANUAL_DATA_OBJECT_TYPE_TABLE:
 		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
-			if (node->chapter.id != NULL)
-				manual_ids_add_node(node);
+			if (node->chapter.id != NULL && !manual_ids_add_node(node))
+				success = false;
 			break;
 		default:
 			break;
@@ -103,13 +107,15 @@ static void parse_link_node(struct manual_data *node, struct manual_data *parent
 
 		/* Process any child nodes. */
 
-		if (node->first_child != NULL)
-			parse_link_node(node->first_child, node);
+		if (node->first_child != NULL && !parse_link_node(node->first_child, node))
+			success = false;
 
 		/* Move on to the next sibling. */
 
 		previous = node;
 		node = node->next;
 	}
+
+	return success;
 }
 
