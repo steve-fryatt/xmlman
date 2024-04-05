@@ -763,8 +763,15 @@ bool output_strong_file_write_text(char *text)
 	do {
 		c = encoding_parse_utf8_string(&text);
 
-		if (c != '\0' && !output_strong_file_write_char(c))
-			return false;
+		if (c != '\0') {
+			/* Escape special characters. */
+
+			if (c == '{' && !output_strong_file_write_char('\\'))
+				return false;
+
+			if (!output_strong_file_write_char(c))
+				return false;
+		}
 	} while (c != '\0');
 
 	return true;
