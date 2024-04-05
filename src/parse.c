@@ -142,7 +142,9 @@ struct manual *parse_document(char *filename)
 	if (document == NULL)
 		return NULL;
 
-	parse_link(manual);
+	if (!parse_link(manual))
+		return;
+
 	manual_ids_dump();
 
 	return document;
@@ -653,6 +655,10 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 				item = parse_code_block(parser);
 				parse_link_item(&tail, new_section, item);
 				break;
+			case PARSE_ELEMENT_FOOTNOTE:
+				item = parse_block_collection_object(parser);
+				parse_link_item(&tail, new_section, item);
+				break;
 			case PARSE_ELEMENT_NONE:
 				break;
 			default:
@@ -712,6 +718,14 @@ static struct manual_data *parse_block_collection_object(struct parse_xml_block 
 	switch (type) {
 	case PARSE_ELEMENT_LI:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_LIST_ITEM);
+		break;
+	case PARSE_ELEMENT_FOOTNOTE:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_FOOTNOTE);
+
+		/* Read the foornote ID. */
+
+		if (new_block != NULL)
+			new_block->chapter.id = parse_xml_get_attribute_text(parser, "id");
 		break;
 	default:
 		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type), "Block Collection");

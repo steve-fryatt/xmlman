@@ -55,6 +55,7 @@ enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_SET,
 	MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_DEFINITION,
 	MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK,
+	MANUAL_DATA_OBJECT_TYPE_FOOTNOTE,
 	MANUAL_DATA_OBJECT_TYPE_PARAGRAPH,
 	MANUAL_DATA_OBJECT_TYPE_CITATION,
 	MANUAL_DATA_OBJECT_TYPE_CODE,
@@ -310,6 +311,8 @@ const char *manual_data_find_object_name(enum manual_data_object_type type);
 /**
  * Given a node, return a pointer to its display number in string format,
  * or NULL if no number is defined.
+ *
+ * This is the full number, including the numbers of any parent sections.
  *
  * \param *node		The node to return a number for.
  * \return		Pointer to the display number, or NULL.

@@ -100,6 +100,7 @@ static bool output_text_write_head(struct manual_data *manual);
 static bool output_text_write_foot(struct manual_data *manual);
 static bool output_text_write_heading(struct manual_data *node, int column);
 static bool output_text_write_block_collection_object(struct manual_data *object, int column, int level);
+static bool output_text_write_footnote(struct manual_data *object, int column);
 static bool output_text_write_list(struct manual_data *object, int column, int level);
 static bool output_text_write_table(struct manual_data *object, int target_column);
 static bool output_text_write_code_block(struct manual_data *object, int column);
@@ -472,6 +473,18 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 					return false;
 				break;
 
+			case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_text_write_footnote(block, 0))
+					return false;
+				break;
+
 			default:
 				msg_report(MSG_UNEXPECTED_CHUNK,
 						manual_data_find_object_name(block->type),
@@ -583,6 +596,7 @@ static bool output_text_write_block_collection_object(struct manual_data *object
 
 	switch (object->type) {
 	case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
+	case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
 		break;
 	default:
 		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_LIST_ITEM),
@@ -640,6 +654,82 @@ static bool output_text_write_block_collection_object(struct manual_data *object
 	return true;
 }
 
+/**
+ * Write a footnote to the output.
+ *
+ * \param *object		The object to be written.
+ * \param column		The column to align the object with.
+ * \return			True if successful; False on failure.
+ */
+
+static bool output_text_write_footnote(struct manual_data *object, int column)
+{
+	char *number = NULL;
+
+	if (object == NULL)
+		return false;
+
+	/* Confirm that this is an index, chapter or section. */
+
+	if (object->type != MANUAL_DATA_OBJECT_TYPE_FOOTNOTE) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_FOOTNOTE),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* If the current output line has content, we can't add to it. */
+
+	if (output_text_line_has_content()) {
+		msg_report(MSG_TEXT_LINE_NOT_EMPTY, manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Write a heading above the block. */
+
+	if (!output_text_line_write_newline()) 
+		return false;
+
+	if (!output_text_line_reset())
+		return false;
+
+	if (!output_text_line_add_text(column, "Note "))
+		return false;
+
+	number = manual_data_get_node_number(object);
+	if (number == NULL)
+		return false;
+
+	if (!output_text_line_add_text(column, number)) {
+		free(number);
+		return false;
+	}
+
+	free(number);
+
+	if (!output_text_line_write(false, false))
+		return false;
+
+	/* Create an indented line for output. */
+
+	if (!output_text_line_push_to_column(column, OUTPUT_TEXT_BLOCK_INDENT))
+		return false;
+
+	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
+		return false;
+
+	if (!output_text_line_reset())
+		return false;
+
+	/* Output the block. */
+
+	if (!output_text_write_block_collection_object(object, 0, 0))
+		return false;
+
+	if (!output_text_line_pop())
+		return false;
+
+	return true;
+}
 /**
  * Write the contents of a list to the output.
  *
@@ -845,9 +935,6 @@ static bool output_text_write_table(struct manual_data *object, int target_colum
 	}
 
 	/* Write the table headings. */
-
-//	if (!output_html_file_write_newline() || !output_html_file_write_plain("<tr>"))
-//		return false;
 
 	if (!output_text_line_reset())
 		return false;
@@ -1298,7 +1385,7 @@ static bool output_text_write_inline_reference(int column, struct manual_data *r
 {
 	struct manual_data *target = NULL;
 	struct filename *filename = NULL;
-	char *link = NULL;
+	char *link = NULL, *number = NULL;
 
 	if (reference == NULL)
 		return false;
@@ -1325,40 +1412,69 @@ static bool output_text_write_inline_reference(int column, struct manual_data *r
 
 	/* Write the reference information. */
 
-	if (reference->first_child != NULL && !output_text_line_add_text(column, " (see "))
-		return false;
-
-	if (!output_text_write_title(column, target))
-		return false;
-
-	if (manual_data_nodes_share_file(reference, target, MODES_TYPE_TEXT) == false) {
-		if (!output_text_line_add_text(column, " in "))
+	switch (target->type) {
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+	case MANUAL_DATA_OBJECT_TYPE_TABLE:
+	case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+		if (reference->first_child != NULL && !output_text_line_add_text(column, " (see "))
 			return false;
 
-		filename = manual_data_get_node_filename(target, output_text_root_filename, MODES_TYPE_TEXT);
-		if (filename == NULL)
+		if (!output_text_write_title(column, target))
 			return false;
 
-		link = filename_convert(filename, FILENAME_PLATFORM_RISCOS, 0);
-		filename_destroy(filename);
+		if (manual_data_nodes_share_file(reference, target, MODES_TYPE_TEXT) == false) {
+			if (!output_text_line_add_text(column, " in "))
+				return false;
 
-		if (link == NULL)
-			return false;
+			filename = manual_data_get_node_filename(target, output_text_root_filename, MODES_TYPE_TEXT);
+			if (filename == NULL)
+				return false;
 
-		if (!output_text_line_add_text(column, link)) {
+			link = filename_convert(filename, FILENAME_PLATFORM_RISCOS, 0);
+			filename_destroy(filename);
+
+			if (link == NULL)
+				return false;
+
+			if (!output_text_line_add_text(column, link)) {
+				free(link);
+				return false;
+			}
+
 			free(link);
+		}
+
+		if (reference->first_child != NULL && !output_text_line_add_text(column, ")"))
+			return false;
+		break;
+
+	case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
+		if (!output_text_line_add_text(column, "["))
+			return false;
+
+		number = manual_data_get_node_number(target);
+		if (number == NULL)
+			return false;
+
+		if (!output_text_line_add_text(column, number)) {
+			free(number);
 			return false;
 		}
 
-		free(link);
-	}
+		free(number);
 
-	if (reference->first_child != NULL && !output_text_line_add_text(column, ")"))
-		return false;
+		if (!output_text_line_add_text(column, "]"))
+			return false;
+		break;
+	
+	default:
+		break;
+	}
 
 	return true;
 }
-
 
 /**
  * Write the title of a node to a column in the current output line.

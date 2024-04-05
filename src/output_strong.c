@@ -85,6 +85,8 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 static bool output_strong_write_head(struct manual_data *manual);
 static bool output_strong_write_foot(struct manual_data *manual);
 static bool output_strong_write_heading(struct manual_data *node, int level, bool root);
+static bool output_strong_write_block_collection_object(struct manual_data *object);
+static bool output_strong_write_footnote(struct manual_data *object);
 static bool output_strong_write_paragraph(struct manual_data *object);
 static bool output_strong_write_reference(struct manual_data *target, char *text);
 static bool output_strong_write_text(enum manual_data_object_type type, struct manual_data *text);
@@ -330,6 +332,11 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 	} else {
 		block = object->first_child;
 
+		/* If changing this switch, note the analogous list in
+		 * output_strong_write_block_collection_object() which
+		 * covers similar block level objects.
+		 */
+
 		while (block != NULL) {
 			switch (block->type) {
 			case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
@@ -348,6 +355,18 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 				}
 
 				if (!output_strong_write_paragraph(block))
+					return false;
+				break;
+
+			case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_strong_write_footnote(block))
 					return false;
 				break;
 
@@ -457,6 +476,153 @@ static bool output_strong_write_heading(struct manual_data *node, int level, boo
 		return false;
 
 	if (!output_strong_file_write_newline())
+		return false;
+
+	return true;
+}
+
+/**
+ * Process the contents of a block collection and write it out.
+ * A block collection must be nested within a parent block object
+ * which can take its content directly if there is only one chunk
+ * within.
+ *
+ * \param *object		The object to process.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_strong_write_block_collection_object(struct manual_data *object)
+{
+	struct manual_data *block;
+
+	if (object == NULL || object->first_child == NULL)
+		return true;
+
+	/* Confirm that this is a suitable object. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
+	case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_LIST_ITEM),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Write out the block contents. */
+
+	block = object->first_child;
+
+	/* If changing this switch, note the analogous list in
+	 * output_html_write_section_object() which covers similar
+	 * block level objects.
+	 */
+
+	while (block != NULL) {
+		switch (block->type) {
+		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+			if (!output_strong_write_paragraph(block))
+				return false;
+			break;
+
+		case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
+		case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+	//		if (!output_html_write_list(block))
+	//			return false;
+			break;
+
+		case MANUAL_DATA_OBJECT_TYPE_TABLE:
+	//		if (!output_html_write_table(block))
+	//			return false;
+			break;
+
+		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+	//		if (!output_html_write_code_block(block))
+	//			return false;
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(block->type),
+					manual_data_find_object_name(object->type));
+			break;
+		}
+
+		block = block->next;
+	}
+
+	return true;
+}
+
+/**
+ * Process the contents of a footnote and write it out.
+ *
+ * \param *object		The object to process.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_strong_write_footnote(struct manual_data *object)
+{
+	char *number = NULL;
+
+	if (object == NULL)
+		return false;
+
+	/* Confirm that this is a code block. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_FOOTNOTE),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Output the footnote block. */
+
+	if (!output_strong_file_write_newline())
+		return false;
+
+	/* Include a tag, if required. */
+
+	if (object->chapter.id != NULL) {
+		if (!output_strong_file_write_plain("#TAG "))
+			return false;
+
+		if (!output_strong_file_write_text(object->chapter.id))
+			return false;
+
+		if (!output_strong_file_write_newline())
+			return false;
+	}
+
+	/* Output the note heading. */
+
+	if (!output_strong_file_write_plain("{f*:"))
+		return false;
+
+	if (!output_strong_file_write_text("Note "))
+		return false;
+
+	number = manual_data_get_node_number(object);
+	if (number == NULL)
+		return false;
+
+	if (!output_strong_file_write_text(number)) {
+		free(number);
+		return false;
+	}
+
+	free(number);
+
+	if (!output_strong_file_write_plain("}"))
+		return false;
+
+	/* Output the note body. */
+
+	if (!output_strong_write_block_collection_object(object))
 		return false;
 
 	return true;
@@ -677,7 +843,7 @@ static bool output_strong_write_inline_reference(struct manual_data *reference)
 {
 	struct manual_data *target = NULL;
 	struct filename *filename = NULL;
-	char *link = NULL;
+	char *link = NULL, *number = NULL;
 
 	if (reference == NULL)
 		return false;
@@ -694,6 +860,17 @@ static bool output_strong_write_inline_reference(struct manual_data *reference)
 
 	target = manual_ids_find_node(reference);
 
+	/* If the target is a footnote, write the body text and
+	 * opening square bracket out now. */
+
+	if (target != NULL && target->type == MANUAL_DATA_OBJECT_TYPE_FOOTNOTE) {
+		if (reference->first_child != NULL && !output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_REFERENCE, reference))
+			return false;
+
+		if (!output_strong_file_write_plain("["))
+			return false;
+	}
+
 	/* Output the opening link tag. */
 
 	if (target != NULL && !output_strong_file_write_plain("<"))
@@ -701,12 +878,25 @@ static bool output_strong_write_inline_reference(struct manual_data *reference)
 
 	/* Output the link body. */
 
-	if (reference->first_child != NULL) {
-		if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_REFERENCE, reference))
+	if (target != NULL && target->type == MANUAL_DATA_OBJECT_TYPE_FOOTNOTE) {
+		number = manual_data_get_node_number(target);
+		if (number == NULL)
 			return false;
+
+		if (!output_strong_file_write_text(number)) {
+			free(number);
+			return false;
+		}
+
+		free(number);
 	} else {
-		if (!output_strong_write_title(target))
-			return false;
+		if (reference->first_child != NULL) {
+			if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_REFERENCE, reference))
+				return false;
+		} else {
+			if (!output_strong_write_title(target))
+				return false;
+		}
 	}
 
 	/* Establish the relative link, if external. */
@@ -743,6 +933,11 @@ static bool output_strong_write_inline_reference(struct manual_data *reference)
 		/* Output the closing link tag. */
 
 		if (!output_strong_file_write_plain(">"))
+			return false;
+
+		/* Close the square brackets if this is a footnote. */
+
+		if (target->type == MANUAL_DATA_OBJECT_TYPE_FOOTNOTE && !output_strong_file_write_plain("]"))
 			return false;
 	}
 

@@ -37,6 +37,14 @@
 #include "manual_ids.h"
 #include "msg.h"
 
+/* Static Global Variables. */
+
+/**
+ * The index count for footnotes, which are globally allocated.
+ */
+
+static int parse_link_footnote_index = 0;
+
 /* Static Function Prototypes. */
 
 static bool parse_link_node(struct manual_data *node, struct manual_data *parent);
@@ -52,6 +60,9 @@ static bool parse_link_node(struct manual_data *node, struct manual_data *parent
 bool parse_link(struct manual_data *root)
 {
 	manual_ids_initialise();
+
+	parse_link_footnote_index = 1;
+
 	return parse_link_node(root, NULL);
 }
 
@@ -82,6 +93,7 @@ static bool parse_link_node(struct manual_data *node, struct manual_data *parent
 		case MANUAL_DATA_OBJECT_TYPE_SECTION:
 		case MANUAL_DATA_OBJECT_TYPE_TABLE:
 		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+		case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
 			if (node->chapter.id != NULL && !manual_ids_add_node(node))
 				success = false;
 			break;
@@ -96,6 +108,10 @@ static bool parse_link_node(struct manual_data *node, struct manual_data *parent
 		case MANUAL_DATA_OBJECT_TYPE_SECTION:
 			if (node->title != NULL)
 				node->index = index++;
+			break;
+
+		case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
+			node->index = parse_link_footnote_index++;
 			break;
 		/* Images, code blocks and so on might need to rely on
 		 * global variables. Zero these at chapter level, and then

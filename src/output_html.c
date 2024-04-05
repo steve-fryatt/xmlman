@@ -88,6 +88,7 @@ static bool output_html_write_head(struct manual_data *manual);
 static bool output_html_write_foot(struct manual_data *manual);
 static bool output_html_write_heading(struct manual_data *node, int level);
 static bool output_html_write_block_collection_object(struct manual_data *object);
+static bool output_html_write_footnote(struct manual_data *object);
 static bool output_html_write_list(struct manual_data *object);
 static bool output_html_write_table(struct manual_data *object);
 static bool output_html_write_code_block(struct manual_data *object);
@@ -429,6 +430,18 @@ static bool output_html_write_section_object(struct manual_data *object, int lev
 					return false;
 				break;
 
+			case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_html_write_footnote(block))
+					return false;
+				break;
+
 			default:
 				msg_report(MSG_UNEXPECTED_CHUNK,
 						manual_data_find_object_name(block->type),
@@ -595,6 +608,7 @@ static bool output_html_write_block_collection_object(struct manual_data *object
 
 	switch (object->type) {
 	case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
+	case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
 		break;
 	default:
 		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_LIST_ITEM),
@@ -664,6 +678,95 @@ static bool output_html_write_block_collection_object(struct manual_data *object
 
 		block = block->next;
 	}
+
+	return true;
+}
+
+/**
+ * Process the contents of a footnote and write it out.
+ *
+ * \param *object		The object to process.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_footnote(struct manual_data *object)
+{
+	char *number = NULL;
+
+	if (object == NULL)
+		return false;
+
+	/* Confirm that this is a code block. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_FOOTNOTE),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Output the footnote block. */
+
+	if (!output_html_file_write_newline())
+		return false;
+
+	if ((object->previous == NULL || object->previous->type != MANUAL_DATA_OBJECT_TYPE_FOOTNOTE) &&
+			!output_html_file_write_plain("<dl class=\"footnotes\">"));
+
+	/* Output the node heading. */
+
+	if (!output_html_file_write_plain("<dt"))
+		return false;
+
+	if (object->chapter.id != NULL) {
+		if (!output_html_file_write_plain(" id=\""))
+			return false;
+
+		if (!output_html_file_write_text(object->chapter.id))
+			return false;
+
+		if (!output_html_file_write_plain("\""))
+			return false;
+	}
+
+	if (!output_html_file_write_plain(">"))
+		return false;
+
+	if (!output_html_file_write_text("Note "))
+		return false;
+
+	number = manual_data_get_node_number(object);
+	if (number == NULL)
+		return false;
+
+	if (!output_html_file_write_text(number)) {
+		free(number);
+		return false;
+	}
+
+	free(number);
+
+	if (!output_html_file_write_plain("</dt>"))
+		return false;
+
+	/* Output the note body. */
+
+	if (!output_html_file_write_newline())
+		return false;
+
+	if (!output_html_file_write_plain("<dd>"))
+		return false;
+
+	if (!output_html_write_block_collection_object(object))
+		return false;
+
+	if (!output_html_file_write_plain("</dd>"))
+		return false;
+
+	if ((object->next == NULL || object->next->type != MANUAL_DATA_OBJECT_TYPE_FOOTNOTE) &&
+			!output_html_file_write_plain("</dl>"));
 
 	return true;
 }
@@ -1249,7 +1352,7 @@ static bool output_html_write_inline_reference(struct manual_data *reference)
 {
 	struct manual_data *target = NULL;
 	struct filename *sourcename = NULL, *targetname = NULL, *filename = NULL;
-	char *link = NULL;
+	char *link = NULL, *number = NULL;
 
 	if (reference == NULL)
 		return false;
@@ -1265,6 +1368,13 @@ static bool output_html_write_inline_reference(struct manual_data *reference)
 	/* Find the target object. */
 
 	target = manual_ids_find_node(reference);
+
+	/* If the target is a footnote, write the body text out now. */
+
+	if (target != NULL && target->type == MANUAL_DATA_OBJECT_TYPE_FOOTNOTE && reference->first_child != NULL) {
+		if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_REFERENCE, reference))
+			return false;
+	}
 
 	/* Establish the relative link, if external. */
 
@@ -1291,19 +1401,45 @@ static bool output_html_write_inline_reference(struct manual_data *reference)
 
 	/* Output the opening link tag. */
 
-	if (target != NULL && !output_html_file_write_plain("<a href=\"%s#%s\">", (link == NULL) ? "" : link, (target->chapter.id == NULL) ? "" : target->chapter.id))
+	if (target != NULL && !output_html_file_write_plain("<a href=\"%s#%s\">", (link == NULL) ? "" : link, (target->chapter.id == NULL) ? "" : target->chapter.id)) {
+		free(link);
 		return false;
+	}
 
-	/* Output the link body. */
+	free(link);
 
-	if (reference->first_child != NULL) {
-		if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_REFERENCE, reference))
+	/* Output the link body. For footnotes, this is the superscript note number;
+	 * for other rererences, this is eiether the target title or the reference
+	 * body text.
+	 */
+
+	if (target != NULL && target->type == MANUAL_DATA_OBJECT_TYPE_FOOTNOTE) {
+		if (!output_html_file_write_plain("<sup>"))
+			return false;
+
+		number = manual_data_get_node_number(target);
+		if (number == NULL)
+			return false;
+
+		if (!output_html_file_write_text(number)) {
+			free(number);
+			return false;
+		}
+
+		free(number);
+
+		if (!output_html_file_write_plain("</sup>"))
 			return false;
 	} else {
-		if (!output_html_write_title(target))
-			return false;
+		if (reference->first_child != NULL) {
+			if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_REFERENCE, reference))
+				return false;
+		} else {
+			if (!output_html_write_title(target))
+				return false;
+		}
 	}
-	
+
 	/* Output the closing link tag. */
 
 	if (target != NULL && !output_html_file_write_plain("</a>"))

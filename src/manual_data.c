@@ -79,6 +79,7 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_SET,		"Table Column Set"},
 	{MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_DEFINITION,	"Table Column Definition"},
 	{MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK,			"Code Block"},
+	{MANUAL_DATA_OBJECT_TYPE_FOOTNOTE,			"Footnote"},
 	{MANUAL_DATA_OBJECT_TYPE_PARAGRAPH,			"Paragraph"},
 	{MANUAL_DATA_OBJECT_TYPE_CITATION,			"Citation"},
 	{MANUAL_DATA_OBJECT_TYPE_CODE,				"Code"},
@@ -258,6 +259,8 @@ const char *manual_data_find_object_name(enum manual_data_object_type type)
  * Given a node, return a pointer to its display number in string format,
  * or NULL if no number is defined.
  *
+ * This is the full number, including the numbers of any parent sections.
+ *
  * \param *node		The node to return a number for.
  * \return		Pointer to the display number, or NULL.
  */
@@ -265,7 +268,7 @@ const char *manual_data_find_object_name(enum manual_data_object_type type)
 char *manual_data_get_node_number(struct manual_data *node)
 {
 	struct manual_data	*nodes[MANUAL_DATA_MAX_NUMBER_DEPTH], *last = NULL;
-	char			*text;
+	char			*text, *separator = NULL;
 	int			depth = 0, written = 0, position = 0;
 
 	if (node == NULL)
@@ -287,6 +290,11 @@ char *manual_data_get_node_number(struct manual_data *node)
 		if (node == NULL)
 			return NULL;
 
+		separator = ".";
+		break;
+
+	case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
+		nodes[depth++] = node;
 		break;
 	/* Images, code blocks and so on would just take the chapter
 	 * and the node, and not step through.
@@ -311,7 +319,8 @@ char *manual_data_get_node_number(struct manual_data *node)
 	position = 0;
 
 	do {
-		written = snprintf(text + position, MANUAL_DATA_MAX_NUMBER_BUFFER_LEN - position, "%d.", nodes[--depth]->index);
+		written = snprintf(text + position, MANUAL_DATA_MAX_NUMBER_BUFFER_LEN - position, "%d%s",
+				nodes[--depth]->index, (separator == NULL) ? "" : separator);
 		if (written < 0) {
 			free(text);
 			return NULL;
