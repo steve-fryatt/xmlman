@@ -87,6 +87,7 @@ static bool output_strong_write_foot(struct manual_data *manual);
 static bool output_strong_write_heading(struct manual_data *node, int level, bool root);
 static bool output_strong_write_block_collection_object(struct manual_data *object);
 static bool output_strong_write_footnote(struct manual_data *object);
+static bool output_strong_write_code_block(struct manual_data *object);
 static bool output_strong_write_paragraph(struct manual_data *object);
 static bool output_strong_write_reference(struct manual_data *target, char *text);
 static bool output_strong_write_text(enum manual_data_object_type type, struct manual_data *text);
@@ -358,6 +359,18 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 					return false;
 				break;
 
+			case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_strong_write_code_block(block))
+					return false;
+				break;
+
 			case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
 					msg_report(MSG_UNEXPECTED_CHUNK,
@@ -538,8 +551,8 @@ static bool output_strong_write_block_collection_object(struct manual_data *obje
 			break;
 
 		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
-	//		if (!output_html_write_code_block(block))
-	//			return false;
+			if (!output_strong_write_code_block(block))
+				return false;
 			break;
 
 		default:
@@ -623,6 +636,78 @@ static bool output_strong_write_footnote(struct manual_data *object)
 	/* Output the note body. */
 
 	if (!output_strong_write_block_collection_object(object))
+		return false;
+
+	return true;
+}
+
+/**
+ * Process a code block to the output.
+ *
+ * \param *object		The object to process.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_strong_write_code_block(struct manual_data *object)
+{
+	if (object == NULL)
+		return false;
+
+	/* Confirm that this is a code block. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Output the code block. */
+
+	if (!output_strong_file_write_newline())
+		return false;
+
+	if (!output_strong_file_write_plain("#Indent +2"))
+		return false;
+
+	if (!output_strong_file_write_newline())
+		return false;
+
+	if (!output_strong_file_write_plain("#fCode"))
+		return false;
+
+	if (!output_strong_file_write_newline())
+		return false;
+
+	if (!output_strong_write_text(object->type, object))
+		return false;
+
+	if (!output_strong_file_write_newline())
+		return false;
+
+	if (!output_strong_file_write_plain("#f"))
+		return false;
+
+	if (!output_strong_file_write_newline())
+		return false;
+
+	if (object->title != NULL) {
+		if (!output_strong_file_write_newline())
+			return false;
+
+		if (!output_strong_write_title(object))
+			return false;
+
+		if (!output_strong_file_write_newline())
+			return false;
+	}
+
+	if (!output_strong_file_write_plain("#Indent"))
+		return false;
+
+	if (!output_strong_file_write_newline())
 		return false;
 
 	return true;
