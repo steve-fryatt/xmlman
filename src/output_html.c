@@ -720,9 +720,10 @@ static bool output_html_write_chapter_list(struct manual_data *object, int level
 		case MANUAL_DATA_OBJECT_TYPE_SECTION:
 			if (entry->title != NULL) {
 				if (first == true) {
-					if (!output_html_file_write_newline() ||
-							!output_html_file_write_plain("<ul class=\"contents-list\">") ||
-							!output_html_file_write_newline())
+					if (!output_html_file_write_newline())
+						return false;
+					
+					if (!output_html_file_write_plain("<ul class=\"contents-list\">") || !output_html_file_write_newline())
 						return false;
 
 					first = false;
@@ -882,8 +883,10 @@ static bool output_html_write_footnote(struct manual_data *object)
 	if (!output_html_file_write_newline())
 		return false;
 
-	if ((object->previous == NULL || object->previous->type != MANUAL_DATA_OBJECT_TYPE_FOOTNOTE) &&
-			!output_html_file_write_plain("<dl class=\"footnotes\">"));
+	if (object->previous == NULL || object->previous->type != MANUAL_DATA_OBJECT_TYPE_FOOTNOTE) {
+		if (!output_html_file_write_plain("<dl class=\"footnotes\">") || !output_html_file_write_newline())
+			return false;
+	}
 
 	/* Output the node heading. */
 
@@ -932,8 +935,15 @@ static bool output_html_write_footnote(struct manual_data *object)
 	if (!output_html_file_write_plain("</dd>"))
 		return false;
 
-	if ((object->next == NULL || object->next->type != MANUAL_DATA_OBJECT_TYPE_FOOTNOTE) &&
-			!output_html_file_write_plain("</dl>"));
+	if (!output_html_file_write_newline())
+		return false;
+
+	/* Close the footnote block. */
+
+	if ((object->next == NULL || object->next->type != MANUAL_DATA_OBJECT_TYPE_FOOTNOTE)) {
+		if (!output_html_file_write_plain("</dl>") || !output_html_file_write_newline())
+			return false;
+	}
 
 	return true;
 }
@@ -972,15 +982,15 @@ static bool output_html_write_list(struct manual_data *object)
 	if (!output_html_file_write_plain((object->type == MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST) ? "<ol>" : "<ul>"))
 		return false;
 
+	if (!output_html_file_write_newline())
+		return false;
+
 
 	item = object->first_child;
 
 	while (item != NULL) {
 		switch (item->type) {
 		case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
-			if (!output_html_file_write_newline())
-				return false;
-
 			if (!output_html_file_write_plain("<li>"))
 				return false;
 
@@ -988,6 +998,9 @@ static bool output_html_write_list(struct manual_data *object)
 				return false;
 
 			if (!output_html_file_write_plain("</li>"))
+				return false;
+
+			if (!output_html_file_write_newline())
 				return false;
 			break;
 
@@ -1002,6 +1015,9 @@ static bool output_html_write_list(struct manual_data *object)
 	}
 
 	if (!output_html_file_write_plain((object->type == MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST) ? "</ol>" : "</ul>"))
+		return false;
+
+	if (!output_html_file_write_newline())
 		return false;
 
 	return true;
@@ -1034,7 +1050,10 @@ static bool output_html_write_table(struct manual_data *object)
 
 	/* Output the table. */
 
-	if (!output_html_file_write_newline() || !output_html_file_write_plain("<div class=\"table\"><table>"))
+	if (!output_html_file_write_newline())
+		return false;
+	
+	if (!output_html_file_write_plain("<div class=\"table\"><table>") || !output_html_file_write_newline())
 		return false;
 
 	/* Write the table headings. */
@@ -1046,7 +1065,7 @@ static bool output_html_write_table(struct manual_data *object)
 		return false;
 	}
 
-	if (!output_html_file_write_newline() || !output_html_file_write_plain("<tr>"))
+	if (!output_html_file_write_plain("<tr>"))
 		return false;
 
 	column = column_set->first_child;
@@ -1075,7 +1094,7 @@ static bool output_html_write_table(struct manual_data *object)
 		column = column->next;
 	}
 
-	if (!output_html_file_write_plain("</tr>"))
+	if (!output_html_file_write_plain("</tr>") || !output_html_file_write_newline())
 		return false;
 
 	/* Write the table rows. */
@@ -1087,7 +1106,7 @@ static bool output_html_write_table(struct manual_data *object)
 		case MANUAL_DATA_OBJECT_TYPE_TABLE_ROW:
 			column = row->first_child;
 
-			if (!output_html_file_write_newline() || !output_html_file_write_plain("<tr>"))
+			if (!output_html_file_write_plain("<tr>"))
 				return false;
 
 			while (column != NULL) {
@@ -1114,7 +1133,7 @@ static bool output_html_write_table(struct manual_data *object)
 				column = column->next;
 			}
 
-			if (!output_html_file_write_plain("</tr>"))
+			if (!output_html_file_write_plain("</tr>") || !output_html_file_write_newline())
 				return false;
 			break;
 
@@ -1130,7 +1149,7 @@ static bool output_html_write_table(struct manual_data *object)
 
 	/* Close the table. */
 
-	if (!output_html_file_write_newline() || !output_html_file_write_plain("</table>"))
+	if (!output_html_file_write_plain("</table>"))
 		return false;
 
 	/* Write the title. */
@@ -1151,7 +1170,7 @@ static bool output_html_write_table(struct manual_data *object)
 
 	/* Close the outer DIV. */
 
-	if (!output_html_file_write_plain("</div>"))
+	if (!output_html_file_write_plain("</div>") || !output_html_file_write_newline())
 		return false;
 
 	return true;
@@ -1208,7 +1227,7 @@ static bool output_html_write_code_block(struct manual_data *object)
 			return false;
 	}
 
-	if (!output_html_file_write_plain("</div>"))
+	if (!output_html_file_write_plain("</div>") || !output_html_file_write_newline())
 		return false;
 
 	return true;
@@ -1246,6 +1265,9 @@ static bool output_html_write_paragraph(struct manual_data *object)
 				return false;
 
 	if (!output_html_file_write_plain("</p>"))
+		return false;
+
+	if (!output_html_file_write_newline())
 		return false;
 
 	return true;
