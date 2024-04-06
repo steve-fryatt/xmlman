@@ -109,7 +109,7 @@ static bool output_text_write_reference(struct manual_data *target);
 static bool output_text_write_text(int column, enum manual_data_object_type type, struct manual_data *text);
 static bool output_text_write_inline_link(int column, struct manual_data *link);
 static bool output_text_write_inline_reference(int column, struct manual_data *reference);
-static bool output_text_write_title(int column, struct manual_data *node);
+static bool output_text_write_title(int column, struct manual_data *node, bool include_name, bool include_title);
 static const char *output_text_convert_entity(enum manual_entity_type entity);
 
 /**
@@ -564,7 +564,7 @@ static bool output_text_write_heading(struct manual_data *node, int column)
 	if (!output_text_line_reset())
 		return false;
 
-	if (!output_text_write_title(column, node))
+	if (!output_text_write_title(column, node, false, true))
 		return false;
 
 	if (!output_text_line_write(false, true))
@@ -692,10 +692,7 @@ static bool output_text_write_footnote(struct manual_data *object, int column)
 	if (!output_text_line_reset())
 		return false;
 
-	if (!output_text_line_add_text(column, "Note "))
-		return false;
-
-	number = manual_data_get_node_number(object);
+	number = manual_data_get_node_number(object, true);
 	if (number == NULL)
 		return false;
 
@@ -730,6 +727,7 @@ static bool output_text_write_footnote(struct manual_data *object, int column)
 
 	return true;
 }
+
 /**
  * Write the contents of a list to the output.
  *
@@ -1036,7 +1034,7 @@ static bool output_text_write_table(struct manual_data *object, int target_colum
 
 	/* Output the title. */
 
-	if (!output_text_write_title(0, object))
+	if (!output_text_write_title(0, object, true, true))
 		return false;
 
 	if (!output_text_line_write(true, false))
@@ -1122,7 +1120,7 @@ static bool output_text_write_code_block(struct manual_data *object, int column)
 
 	/* Output the title. */
 
-	if (!output_text_write_title(0, object))
+	if (!output_text_write_title(0, object, true, true))
 		return false;
 
 	if (!output_text_line_write(true, false))
@@ -1386,6 +1384,7 @@ static bool output_text_write_inline_reference(int column, struct manual_data *r
 	struct manual_data *target = NULL;
 	struct filename *filename = NULL;
 	char *link = NULL, *number = NULL;
+	bool include_title = false;
 
 	if (reference == NULL)
 		return false;
@@ -1416,12 +1415,14 @@ static bool output_text_write_inline_reference(int column, struct manual_data *r
 	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 	case MANUAL_DATA_OBJECT_TYPE_INDEX:
 	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		include_title = true;
+
 	case MANUAL_DATA_OBJECT_TYPE_TABLE:
 	case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
 		if (reference->first_child != NULL && !output_text_line_add_text(column, " (see "))
 			return false;
 
-		if (!output_text_write_title(column, target))
+		if (!output_text_write_title(column, target, true, include_title))
 			return false;
 
 		if (manual_data_nodes_share_file(reference, target, MODES_TYPE_TEXT) == false) {
@@ -1454,7 +1455,7 @@ static bool output_text_write_inline_reference(int column, struct manual_data *r
 		if (!output_text_line_add_text(column, "["))
 			return false;
 
-		number = manual_data_get_node_number(target);
+		number = manual_data_get_node_number(target, false);
 		if (number == NULL)
 			return false;
 
@@ -1481,17 +1482,19 @@ static bool output_text_write_inline_reference(int column, struct manual_data *r
  *
  * \param column		The column in the line to write to.
  * \param *node			The node whose title is to be written.
+ * \param include_name		Should we prefix the number with the object name?
+ * \param include_title		Should we include the object title?
  * \return			True if successful; False on error.
  */
 
-static bool output_text_write_title(int column, struct manual_data *node)
+static bool output_text_write_title(int column, struct manual_data *node, bool include_name, bool include_title)
 {
 	char *number;
 
 	if (node == NULL || node->title == NULL)
 		return false;
 
-	number = manual_data_get_node_number(node);
+	number = manual_data_get_node_number(node, include_name);
 
 	if (number != NULL) {
 		if (!output_text_line_add_text(0, number)) {

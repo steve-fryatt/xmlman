@@ -315,10 +315,11 @@ const char *manual_data_find_object_name(enum manual_data_object_type type);
  * This is the full number, including the numbers of any parent sections.
  *
  * \param *node		The node to return a number for.
+ * \param include_name	Should we prefix the number with the object name?
  * \return		Pointer to the display number, or NULL.
  */
 
-char *manual_data_get_node_number(struct manual_data *node);
+char *manual_data_get_node_number(struct manual_data *node, bool include_name);
 
 #include "modes.h"
 

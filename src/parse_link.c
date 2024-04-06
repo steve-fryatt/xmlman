@@ -45,6 +45,18 @@
 
 static int parse_link_footnote_index = 0;
 
+/**
+ * The index count for tables, which are allocated per chapter.
+ */
+
+static int parse_link_table_index = 0;
+
+/**
+ * The index count for code blocks, which are allocated per chapter.
+ */
+
+static int parse_link_code_block_index = 0;
+
 /* Static Function Prototypes. */
 
 static bool parse_link_node(struct manual_data *node, struct manual_data *parent);
@@ -101,6 +113,13 @@ static bool parse_link_node(struct manual_data *node, struct manual_data *parent
 			break;
 		}
 
+		/* Reset the per-chapter index numbers. */
+
+		if (node->type == MANUAL_DATA_OBJECT_TYPE_CHAPTER) {
+			parse_link_code_block_index = 1;
+			parse_link_table_index = 1;
+		}
+
 		/* Number the node, if appropriate. */
 
 		switch (node->type) {
@@ -110,13 +129,20 @@ static bool parse_link_node(struct manual_data *node, struct manual_data *parent
 				node->index = index++;
 			break;
 
+		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+			if (node->title != NULL)
+				node->index = parse_link_code_block_index++;
+			break;
+
+		case MANUAL_DATA_OBJECT_TYPE_TABLE:
+			if (node->title != NULL)
+				node->index = parse_link_table_index++;
+			break;
+
 		case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
 			node->index = parse_link_footnote_index++;
 			break;
-		/* Images, code blocks and so on might need to rely on
-		 * global variables. Zero these at chapter level, and then
-		 * let them count up as the tree beneath is processed.
-		 */
+
 		default:
 			break;
 		}

@@ -99,7 +99,7 @@ static bool output_html_write_span_tag(enum manual_data_object_type type, char *
 static bool output_html_write_span_style(enum manual_data_object_type type, char *style, struct manual_data *text);
 static bool output_html_write_inline_link(struct manual_data *link);
 static bool output_html_write_inline_reference(struct manual_data *reference);
-static bool output_html_write_title(struct manual_data *node);
+static bool output_html_write_title(struct manual_data *node, bool include_name, bool include_title);
 static const char *output_html_convert_entity(enum manual_entity_type entity);
 
 /**
@@ -573,7 +573,7 @@ static bool output_html_write_heading(struct manual_data *node, int level)
 
 	/* Write the title text. */
 
-	if (!output_html_write_title(node))
+	if (!output_html_write_title(node, false, true))
 		return false;
 
 	/* Write the closing tag. */
@@ -734,10 +734,7 @@ static bool output_html_write_footnote(struct manual_data *object)
 	if (!output_html_file_write_plain(">"))
 		return false;
 
-	if (!output_html_file_write_text("Note "))
-		return false;
-
-	number = manual_data_get_node_number(object);
+	number = manual_data_get_node_number(object, true);
 	if (number == NULL)
 		return false;
 
@@ -975,7 +972,7 @@ static bool output_html_write_table(struct manual_data *object)
 		if (!output_html_file_write_plain("<div class=\"caption\">"))
 			return false;
 
-		if (!output_html_write_title(object))
+		if (!output_html_write_title(object, true, true))
 			return false;
 
 		if (!output_html_file_write_plain("</div>"))
@@ -1034,7 +1031,7 @@ static bool output_html_write_code_block(struct manual_data *object)
 		if (!output_html_file_write_plain("<div class=\"caption\">"))
 			return false;
 
-		if (!output_html_write_title(object))
+		if (!output_html_write_title(object, true, true))
 			return false;
 
 		if (!output_html_file_write_plain("</div>"))
@@ -1353,6 +1350,7 @@ static bool output_html_write_inline_reference(struct manual_data *reference)
 	struct manual_data *target = NULL;
 	struct filename *sourcename = NULL, *targetname = NULL, *filename = NULL;
 	char *link = NULL, *number = NULL;
+	bool include_title = false;
 
 	if (reference == NULL)
 		return false;
@@ -1417,7 +1415,7 @@ static bool output_html_write_inline_reference(struct manual_data *reference)
 		if (!output_html_file_write_plain("<sup>"))
 			return false;
 
-		number = manual_data_get_node_number(target);
+		number = manual_data_get_node_number(target, false);
 		if (number == NULL)
 			return false;
 
@@ -1435,7 +1433,12 @@ static bool output_html_write_inline_reference(struct manual_data *reference)
 			if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_REFERENCE, reference))
 				return false;
 		} else {
-			if (!output_html_write_title(target))
+			include_title = (
+					target->type == MANUAL_DATA_OBJECT_TYPE_CHAPTER ||
+					target->type == MANUAL_DATA_OBJECT_TYPE_INDEX ||
+					target->type == MANUAL_DATA_OBJECT_TYPE_SECTION) ? true : false;
+
+			if (!output_html_write_title(target, true, include_title))
 				return false;
 		}
 	}
@@ -1453,17 +1456,19 @@ static bool output_html_write_inline_reference(struct manual_data *reference)
  * Write out the title of a node.
  *
  * \param *node			The node whose title is to be written.
+ * \param include_name		Should we prefix the number with the object name?
+ * \param include_title		Should we include the object title?
  * \return			True if successful; False on error.
  */
 
-static bool output_html_write_title(struct manual_data *node)
+static bool output_html_write_title(struct manual_data *node, bool include_name, bool include_title)
 {
 	char *number;
 
 	if (node == NULL || node->title == NULL)
 		return false;
 
-	number = manual_data_get_node_number(node);
+	number = manual_data_get_node_number(node, include_name);
 
 	if (number != NULL) {
 		if (!output_html_file_write_text(number)) {

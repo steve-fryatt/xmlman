@@ -101,7 +101,7 @@ static bool output_strong_write_reference(struct manual_data *target, char *text
 static bool output_strong_write_text(enum manual_data_object_type type, struct manual_data *text);
 static bool output_strong_write_inline_link(struct manual_data *link);
 static bool output_strong_write_inline_reference(struct manual_data *reference);
-static bool output_strong_write_title(struct manual_data *node);
+static bool output_strong_write_title(struct manual_data *node, bool include_name, bool include_title);
 static const char *output_strong_convert_entity(enum manual_entity_type entity);
 
 /**
@@ -503,7 +503,7 @@ static bool output_strong_write_heading(struct manual_data *node, int level, boo
 	if ((level > 0) && !output_strong_file_write_plain("{fh%d:", level))
 		return false;
 
-	if (!output_strong_write_title(node))
+	if (!output_strong_write_title(node, false, true))
 		return false;
 
 	if ((level > 0) && !output_strong_file_write_plain("}"))
@@ -650,10 +650,7 @@ static bool output_strong_write_footnote(struct manual_data *object)
 	if (!output_strong_file_write_plain("{f*:"))
 		return false;
 
-	if (!output_strong_file_write_text("Note "))
-		return false;
-
-	number = manual_data_get_node_number(object);
+	number = manual_data_get_node_number(object, true);
 	if (number == NULL)
 		return false;
 
@@ -840,7 +837,7 @@ static bool output_strong_write_code_block(struct manual_data *object)
 		if (!output_strong_file_write_newline())
 			return false;
 
-		if (!output_strong_write_title(object))
+		if (!output_strong_write_title(object, true, true))
 			return false;
 
 		if (!output_strong_file_write_newline())
@@ -1072,6 +1069,7 @@ static bool output_strong_write_inline_reference(struct manual_data *reference)
 	struct manual_data *target = NULL;
 	struct filename *filename = NULL;
 	char *link = NULL, *number = NULL;
+	bool include_title = false;
 
 	if (reference == NULL)
 		return false;
@@ -1107,7 +1105,7 @@ static bool output_strong_write_inline_reference(struct manual_data *reference)
 	/* Output the link body. */
 
 	if (target != NULL && target->type == MANUAL_DATA_OBJECT_TYPE_FOOTNOTE) {
-		number = manual_data_get_node_number(target);
+		number = manual_data_get_node_number(target, false);
 		if (number == NULL)
 			return false;
 
@@ -1122,7 +1120,12 @@ static bool output_strong_write_inline_reference(struct manual_data *reference)
 			if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_REFERENCE, reference))
 				return false;
 		} else {
-			if (!output_strong_write_title(target))
+			include_title = (
+					target->type == MANUAL_DATA_OBJECT_TYPE_CHAPTER ||
+					target->type == MANUAL_DATA_OBJECT_TYPE_INDEX ||
+					target->type == MANUAL_DATA_OBJECT_TYPE_SECTION) ? true : false;
+
+			if (!output_strong_write_title(target, true, include_title))
 				return false;
 		}
 	}
@@ -1176,17 +1179,19 @@ static bool output_strong_write_inline_reference(struct manual_data *reference)
  * Write the title of a node to the output file.
  *
  * \param *node			The node whose title is to be written.
+ * \param include_name		Should we prefix the number with the object name?
+ * \param include_title		Should we include the object title?
  * \return			True if successful; False on error.
  */
 
-static bool output_strong_write_title(struct manual_data *node)
+static bool output_strong_write_title(struct manual_data *node, bool include_name, bool include_title)
 {
 	char *number;
 
 	if (node == NULL || node->title == NULL)
 		return false;
 
-	number = manual_data_get_node_number(node);
+	number = manual_data_get_node_number(node, include_name);
 
 	if (number != NULL) {
 		if (!output_strong_file_write_text(number)) {

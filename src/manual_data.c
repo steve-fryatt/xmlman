@@ -262,25 +262,63 @@ const char *manual_data_find_object_name(enum manual_data_object_type type)
  * This is the full number, including the numbers of any parent sections.
  *
  * \param *node		The node to return a number for.
+ * \param include_name	Should we prefix the number with the object name?
  * \return		Pointer to the display number, or NULL.
  */
 
-char *manual_data_get_node_number(struct manual_data *node)
+char *manual_data_get_node_number(struct manual_data *node, bool include_name)
 {
 	struct manual_data	*nodes[MANUAL_DATA_MAX_NUMBER_DEPTH], *last = NULL;
-	char			*text, *separator = NULL;
+	char			*text, *separator = NULL, *name = NULL;
 	int			depth = 0, written = 0, position = 0;
+	bool			include_sections = false;
 
 	if (node == NULL)
 		return NULL;
+
+	/* Identify a node type name. */
+
+	// TODO -- these should come from the manual, so that they can be internationalised.
+
+	switch (node->type) {
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		name = "Chapter";
+		break;
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		name = "Section";
+		break;
+	case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+		name = "Listing";
+		break;
+	case MANUAL_DATA_OBJECT_TYPE_TABLE:
+		name = "Table";
+		break;
+	case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
+		name = "Note";
+		break;
+	default:
+		break;	
+	}
 
 	/* Identify the nodes which will make up the number. */
 
 	switch (node->type) {
 	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+		include_sections = true;
+		/* Chapters and sections are the same as block objects,
+		 * except that we include the numbers for all intermediate
+		 * sections on the way up.
+		 */
+
+	case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+	case MANUAL_DATA_OBJECT_TYPE_TABLE:
 		do {
-			nodes[depth++] = node;
+			if ((node->type == MANUAL_DATA_OBJECT_TYPE_SECTION && include_sections == true) ||
+					(node->type == MANUAL_DATA_OBJECT_TYPE_CHAPTER) ||
+					last == NULL /* Always include the target node. */)
+				nodes[depth++] = node;
+
 			last = node;
 			node = node->parent;
 		} while ((node != NULL) && (last != NULL) &&
@@ -314,9 +352,21 @@ char *manual_data_get_node_number(struct manual_data *node)
 	if (text == NULL)
 		return NULL;
 
-	/* Write the number to the buffer. */
-
 	position = 0;
+
+	/* Put the object name in the buffer. */
+
+	if (include_name == true && name != NULL) {
+		written = snprintf(text + position, MANUAL_DATA_MAX_NUMBER_BUFFER_LEN - position, "%s ", name);
+		if (written < 0) {
+			free(text);
+			return NULL;
+		}
+
+		position += written;
+	}
+
+	/* Write the number to the buffer. */
 
 	do {
 		written = snprintf(text + position, MANUAL_DATA_MAX_NUMBER_BUFFER_LEN - position, "%d%s",
