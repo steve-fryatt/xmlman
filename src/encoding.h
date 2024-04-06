@@ -100,6 +100,16 @@
 #define ENCODING_UTF8_TIMES "\xc3\x97"
 
 /**
+ * UTF8 Bullet Sequence
+ */
+#define ENCODING_UTF8_BULLET "\xe2\x80\xa2"
+
+/**
+ * UTF8 Middot Sequence
+ */
+#define ENCODING_UTF8_MIDDOT "\xc2\xb7"
+
+/**
  * A list of possible target encodings.
  *
  * The order of this list must match the encoding_list table in encoding.c

@@ -37,6 +37,7 @@
 
 #include "encoding.h"
 #include "filename.h"
+#include "list_numbers.h"
 #include "manual_data.h"
 #include "manual_queue.h"
 #include "modes.h"
@@ -77,6 +78,12 @@
 
 static struct filename *output_strong_root_filename;
 
+/**
+ * The bullets that we will use for unordered lists.
+ */
+
+static char *output_strong_unordered_list_bullets[] = { ENCODING_UTF8_BULLET, ENCODING_UTF8_MIDDOT, NULL };
+
 /* Static Function Prototypes. */
 
 static bool output_strong_write_manual(struct manual_data *manual);
@@ -85,8 +92,9 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 static bool output_strong_write_head(struct manual_data *manual);
 static bool output_strong_write_foot(struct manual_data *manual);
 static bool output_strong_write_heading(struct manual_data *node, int level, bool root);
-static bool output_strong_write_block_collection_object(struct manual_data *object);
+static bool output_strong_write_block_collection_object(struct manual_data *object, int level);
 static bool output_strong_write_footnote(struct manual_data *object);
+static bool output_strong_write_list(struct manual_data *object, int level);
 static bool output_strong_write_code_block(struct manual_data *object);
 static bool output_strong_write_paragraph(struct manual_data *object);
 static bool output_strong_write_reference(struct manual_data *target, char *text);
@@ -359,6 +367,19 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 					return false;
 				break;
 
+			case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
+			case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_strong_write_list(block, 0))
+					return false;
+				break;
+
 			case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
 					msg_report(MSG_UNEXPECTED_CHUNK,
@@ -501,10 +522,11 @@ static bool output_strong_write_heading(struct manual_data *node, int level, boo
  * within.
  *
  * \param *object		The object to process.
+ * \param level			The list nesting level, when writing lists.
  * \return			True if successful; False on error.
  */
 
-static bool output_strong_write_block_collection_object(struct manual_data *object)
+static bool output_strong_write_block_collection_object(struct manual_data *object, int level)
 {
 	struct manual_data *block;
 
@@ -535,14 +557,26 @@ static bool output_strong_write_block_collection_object(struct manual_data *obje
 	while (block != NULL) {
 		switch (block->type) {
 		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
-			if (!output_strong_write_paragraph(block))
-				return false;
+			/* If this is the first item in the collection, write it
+			 * following on from whatever might already have been written,
+			 * to allow for parent formatting.
+			 */
+			if (block->previous == NULL) {
+				if (!output_strong_write_text(block->type, block))
+					return false;
+
+				if (block->next != NULL && !output_strong_file_write_newline())
+					return false;
+			} else {
+				if (!output_strong_write_paragraph(block))
+					return false;
+			}
 			break;
 
 		case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
 		case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
-	//		if (!output_html_write_list(block))
-	//			return false;
+			if (!output_strong_write_list(block, level + 1))
+				return false;
 			break;
 
 		case MANUAL_DATA_OBJECT_TYPE_TABLE:
@@ -635,8 +669,117 @@ static bool output_strong_write_footnote(struct manual_data *object)
 
 	/* Output the note body. */
 
-	if (!output_strong_write_block_collection_object(object))
+	if (!output_strong_write_block_collection_object(object, 0))
 		return false;
+
+	return true;
+}
+
+/**
+ * Write the contents of a list to the output.
+ *
+ * \param *object		The object to process.
+ * \param level			The list nesting level.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_strong_write_list(struct manual_data *object, int level)
+{
+	struct manual_data *item;
+	struct list_numbers *numbers = NULL;
+	int entries = 0;
+
+	if (object == NULL)
+		return false;
+
+	/* Confirm that this is a list. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
+	case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Set the list numbers or bullets up. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
+		item = object->first_child;
+
+		while (item != NULL) {
+			entries++;
+			item = item->next;
+		}
+
+		numbers = list_numbers_create_ordered(entries, level);
+		break;
+
+	case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+		numbers = list_numbers_create_unordered(output_strong_unordered_list_bullets, level);
+		break;
+	
+	default:
+		break;
+	}
+
+	if (numbers == NULL) {
+		msg_report(MSG_BAD_LIST_NUMBERS);
+		return false;
+	}
+
+	/* If the list isn't nested in a list item, output a blank line
+	 * above it.
+	 */
+
+//	if (object->parent != NULL &&
+//			object->parent->type != MANUAL_DATA_OBJECT_TYPE_LIST_ITEM &&
+//			!output_text_line_write_newline())
+//		return false;
+
+	if (!output_strong_file_write_newline()) {
+		list_numbers_destroy(numbers);
+		return false;
+	}
+
+	item = object->first_child;
+
+	while (item != NULL) {
+		switch (item->type) {
+		case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
+			if (!output_strong_file_write_text(list_numbers_get_next_entry(numbers))) {
+				list_numbers_destroy(numbers);
+				return false;
+			}
+
+			if (!output_strong_file_write_plain("\t"))
+				return false;
+
+			if (!output_strong_write_block_collection_object(item, level)) {
+				list_numbers_destroy(numbers);
+				return false;
+			}
+
+			if (!output_strong_file_write_newline()) {
+				list_numbers_destroy(numbers);
+				return false;
+			}
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(item->type),
+					manual_data_find_object_name(object->type));
+			break;
+		}
+
+		item = item->next;
+	}
+
+	list_numbers_destroy(numbers);
 
 	return true;
 }
