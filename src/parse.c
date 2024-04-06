@@ -528,6 +528,27 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 				break;
 			}
 			break;
+		case PARSE_XML_RESULT_TAG_EMPTY:
+			element = parse_xml_get_element(parser);
+
+			switch (element) {
+			case PARSE_ELEMENT_CHAPTERLIST:
+				item = manual_data_create(MANUAL_DATA_OBJECT_TYPE_CONTENTS);
+				if (item == NULL) {
+					result = parse_xml_set_error(parser);
+					msg_report(MSG_DATA_MALLOC_FAIL);
+					continue;
+				}
+				parse_link_item(&tail, new_chapter, item);
+				break;
+			case PARSE_ELEMENT_NONE:
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
+				parse_unknown(parser);
+				break;
+			}
+			break;
 		case PARSE_XML_RESULT_TAG_END:
 			element = parse_xml_get_element(parser);
 
@@ -657,6 +678,27 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 				break;
 			case PARSE_ELEMENT_FOOTNOTE:
 				item = parse_block_collection_object(parser);
+				parse_link_item(&tail, new_section, item);
+				break;
+			case PARSE_ELEMENT_NONE:
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
+				parse_unknown(parser);
+				break;
+			}
+			break;
+		case PARSE_XML_RESULT_TAG_EMPTY:
+			element = parse_xml_get_element(parser);
+
+			switch (element) {
+			case PARSE_ELEMENT_CHAPTERLIST:
+				item = manual_data_create(MANUAL_DATA_OBJECT_TYPE_CONTENTS);
+				if (item == NULL) {
+					result = parse_xml_set_error(parser);
+					msg_report(MSG_DATA_MALLOC_FAIL);
+					continue;
+				}
 				parse_link_item(&tail, new_section, item);
 				break;
 			case PARSE_ELEMENT_NONE:

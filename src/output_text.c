@@ -50,7 +50,7 @@
 /**
  * The number of characters to indent each new block by.
  */
- 
+
 #define OUTPUT_TEXT_BLOCK_INDENT 2
 
 /**
@@ -99,6 +99,7 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 static bool output_text_write_head(struct manual_data *manual);
 static bool output_text_write_foot(struct manual_data *manual);
 static bool output_text_write_heading(struct manual_data *node, int column);
+static bool output_text_write_chapter_list(struct manual_data *object, int level);
 static bool output_text_write_block_collection_object(struct manual_data *object, int column, int level);
 static bool output_text_write_footnote(struct manual_data *object, int column);
 static bool output_text_write_list(struct manual_data *object, int column, int level);
@@ -319,7 +320,7 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
  *
  * \param *object	The object to process.
  * \param root		True if the object is at the root of a file.
- * \param indent	The level to write the section at, starting from 0.
+ * \param level		The level to write the section at, starting from 0.
  * \return		True if successful; False on error.
  */
 
@@ -421,6 +422,20 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 			case MANUAL_DATA_OBJECT_TYPE_INDEX:
 			case MANUAL_DATA_OBJECT_TYPE_SECTION:
 				if (!output_text_write_object(block, false, (block->type == MANUAL_DATA_OBJECT_TYPE_SECTION) ? level + 1 : level))
+					return false;
+				break;
+
+			case MANUAL_DATA_OBJECT_TYPE_CONTENTS:
+				if (object->type == MANUAL_DATA_OBJECT_TYPE_MANUAL) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				/* The chapter list is treated like a section, so we always bump the level. */
+
+				if (!output_text_write_chapter_list(block, level + 1))
 					return false;
 				break;
 
@@ -574,6 +589,83 @@ static bool output_text_write_heading(struct manual_data *node, int column)
 }
 
 /**
+ * Write a chapter list. The list will be for the chain of objects at the
+ * list object's parent level (so if it appears in a chapter, the list
+ * will be for the whole manual).
+ *
+ * Note that this means that we will list the section (or chapter) in
+ * which we appear, assuming that it isn't an index and has a title.
+ *
+ * \param *object	The chapter list object to be written.
+ * \param level		The level to write the section at, starting from 0.
+*/
+
+static bool output_text_write_chapter_list(struct manual_data *object, int level)
+{
+	struct manual_data *entry = NULL;
+	bool first = true;
+
+	/* The parent object is in the chain to be listed, so we need to
+	 * go up again to its parent and then down to the first child in
+	 * order to get the whole list.
+	 */
+
+	if (object == NULL || object->parent == NULL || object->parent->parent == NULL)
+		return false;
+
+	/* The list is treated as a pseudo-section, so we do a section indent
+	 * here to make it line up with any siblings.
+	 */
+
+	if (!output_text_line_push(level * OUTPUT_TEXT_BLOCK_INDENT))
+		return false;
+
+	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
+		return false;
+
+	/* Output the list. */
+
+	entry = object->parent->parent->first_child;
+
+	while (entry != NULL) {
+		switch (entry->type) {
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			if (entry->title != NULL) {
+				if (first == true) {
+					if (!output_text_line_write_newline())
+						return false;
+
+					first = false;
+				}
+
+				if (!output_text_line_reset())
+					return false;
+
+				if (!output_text_write_title(0, entry, false, true))
+					return false;
+
+				if (!output_text_line_write(false, false))
+					return false;
+			}
+			break;
+
+		default:
+			break;
+		}
+
+		entry = entry->next;
+	}
+
+	/* Pop the line indent, and we're done. */
+
+	if (!output_text_line_pop())
+		return false;
+
+	return true;
+}
+
+/**
  * Process the contents of a block collection and write it out.
  * A block collection must be nested within a parent block object
  * which can take its content directly if there is only one chunk
@@ -686,7 +778,7 @@ static bool output_text_write_footnote(struct manual_data *object, int column)
 
 	/* Write a heading above the block. */
 
-	if (!output_text_line_write_newline()) 
+	if (!output_text_line_write_newline())
 		return false;
 
 	if (!output_text_line_reset())
@@ -782,7 +874,7 @@ static bool output_text_write_list(struct manual_data *object, int column, int l
 	case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
 		numbers = list_numbers_create_unordered(output_text_unordered_list_bullets, level);
 		break;
-	
+
 	default:
 		break;
 	}
@@ -898,7 +990,7 @@ static bool output_text_write_table(struct manual_data *object, int target_colum
 
 	/* Write a newline above the table. */
 
-	if (!output_text_line_write_newline()) 
+	if (!output_text_line_write_newline())
 		return false;
 
 	/* Create columns for the table. */
@@ -1015,7 +1107,7 @@ static bool output_text_write_table(struct manual_data *object, int target_colum
 
 	/* Write a newline above the title. */
 
-	if (!output_text_line_write_newline()) 
+	if (!output_text_line_write_newline())
 		return false;
 
 	/* Create a single column for the title. */
@@ -1076,7 +1168,7 @@ static bool output_text_write_code_block(struct manual_data *object, int column)
 
 	/* Write a newline above the block. */
 
-	if (!output_text_line_write_newline()) 
+	if (!output_text_line_write_newline())
 		return false;
 
 	/* Create a paragraph for output. */
@@ -1107,7 +1199,7 @@ static bool output_text_write_code_block(struct manual_data *object, int column)
 
 	/* Write a newline above the title. */
 
-	if (!output_text_line_write_newline()) 
+	if (!output_text_line_write_newline())
 		return false;
 
 	/* Centre the title. */
@@ -1164,7 +1256,7 @@ static bool output_text_write_paragraph(struct manual_data *object, int column, 
 		if (!output_text_line_reset())
 			return false;
 
-		if (!output_text_line_write_newline()) 
+		if (!output_text_line_write_newline())
 			return false;
 	}
 
@@ -1182,7 +1274,7 @@ static bool output_text_write_paragraph(struct manual_data *object, int column, 
 
 /**
  * Write an internal reference (a link to another page) to the output.
- * 
+ *
  * \param *target		The node to be the target of the link.
  * \return			True if successful; False on failure.
  */
@@ -1472,7 +1564,7 @@ static bool output_text_write_inline_reference(int column, struct manual_data *r
 		if (!output_text_line_add_text(column, "]"))
 			return false;
 		break;
-	
+
 	default:
 		break;
 	}

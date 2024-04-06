@@ -83,6 +83,7 @@ static struct parse_element_definition parse_element_tags[] = {
 	{PARSE_ELEMENT_STYLESHEET,	"stylesheet"},
 	{PARSE_ELEMENT_IMAGES,		"images"},
 	{PARSE_ELEMENT_DOWNLOADS,	"downloads"},
+	{PARSE_ELEMENT_CHAPTERLIST,	"chapterlist"},
 	{PARSE_ELEMENT_SUMMARY,		"summary"},
 	{PARSE_ELEMENT_CHAPTER,		"chapter"},
 	{PARSE_ELEMENT_INDEX,		"index"},

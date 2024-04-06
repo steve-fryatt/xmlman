@@ -88,6 +88,7 @@ static bool output_html_write_head(struct manual_data *manual);
 static bool output_html_write_stylesheet_link(struct manual_data *manual);
 static bool output_html_write_foot(struct manual_data *manual);
 static bool output_html_write_heading(struct manual_data *node, int level);
+static bool output_html_write_chapter_list(struct manual_data *object, int level);
 static bool output_html_write_block_collection_object(struct manual_data *object);
 static bool output_html_write_footnote(struct manual_data *object);
 static bool output_html_write_list(struct manual_data *object);
@@ -100,6 +101,7 @@ static bool output_html_write_span_tag(enum manual_data_object_type type, char *
 static bool output_html_write_span_style(enum manual_data_object_type type, char *style, struct manual_data *text);
 static bool output_html_write_inline_link(struct manual_data *link);
 static bool output_html_write_inline_reference(struct manual_data *reference);
+static bool output_html_write_local_anchor(struct manual_data *source, struct manual_data *target);
 static bool output_html_write_title(struct manual_data *node, bool include_name, bool include_title);
 static const char *output_html_convert_entity(enum manual_entity_type entity);
 
@@ -382,6 +384,20 @@ static bool output_html_write_section_object(struct manual_data *object, int lev
 					return false;
 				break;
 
+			case MANUAL_DATA_OBJECT_TYPE_CONTENTS:
+				if (object->type == MANUAL_DATA_OBJECT_TYPE_MANUAL) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				/* The chapter list is treated like a section, so we always bump the level. */
+
+				if (!output_html_write_chapter_list(block, level + 1))
+					return false;
+				break;
+
 			case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
 					msg_report(MSG_UNEXPECTED_CHUNK,
@@ -495,6 +511,13 @@ static bool output_html_write_head(struct manual_data *manual)
 	return true;
 }
 
+/**
+ * Write a stylesheet link for a file associated with a given node.
+ *
+ * \param *manual	The node at the root of the file.
+ * \return		TRUE if successful, otherwise FALSE.
+ * 
+ */
 
 static bool output_html_write_stylesheet_link(struct manual_data *manual)
 {
@@ -657,6 +680,78 @@ static bool output_html_write_heading(struct manual_data *node, int level)
 		return false;
 
 	if (!output_html_file_write_newline())
+		return false;
+
+	return true;
+}
+
+/**
+ * Write a chapter list. The list will be for the chain of objects at the
+ * list object's parent level (so if it appears in a chapter, the list
+ * will be for the whole manual).
+ *
+ * Note that this means that we will list the section (or chapter) in
+ * which we appear, assuming that it isn't an index and has a title.
+ *
+ * \param *object	The chapter list object to be written.
+ * \param level		The level to write the section at, starting from 0.
+*/
+
+static bool output_html_write_chapter_list(struct manual_data *object, int level)
+{
+	struct manual_data *entry = NULL;
+	bool first = true;
+
+	/* The parent object is in the chain to be listed, so we need to
+	 * go up again to its parent and then down to the first child in
+	 * order to get the whole list.
+	 */
+
+	if (object == NULL || object->parent == NULL || object->parent->parent == NULL)
+		return false;
+
+	/* Output the list. */
+
+	entry = object->parent->parent->first_child;
+
+	while (entry != NULL) {
+		switch (entry->type) {
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			if (entry->title != NULL) {
+				if (first == true) {
+					if (!output_html_file_write_newline() ||
+							!output_html_file_write_plain("<ul class=\"contents-list\">") ||
+							!output_html_file_write_newline())
+						return false;
+
+					first = false;
+				}
+
+				if (!output_html_file_write_plain("<li>"))
+					return false;
+
+				if (!output_html_write_local_anchor(object, entry))
+					return false;
+
+				if (!output_html_write_title(entry, false, true))
+					return false;
+
+				if (!output_html_file_write_plain("</a></li>") || !output_html_file_write_newline())
+					return false;
+			}
+			break;
+
+		default:
+			break;
+		}
+
+		entry = entry->next;
+	}
+
+	/* Close the list if we need to, and we're done. */
+
+	if (first == false && (!output_html_file_write_plain("</ul>") || !output_html_file_write_newline()))
 		return false;
 
 	return true;
@@ -1427,8 +1522,7 @@ static bool output_html_write_inline_link(struct manual_data *link)
 static bool output_html_write_inline_reference(struct manual_data *reference)
 {
 	struct manual_data *target = NULL;
-	struct filename *sourcename = NULL, *targetname = NULL, *filename = NULL;
-	char *link = NULL, *number = NULL;
+	char *number = NULL;
 	bool include_title = false;
 
 	if (reference == NULL)
@@ -1453,37 +1547,10 @@ static bool output_html_write_inline_reference(struct manual_data *reference)
 			return false;
 	}
 
-	/* Establish the relative link, if external. */
+	/* Output the opening anchor tag. */
 
-	if (manual_data_nodes_share_file(reference, target, MODES_TYPE_HTML) == false) {
-		sourcename = manual_data_get_node_filename(reference, output_html_root_filename, MODES_TYPE_HTML);
-		if (sourcename == NULL)
-			return false;
-
-		targetname = manual_data_get_node_filename(target, output_html_root_filename, MODES_TYPE_HTML);
-		if (targetname == NULL) {
-			filename_destroy(sourcename);
-			return false;
-		}
-
-		filename = filename_get_relative(sourcename, targetname);
-		filename_destroy(sourcename);
-		filename_destroy(targetname);
-		if (filename == NULL)
-			return false;
-
-		link = filename_convert(filename, FILENAME_PLATFORM_LINUX, 0);
-		filename_destroy(filename);
-	}
-
-	/* Output the opening link tag. */
-
-	if (target != NULL && !output_html_file_write_plain("<a href=\"%s#%s\">", (link == NULL) ? "" : link, (target->chapter.id == NULL) ? "" : target->chapter.id)) {
-		free(link);
+	if (target != NULL && !output_html_write_local_anchor(reference, target))
 		return false;
-	}
-
-	free(link);
 
 	/* Output the link body. For footnotes, this is the superscript note number;
 	 * for other rererences, this is eiether the target title or the reference
@@ -1530,6 +1597,59 @@ static bool output_html_write_inline_reference(struct manual_data *reference)
 	return true;
 }
 
+/**
+ * Write an opening <a ...> tag for a link from a source node to a
+ * target node.
+ *
+ * \param *source		The source node.
+ * \param *targer		The target node.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_local_anchor(struct manual_data *source, struct manual_data *target)
+{
+	struct filename *sourcename = NULL, *targetname = NULL, *filename = NULL;
+	char *link = NULL;
+
+	if (source == NULL || target == NULL)
+		return false;
+
+	/* Establish the relative link, if external. */
+
+	if (manual_data_nodes_share_file(source, target, MODES_TYPE_HTML) == false) {
+		sourcename = manual_data_get_node_filename(source, output_html_root_filename, MODES_TYPE_HTML);
+		if (sourcename == NULL)
+			return false;
+
+		targetname = manual_data_get_node_filename(target, output_html_root_filename, MODES_TYPE_HTML);
+		if (targetname == NULL) {
+			filename_destroy(sourcename);
+			return false;
+		}
+
+		filename = filename_get_relative(sourcename, targetname);
+		filename_destroy(sourcename);
+		filename_destroy(targetname);
+		if (filename == NULL)
+			return false;
+
+		link = filename_convert(filename, FILENAME_PLATFORM_LINUX, 0);
+		filename_destroy(filename);
+	}
+
+	/* Output the opening link tag. */
+
+	if (!output_html_file_write_plain("<a href=\"%s#%s\">",
+			(link == NULL) ? "" : link,
+			(target->chapter.id == NULL) ? "" : target->chapter.id)) {
+		free(link);
+		return false;
+	}
+
+	free(link);
+
+	return true;
+}
 
 /**
  * Write out the title of a node.

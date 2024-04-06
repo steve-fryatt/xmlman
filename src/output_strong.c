@@ -92,6 +92,7 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 static bool output_strong_write_head(struct manual_data *manual);
 static bool output_strong_write_foot(struct manual_data *manual);
 static bool output_strong_write_heading(struct manual_data *node, int level, bool root);
+static bool output_strong_write_chapter_list(struct manual_data *object, int level);
 static bool output_strong_write_block_collection_object(struct manual_data *object, int level);
 static bool output_strong_write_footnote(struct manual_data *object);
 static bool output_strong_write_list(struct manual_data *object, int level);
@@ -101,6 +102,7 @@ static bool output_strong_write_reference(struct manual_data *target, char *text
 static bool output_strong_write_text(enum manual_data_object_type type, struct manual_data *text);
 static bool output_strong_write_inline_link(struct manual_data *link);
 static bool output_strong_write_inline_reference(struct manual_data *reference);
+static bool output_strong_write_local_anchor(struct manual_data *source, struct manual_data *target);
 static bool output_strong_write_title(struct manual_data *node, bool include_name, bool include_title);
 static const char *output_strong_convert_entity(enum manual_entity_type entity);
 
@@ -355,6 +357,20 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 					return false;
 				break;
 
+			case MANUAL_DATA_OBJECT_TYPE_CONTENTS:
+				if (object->type == MANUAL_DATA_OBJECT_TYPE_MANUAL) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				/* The chapter list is treated like a section, so we always bump the level. */
+
+				if (!output_strong_write_chapter_list(block, level + 1))
+					return false;
+				break;
+
 			case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
 					msg_report(MSG_UNEXPECTED_CHUNK,
@@ -511,6 +527,71 @@ static bool output_strong_write_heading(struct manual_data *node, int level, boo
 
 	if (!output_strong_file_write_newline())
 		return false;
+
+	return true;
+}
+
+/**
+ * Write a chapter list. The list will be for the chain of objects at the
+ * list object's parent level (so if it appears in a chapter, the list
+ * will be for the whole manual).
+ *
+ * Note that this means that we will list the section (or chapter) in
+ * which we appear, assuming that it isn't an index and has a title.
+ *
+ * \param *object	The chapter list object to be written.
+ * \param level		The level to write the section at, starting from 0.
+*/
+
+static bool output_strong_write_chapter_list(struct manual_data *object, int level)
+{
+	struct manual_data *entry = NULL;
+	bool first = true;
+
+	/* The parent object is in the chain to be listed, so we need to
+	 * go up again to its parent and then down to the first child in
+	 * order to get the whole list.
+	 */
+
+	if (object == NULL || object->parent == NULL || object->parent->parent == NULL)
+		return false;
+
+	/* Output the list. */
+
+	entry = object->parent->parent->first_child;
+
+	while (entry != NULL) {
+		switch (entry->type) {
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			if (entry->title != NULL) {
+				if (first == true) {
+					if (!output_strong_file_write_newline())
+						return false;
+
+					first = false;
+				}
+
+				if (!output_strong_file_write_plain("<"))
+					return false;
+
+				if (!output_strong_write_title(entry, false, true))
+					return false;
+
+				if (!output_strong_write_local_anchor(object, entry))
+					return false;
+
+				if (!output_strong_file_write_newline())
+					return false;
+			}
+			break;
+
+		default:
+			break;
+		}
+
+		entry = entry->next;
+	}
 
 	return true;
 }
@@ -1070,8 +1151,7 @@ static bool output_strong_write_inline_link(struct manual_data *link)
 static bool output_strong_write_inline_reference(struct manual_data *reference)
 {
 	struct manual_data *target = NULL;
-	struct filename *filename = NULL;
-	char *link = NULL, *number = NULL;
+	char *number = NULL;
 	bool include_title = false;
 
 	if (reference == NULL)
@@ -1133,40 +1213,10 @@ static bool output_strong_write_inline_reference(struct manual_data *reference)
 		}
 	}
 
-	/* Establish the relative link, if external. */
+	/* Write the relative link. */
 
 	if (target != NULL) {
-		if (manual_data_nodes_share_file(reference, target, MODES_TYPE_STRONGHELP) == false) {
-			filename = manual_data_get_node_filename(target, output_strong_root_filename, MODES_TYPE_STRONGHELP);
-			if (filename == NULL)
-				return false;
-
-			link = filename_convert(filename, FILENAME_PLATFORM_STRONGHELP, 0);
-			filename_destroy(filename);
-
-			if (link == NULL)
-				return false;
-
-			if (!output_strong_file_write_plain("=>%s", link)) {
-				free(link);
-				return false;
-			}
-
-			free(link);
-
-			if (target->chapter.id != NULL && !output_strong_file_write_plain("#"))
-				return false;
-		} else if (target->chapter.id != NULL) {
-			if (!output_strong_file_write_plain("=>#TAG "))
-				return false;
-		}
-
-		if (target->chapter.id != NULL && !output_strong_file_write_plain("%s", target->chapter.id))
-			return false;
-
-		/* Output the closing link tag. */
-
-		if (!output_strong_file_write_plain(">"))
+		if (!output_strong_write_local_anchor(reference, target))
 			return false;
 
 		/* Close the square brackets if this is a footnote. */
@@ -1174,6 +1224,60 @@ static bool output_strong_write_inline_reference(struct manual_data *reference)
 		if (target->type == MANUAL_DATA_OBJECT_TYPE_FOOTNOTE && !output_strong_file_write_plain("]"))
 			return false;
 	}
+
+	return true;
+}
+
+/**
+ * Write the =>....> component of a link from a source node to a target node.
+ *
+ * \param *source		The source node.
+ * \param *targer		The target node.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_strong_write_local_anchor(struct manual_data *source, struct manual_data *target)
+{
+	struct filename *filename = NULL;
+	char *link = NULL;
+
+	if (source == NULL || target == NULL)
+		return false;
+
+	/* Establish the relative link, if external. */
+
+	if (manual_data_nodes_share_file(source, target, MODES_TYPE_STRONGHELP) == false) {
+		filename = manual_data_get_node_filename(target, output_strong_root_filename, MODES_TYPE_STRONGHELP);
+		if (filename == NULL)
+			return false;
+
+		link = filename_convert(filename, FILENAME_PLATFORM_STRONGHELP, 0);
+		filename_destroy(filename);
+
+		if (link == NULL)
+			return false;
+
+		if (!output_strong_file_write_plain("=>%s", link)) {
+			free(link);
+			return false;
+		}
+
+		free(link);
+
+		if (target->chapter.id != NULL && !output_strong_file_write_plain("#"))
+			return false;
+	} else if (target->chapter.id != NULL) {
+		if (!output_strong_file_write_plain("=>#TAG "))
+			return false;
+	}
+
+	if (target->chapter.id != NULL && !output_strong_file_write_plain("%s", target->chapter.id))
+		return false;
+
+	/* Output the closing link tag. */
+
+	if (!output_strong_file_write_plain(">"))
+		return false;
 
 	return true;
 }

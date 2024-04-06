@@ -70,6 +70,7 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_SECTION,			"Section"},
 	{MANUAL_DATA_OBJECT_TYPE_TITLE,				"Title"},
 	{MANUAL_DATA_OBJECT_TYPE_SUMMARY,			"Summary"},
+	{MANUAL_DATA_OBJECT_TYPE_CONTENTS,			"Contents"},
 	{MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST,			"Ordered List"},
 	{MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST,		"Unordered List"},
 	{MANUAL_DATA_OBJECT_TYPE_LIST_ITEM,			"List Item"},
