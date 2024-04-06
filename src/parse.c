@@ -68,7 +68,7 @@ static struct manual_data *parse_empty_block_object(struct parse_xml_block *pars
 
 static void parse_unknown(struct parse_xml_block *parser);
 static void parse_resources(struct parse_xml_block *parser, struct manual_data_resources *resources);
-static void parse_mode_resources(struct parse_xml_block *parser, struct manual_data_mode *resources);
+static void parse_mode_resources(struct parse_xml_block *parser, enum modes_type mode, struct manual_data_mode *resources);
 static struct manual_data *parse_multi_level_attribute(struct parse_xml_block *parser, char *attribute);
 static struct manual_data *parse_single_level_attribute(struct parse_xml_block *parser, char *attribute);
 static bool parse_fetch_single_level_block(struct parse_xml_block *parser, char *buffer, size_t length);
@@ -1704,7 +1704,7 @@ static void parse_resources(struct parse_xml_block *parser, struct manual_data_r
 					mode = modes_find_type(buffer);
 					if (mode != MODES_TYPE_NONE) {
 						mode_resources = modes_find_resources(resources, mode);
-						parse_mode_resources(parser, mode_resources);
+						parse_mode_resources(parser, mode, mode_resources);
 					} else {
 						msg_report(MSG_UNKNOWN_MODE, buffer);
 						parse_xml_set_error(parser);
@@ -1756,10 +1756,11 @@ static void parse_resources(struct parse_xml_block *parser, struct manual_data_r
  * within inside the supplied resources object.
  *
  * \param *parser	Pointer to the parser to use.
+ * \param mode		The mode to which the resources belong.
  * \param *resources	Pointer to the resources object to fill.
  */
 
-static void parse_mode_resources(struct parse_xml_block *parser, struct manual_data_mode *resources)
+static void parse_mode_resources(struct parse_xml_block *parser, enum modes_type mode, struct manual_data_mode *resources)
 {
 	bool done = false;
 	char buffer[PARSE_MAX_LEAFNAME];
@@ -1802,6 +1803,15 @@ static void parse_mode_resources(struct parse_xml_block *parser, struct manual_d
 			case PARSE_ELEMENT_FOLDER:
 				if (parse_fetch_single_level_block(parser, buffer, PARSE_MAX_LEAFNAME))
 					resources->folder = filename_make(buffer, FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
+				break;
+			case PARSE_ELEMENT_STYLESHEET:
+				if (mode == MODES_TYPE_HTML) {
+					if (parse_fetch_single_level_block(parser, buffer, PARSE_MAX_LEAFNAME))
+						resources->stylesheet = filename_make(buffer, FILENAME_TYPE_DIRECTORY, FILENAME_PLATFORM_LINUX);
+				} else {
+					msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
+					parse_unknown(parser);
+				}
 				break;
 			case PARSE_ELEMENT_NONE:
 				break;

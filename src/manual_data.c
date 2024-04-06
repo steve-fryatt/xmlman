@@ -236,6 +236,7 @@ static void manual_data_initialise_mode_resources(struct manual_data_mode *mode)
 
 	mode->filename = NULL;
 	mode->folder = NULL;
+	mode->stylesheet = NULL;
 }
 
 /**
@@ -439,7 +440,6 @@ bool manual_data_find_filename_data(struct manual_data *node, enum modes_type ty
  *
  * \param *node		The node to return a filename for.
  * \param *root		A default root filename.
- * \param platform	The target platform for the filename.
  * \param type		The target output type.
  * \return		Pointer to a filename, or NULL on failure.
  */
@@ -494,6 +494,48 @@ struct filename *manual_data_get_node_filename(struct manual_data *node, struct 
 		filename_prepend(filename, root, 0);
 
 	return filename;
+}
+
+/**
+ * Given a node, return a pointer to the first parent node which contains
+ * a stylesheet filename for the chosen output type.
+ *
+ * \param *node		The node to return a filename for.
+ * \param type		The target output type.
+ * \return		Pointer to a node, or NULL on failure.
+ */
+
+struct manual_data *manual_data_get_node_stylesheet(struct manual_data *node, enum modes_type type)
+{
+	struct manual_data_mode *resources = NULL;
+
+	if (node == NULL)
+		return NULL;
+
+	while (node != NULL) {
+		switch (node->type) {
+		case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+		case MANUAL_DATA_OBJECT_TYPE_INDEX:
+		case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+		case MANUAL_DATA_OBJECT_TYPE_SECTION:
+			resources = modes_find_resources(node->chapter.resources, type);
+			if (resources == NULL)
+				break;
+
+			/* Return as soon as we find a stylesheet link. */
+
+			if (resources->stylesheet != NULL)
+				return node;
+			break;
+
+		default:
+			break;
+		}
+
+		node = node->parent;
+	}
+
+	return NULL;
 }
 
 /**

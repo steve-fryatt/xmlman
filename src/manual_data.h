@@ -110,6 +110,11 @@ struct manual_data_mode {
 	 * Relative folder name for the section output.
 	 */
 	struct filename				*folder;
+
+	/**
+	 * Relative filename for a stylesheet.
+	 */
+	struct filename				*stylesheet;
 };
 
 /**
@@ -345,6 +350,17 @@ bool manual_data_find_filename_data(struct manual_data *node, enum modes_type ty
  */
 
 struct filename *manual_data_get_node_filename(struct manual_data *node, struct filename *root, enum modes_type type);
+
+/**
+ * Given a node, return a pointer to the first parent node which contains
+ * a stylesheet filename for the chosen output type.
+ *
+ * \param *node		The node to return a filename for.
+ * \param type		The target output type.
+ * \return		Pointer to a node, or NULL on failure.
+ */
+
+struct manual_data *manual_data_get_node_stylesheet(struct manual_data *node, enum modes_type type);
 
 /**
  * Test a pair of nodes, to determine whether or not they are

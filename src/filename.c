@@ -83,6 +83,7 @@ static size_t filename_get_storage_size(struct filename *name);
 static bool filename_copy_to_buffer(struct filename *name, char *buffer, size_t length, enum filename_platform platform, int levels);
 static int filename_count_nodes(struct filename *name);
 static struct filename_node *filename_create_node(struct filename_node *node, size_t length);
+static void filename_destroy_node(struct filename_node *node);
 static char filename_get_separator(enum filename_platform platform);
 static char filename_get_extension(enum filename_platform platform);
 static char *filename_get_parent_name(enum filename_platform platform);
@@ -192,10 +193,7 @@ void filename_destroy(struct filename *name)
 	while (current_node != NULL) {
 		next_node = current_node->next;
 
-		if (current_node->name != NULL)
-			free(current_node->name);
-
-		free(current_node);
+		filename_destroy_node(current_node);
 
 		current_node = next_node;
 	}
@@ -483,7 +481,6 @@ bool filename_append(struct filename *name, struct filename *add, int levels)
 
 	return true;
 }
-
 
 /**
  * Join two filenames together, returing the result as a new filename.
@@ -844,6 +841,22 @@ static struct filename_node *filename_create_node(struct filename_node *node, si
 	return new_node;
 }
 
+/**
+ * Destroy a node, freeing the memory that it uses.
+ *
+ * \param *node		Pointer to the node to be destroyed.
+ */
+
+static void filename_destroy_node(struct filename_node *node)
+{
+	if (node == NULL)
+		return;
+
+	if (node->name != NULL)
+		free(node->name);
+
+	free(node);
+}
 
 /**
  * Return the filename separator for a given platform.

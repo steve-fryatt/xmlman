@@ -85,6 +85,7 @@ static bool output_html_write_manual(struct manual_data *manual, struct filename
 static bool output_html_write_file(struct manual_data *object, struct filename *folder, bool single_file);
 static bool output_html_write_section_object(struct manual_data *object, int level, bool root);
 static bool output_html_write_head(struct manual_data *manual);
+static bool output_html_write_stylesheet_link(struct manual_data *manual);
 static bool output_html_write_foot(struct manual_data *manual);
 static bool output_html_write_heading(struct manual_data *node, int level);
 static bool output_html_write_block_collection_object(struct manual_data *object);
@@ -482,6 +483,9 @@ static bool output_html_write_head(struct manual_data *manual)
 	if (!output_html_write_heading(manual, 0))
 		return false;
 
+	if (!output_html_write_stylesheet_link(manual))
+		return false;
+
 	if (!output_html_file_write_plain("</head>") || !output_html_file_write_newline() || !output_html_file_write_newline())
 		return false;
 
@@ -490,6 +494,77 @@ static bool output_html_write_head(struct manual_data *manual)
 
 	return true;
 }
+
+
+static bool output_html_write_stylesheet_link(struct manual_data *manual)
+{
+	struct manual_data *sheet_node = NULL;
+	struct filename *sheetname = NULL, *sourcename = NULL, *targetname = NULL, *filename = NULL;
+	char *link = NULL;
+
+	if (manual == NULL)
+		return false;
+
+	/* Find the nearest stylesheet details, and exit if there nothing to do. */
+
+	sheet_node = manual_data_get_node_stylesheet(manual, MODES_TYPE_HTML);
+	if (sheet_node == NULL)
+		return true;
+
+	sheetname = filename_up(sheet_node->chapter.resources->html.stylesheet, 0);
+	if (sheetname == NULL)
+		return false;
+
+	/* If the two nodes are not in the same file, get a relative filename. */
+
+	if (manual_data_nodes_share_file(manual, sheet_node, MODES_TYPE_HTML) == false) {
+		sourcename = manual_data_get_node_filename(manual, output_html_root_filename, MODES_TYPE_HTML);
+		if (sourcename == NULL)
+			return false;
+
+		targetname = manual_data_get_node_filename(sheet_node, output_html_root_filename, MODES_TYPE_HTML);
+		if (targetname == NULL) {
+			filename_destroy(sourcename);
+			return false;
+		}
+
+		filename = filename_get_relative(sourcename, targetname);
+		filename_destroy(sourcename);
+		filename_destroy(targetname);
+		if (filename == NULL)
+			return false;
+
+		if (!filename_prepend(sheetname, filename, 0)) {
+			filename_destroy(filename);
+			filename_destroy(sheetname);
+			return false;
+		}
+	}
+
+	link = filename_convert(sheetname, FILENAME_PLATFORM_LINUX, 0);
+	filename_destroy(sheetname);
+
+	if (link == NULL)
+		return false;
+
+	if (!output_html_file_write_plain("<link rel=\"stylesheet\" type=\"text/css\" href=\"")) {
+		free(link);
+		return false;
+	}
+
+	if (!output_html_file_write_text(link)) {
+		free(link);
+		return false;
+	}
+
+	free(link);
+
+	if (!output_html_file_write_plain("\">") || !output_html_file_write_newline())
+		return false;
+
+	return true;
+}
+
 
 /**
  * Write an HTML file foot block out. This starts with the closing

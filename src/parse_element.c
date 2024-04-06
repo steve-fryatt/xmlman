@@ -79,6 +79,7 @@ static struct parse_element_definition parse_element_tags[] = {
 	{PARSE_ELEMENT_MODE,		"mode"},
 	{PARSE_ELEMENT_FILENAME,	"filename"},
 	{PARSE_ELEMENT_FOLDER,		"folder"},
+	{PARSE_ELEMENT_STYLESHEET,	"stylesheet"},
 	{PARSE_ELEMENT_IMAGES,		"images"},
 	{PARSE_ELEMENT_DOWNLOADS,	"downloads"},
 	{PARSE_ELEMENT_SUMMARY,		"summary"},
