@@ -995,6 +995,9 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 		case MANUAL_DATA_OBJECT_TYPE_REFERENCE:
 			output_strong_write_inline_reference(chunk);
 			break;
+		case MANUAL_DATA_OBJECT_TYPE_LINE_BREAK:
+			output_strong_file_write_newline();
+			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
 			output_strong_file_write_text(chunk->chunk.text);
 			break;

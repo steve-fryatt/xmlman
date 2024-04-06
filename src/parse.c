@@ -1506,6 +1506,15 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 			element = parse_xml_get_element(parser);
 
 			switch (element) {
+			case PARSE_ELEMENT_BR:
+				item = manual_data_create(MANUAL_DATA_OBJECT_TYPE_LINE_BREAK);
+				if (item == NULL) {
+					result = parse_xml_set_error(parser);
+					msg_report(MSG_DATA_MALLOC_FAIL);
+					continue;
+				}
+				parse_link_item(&tail, new_block, item);
+				break;
 			case PARSE_ELEMENT_LINK:
 			case PARSE_ELEMENT_REF:
 				item = parse_empty_block_object(parser);

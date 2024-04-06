@@ -81,6 +81,7 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK,			"Code Block"},
 	{MANUAL_DATA_OBJECT_TYPE_FOOTNOTE,			"Footnote"},
 	{MANUAL_DATA_OBJECT_TYPE_PARAGRAPH,			"Paragraph"},
+	{MANUAL_DATA_OBJECT_TYPE_LINE_BREAK,			"Line Break"},
 	{MANUAL_DATA_OBJECT_TYPE_CITATION,			"Citation"},
 	{MANUAL_DATA_OBJECT_TYPE_CODE,				"Code"},
 	{MANUAL_DATA_OBJECT_TYPE_USER_ENTRY,			"User Entry"},

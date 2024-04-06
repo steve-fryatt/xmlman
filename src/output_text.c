@@ -1299,14 +1299,17 @@ static bool output_text_write_text(int column, enum manual_data_object_type type
 		case MANUAL_DATA_OBJECT_TYPE_REFERENCE:
 			output_text_write_inline_reference(column, chunk);
 			break;
-		case MANUAL_DATA_OBJECT_TYPE_TEXT:
-			output_text_line_add_text(column, chunk->chunk.text);
-			break;
 		case MANUAL_DATA_OBJECT_TYPE_VARIABLE:
 			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_VARIABLE, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_WINDOW:
 			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_WINDOW, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_LINE_BREAK:
+			output_text_line_add_text(column, "\n");
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_TEXT:
+			output_text_line_add_text(column, chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
 			output_text_line_add_text(column, (char *) output_text_convert_entity(chunk->chunk.entity));

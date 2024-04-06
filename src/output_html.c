@@ -1276,9 +1276,6 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 		case MANUAL_DATA_OBJECT_TYPE_REFERENCE:
 			output_html_write_inline_reference(chunk);
 			break;
-		case MANUAL_DATA_OBJECT_TYPE_TEXT:
-			output_html_file_write_text(chunk->chunk.text);
-			break;
 		case MANUAL_DATA_OBJECT_TYPE_USER_ENTRY:
 			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_USER_ENTRY, "entry", chunk);
 			break;
@@ -1287,6 +1284,13 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_WINDOW:
 			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_WINDOW, "window", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_LINE_BREAK:
+			output_html_file_write_plain("<br>");
+			output_html_file_write_newline();
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_TEXT:
+			output_html_file_write_text(chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
 			output_html_file_write_text((char *) output_html_convert_entity(chunk->chunk.entity));
