@@ -70,6 +70,10 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_SECTION,			"Section"},
 	{MANUAL_DATA_OBJECT_TYPE_TITLE,				"Title"},
 	{MANUAL_DATA_OBJECT_TYPE_SUMMARY,			"Summary"},
+	{MANUAL_DATA_OBJECT_TYPE_STRAPLINE,			"Strapline"},
+	{MANUAL_DATA_OBJECT_TYPE_CREDIT,			"Credit"},
+	{MANUAL_DATA_OBJECT_TYPE_VERSION,			"Version"},
+	{MANUAL_DATA_OBJECT_TYPE_DATE,				"Date"},
 	{MANUAL_DATA_OBJECT_TYPE_CONTENTS,			"Contents"},
 	{MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST,			"Ordered List"},
 	{MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST,		"Unordered List"},
@@ -216,6 +220,10 @@ struct manual_data_resources *manual_data_get_resources(struct manual_data *obje
 		object->chapter.resources->images = NULL;
 		object->chapter.resources->downloads = NULL;
 		object->chapter.resources->summary = NULL;
+		object->chapter.resources->strapline = NULL;
+		object->chapter.resources->credit = NULL;
+		object->chapter.resources->version = NULL;
+		object->chapter.resources->date = NULL;
 
 		manual_data_initialise_mode_resources(&(object->chapter.resources->text));
 		manual_data_initialise_mode_resources(&(object->chapter.resources->html));
@@ -256,6 +264,60 @@ const char *manual_data_find_object_name(enum manual_data_object_type type)
 	for (i = 0; manual_data_object_type_names[i].type != MANUAL_DATA_OBJECT_TYPE_NONE && manual_data_object_type_names[i].type != type; i++);
 
 	return manual_data_object_type_names[i].name;
+}
+
+/**
+ * Given a node and a current nesting level for the parent node,
+ * determine the nesting level if the node is descended into.
+ *
+ * \param *node		The node of interest.
+ * \param current_level	The nesting level of the parent node.
+ * \return		The new nesting level.
+ */
+
+int manual_data_get_nesting_level(struct manual_data *node, int current_level)
+{
+	if (node == NULL)
+		return current_level;
+
+	switch (node->type) {
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+		/* Chapters and Indexes bump the level, so long as they are
+		 * nested in a manual, which they should always be!
+		 *
+		 * We don't worry about the title, as they should all have titles!
+		 */
+		if (node->parent != NULL && node->parent->type == MANUAL_DATA_OBJECT_TYPE_MANUAL)
+			current_level++;
+		break;
+
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+	case MANUAL_DATA_OBJECT_TYPE_CONTENTS:
+		if (node->parent == NULL)
+			break;
+
+		/* A section with no parent shouldn't happen! */
+
+		if (node->parent->type == MANUAL_DATA_OBJECT_TYPE_MANUAL)
+			/* A section in a manual is always a level bump. */
+			current_level++;
+	//	else if (node->parent->type == MANUAL_DATA_OBJECT_TYPE_SECTION)
+	//		/* A section in a section is always a level bump. */
+	//		current_level++;
+		else if (node->title != NULL)
+			/* A section in a chapter or index is only a level bump
+			 * if it has a title. Otherwise it's text at the parent's
+			 * level.
+			 */
+			current_level++;
+		break;
+
+	default:
+		break;
+	}
+
+	return current_level;
 }
 
 /**

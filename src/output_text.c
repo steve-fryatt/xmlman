@@ -60,6 +60,12 @@
 #define OUTPUT_TEXT_NO_INDENT 0
 
 /**
+ * The base level for section nesting.
+ */
+
+#define OUTPUT_TEXT_BASE_LEVEL 1
+
+/**
  * The maximum indent that can be applied to sections (effectively
  * limiting the depth to which they can be nested.
  */
@@ -96,8 +102,10 @@ static char *output_text_unordered_list_bullets[] = { "*", "+", ">", NULL };
 static bool output_text_write_manual(struct manual_data *chapter, struct filename *folder);
 static bool output_text_write_file(struct manual_data *object, struct filename *folder, bool single_file);
 static bool output_text_write_object(struct manual_data *object, bool root, int level);
-static bool output_text_write_head(struct manual_data *manual);
-static bool output_text_write_foot(struct manual_data *manual);
+static bool output_text_write_file_head(struct manual_data *manual);
+static bool output_text_write_page_head(struct manual_data *manual, int level);
+static bool output_text_write_page_foot(struct manual_data *manual);
+static bool output_text_write_file_foot(struct manual_data *manual);
 static bool output_text_write_heading(struct manual_data *node, int column);
 static bool output_text_write_chapter_list(struct manual_data *object, int level);
 static bool output_text_write_block_collection_object(struct manual_data *object, int column, int level);
@@ -278,7 +286,7 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 
 	/* Write the file header. */
 
-	if (!output_text_write_head(object)) {
+	if (!output_text_write_file_head(object)) {
 		output_text_line_close();
 		filename_destroy(foldername);
 		filename_destroy(filename);
@@ -294,7 +302,7 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 
 	/* Output the object. */
 
-	if (!output_text_write_object(object, true, 0)) {
+	if (!output_text_write_object(object, true, OUTPUT_TEXT_BASE_LEVEL)) {
 		output_text_line_close();
 		filename_destroy(foldername);
 		filename_destroy(filename);
@@ -303,7 +311,7 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 
 	/* Output the file footer. */
 
-	if (!output_text_write_foot(object)) {
+	if (!output_text_write_file_foot(object)) {
 		output_text_line_close();
 		filename_destroy(foldername);
 		filename_destroy(filename);
@@ -355,27 +363,32 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 		return false;
 	}
 
-	/* If this isn't the root level, indent everything now, before
-	 * the object heading is written.
+	/* Push the title indent. These only start to indent from their
+	 * parent level after level 3.
 	 */
 
-	if (!output_text_line_pop())
-		return false;
-
-	if (!output_text_line_push(level * OUTPUT_TEXT_BLOCK_INDENT))
+	if (!output_text_line_push_absolute((level > 2) ? ((level - 2) * OUTPUT_TEXT_BLOCK_INDENT) : OUTPUT_TEXT_NO_INDENT))
 		return false;
 
 	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
-			return false;
+		return false;
 
-	/* Write out the object heading.
-	 *
-	 * Don't do this for a manual, as the file will already have a heading
-	 * above it with the title. For sub-files, we do, as the chapter/section
-	 * heading won't be the same.
+	/* Write out the object heading. At the top of the file, this is
+	 * the full page heading; lower down, it's just a heading line.
 	 */
 
-	if (object->type != MANUAL_DATA_OBJECT_TYPE_MANUAL && object->title != NULL) {
+	if (root == true) {
+		if (!output_text_write_page_head(object, level))
+			return false;
+
+		/* If we're starting at a section, skip up a level to
+		 * make the hanging indent work. There's no chapter
+		 * or index to do this for us.
+		 */
+
+		if (object->type == MANUAL_DATA_OBJECT_TYPE_SECTION)
+			level++;
+	} else if (object->title != NULL) {
 		if (!output_text_line_write_newline())
 			return false;
 
@@ -383,20 +396,18 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 			return false;
 	}
 
-	/* If this is the root level, indent everything now, after the
-	 * object heading has been written.
-	 */
+	/* Pop the title indent. */
 
-	if (level == 0) {
-		if (!output_text_line_pop())
-			return false;
+	if (!output_text_line_pop())
+		return false;
 
-		if (!output_text_line_push(level * OUTPUT_TEXT_BLOCK_INDENT))
-			return false;
+	/* Push the body indent. */
 
-		if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
-			return false;
-	}
+	if (!output_text_line_push_absolute(((level > 2) ? (level - 2) : (level - 1)) * OUTPUT_TEXT_BLOCK_INDENT))
+		return false;
+
+	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
+		return false;
 
 	/* If this is a separate file, queue it for writing later. Otherwise,
 	 * write the objects which fall within it.
@@ -421,7 +432,7 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 			case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 			case MANUAL_DATA_OBJECT_TYPE_INDEX:
 			case MANUAL_DATA_OBJECT_TYPE_SECTION:
-				if (!output_text_write_object(block, false, (block->type == MANUAL_DATA_OBJECT_TYPE_SECTION) ? level + 1 : level))
+				if (!output_text_write_object(block, false, manual_data_get_nesting_level(block, level)))
 					return false;
 				break;
 
@@ -435,7 +446,7 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 
 				/* The chapter list is treated like a section, so we always bump the level. */
 
-				if (!output_text_write_chapter_list(block, level + 1))
+				if (!output_text_write_chapter_list(block, manual_data_get_nesting_level(block, level)))
 					return false;
 				break;
 
@@ -511,6 +522,17 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 		}
 	}
 
+	/* Pop the indent. */
+
+	if (!output_text_line_pop())
+		return false;
+
+	/* If this is the file root, write the page footer out. */
+
+	if (root == true && !output_text_write_page_foot(object))
+		return false;
+
+
 	return true;
 }
 
@@ -521,19 +543,129 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-static bool output_text_write_head(struct manual_data *manual)
+static bool output_text_write_file_head(struct manual_data *manual)
 {
 	if (manual == NULL)
 		return false;
 
-//	if (!output_strong_file_write_plain("<head>") || !output_strong_file_write_newline())
-//		return false;
+	return true;
+}
 
-	if (!output_text_write_heading(manual, 0))
+
+/**
+ * Write an HTML page head block out. This follows the body, and
+ * contains the <div class="head">... down to the </div></div class"body">.
+ *
+ * \param *manual	The manual to base the block on.
+ * \param level		The level to write the heading at.
+ * \return		TRUE if successful, otherwise FALSE.
+ */
+
+static bool output_text_write_page_head(struct manual_data *manual, int level)
+{
+	if (manual == NULL)
 		return false;
 
-//	if (!output_strong_file_write_plain("</head>") || !output_strong_file_write_newline())
-//		return false;
+	if (!output_text_line_reset())
+		return false;
+
+	if (manual->type == MANUAL_DATA_OBJECT_TYPE_MANUAL && manual->chapter.resources != NULL) {
+		if (!output_text_line_write_ruleoff('='))
+			return false;
+	}
+
+	/* Write out the object heading. */
+
+	if (!output_text_line_push(0))
+		return false;
+
+	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
+		return false;
+
+	if (!output_text_line_add_column(1, 17))
+		return false;
+
+	if (!output_text_line_set_column_flags(1, OUTPUT_TEXT_LINE_COLUMN_FLAGS_RIGHT))
+		return false;
+
+	if (!output_text_line_reset())
+		return false;
+
+	if (manual->title != NULL) {
+		if (!output_text_write_title(0, manual, false, true))
+			return false;
+
+		if (manual->type == MANUAL_DATA_OBJECT_TYPE_MANUAL && manual->chapter.resources != NULL &&
+				manual->chapter.resources->strapline != NULL) {
+			if (!output_text_line_add_text(0, " - "))
+				return false;
+
+			if (!output_text_line_set_hanging_indent(0))
+				return false;
+		}
+	}
+
+	if (manual->type == MANUAL_DATA_OBJECT_TYPE_MANUAL && manual->chapter.resources != NULL) {
+		if (manual->chapter.resources->strapline != NULL) {
+			if (!output_text_write_text(0, MANUAL_DATA_OBJECT_TYPE_STRAPLINE, manual->chapter.resources->strapline))
+				return false;
+		}
+
+		if (manual->chapter.resources->version != NULL) {
+			if (!output_text_write_text(1, MANUAL_DATA_OBJECT_TYPE_VERSION, manual->chapter.resources->version))
+				return false;
+		}
+	}
+
+	if (!output_text_line_write(false, false))
+		return false;
+
+	if (manual->type == MANUAL_DATA_OBJECT_TYPE_MANUAL && manual->chapter.resources != NULL &&
+			(manual->chapter.resources->credit != NULL || manual->chapter.resources->date != NULL)) {
+		if (!output_text_line_write_newline())
+			return false;
+
+		if (!output_text_line_reset())
+			return false;
+
+		if (manual->chapter.resources->credit != NULL) {
+			if (!output_text_write_text(0, MANUAL_DATA_OBJECT_TYPE_CREDIT, manual->chapter.resources->credit))
+				return false;
+		}
+
+		if (manual->chapter.resources->date != NULL) {
+			if (!output_text_write_text(1, MANUAL_DATA_OBJECT_TYPE_DATE, manual->chapter.resources->date))
+				return false;
+		}
+
+		if (!output_text_line_write(false, true))
+			return false;
+	}
+
+	if (!output_text_line_pop())
+		return false;
+
+	if (manual->type == MANUAL_DATA_OBJECT_TYPE_MANUAL && manual->chapter.resources != NULL) {
+		if (!output_text_line_write_ruleoff('='))
+			return false;
+	}
+
+	return true;
+}
+
+
+/**
+ * Write a text page foot block out. This ends the <div id="body">
+ * section and runs down to just before the </body> tag.
+ *
+ * \param *manual	The manual to base the block on.
+ * \return		TRUE if successful, otherwise FALSE.
+ */
+
+static bool output_text_write_page_foot(struct manual_data *manual)
+{
+	if (manual == NULL)
+		return false;
 
 	return true;
 }
@@ -545,7 +677,7 @@ static bool output_text_write_head(struct manual_data *manual)
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-static bool output_text_write_foot(struct manual_data *manual)
+static bool output_text_write_file_foot(struct manual_data *manual)
 {
 	if (manual == NULL)
 		return false;
@@ -582,7 +714,7 @@ static bool output_text_write_heading(struct manual_data *node, int column)
 	if (!output_text_write_title(column, node, false, true))
 		return false;
 
-	if (!output_text_line_write(false, true))
+	if (!output_text_line_write(true, false))
 		return false;
 
 	return true;
@@ -617,7 +749,7 @@ static bool output_text_write_chapter_list(struct manual_data *object, int level
 	 * here to make it line up with any siblings.
 	 */
 
-	if (!output_text_line_push(level * OUTPUT_TEXT_BLOCK_INDENT))
+	if (!output_text_line_push_absolute(((level > 2) ? (level - 2) : (level - 1)) * OUTPUT_TEXT_BLOCK_INDENT))
 		return false;
 
 	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
@@ -1129,7 +1261,7 @@ static bool output_text_write_table(struct manual_data *object, int target_colum
 	if (!output_text_write_title(0, object, true, true))
 		return false;
 
-	if (!output_text_line_write(true, false))
+	if (!output_text_line_write(false, false))
 		return false;
 
 	if (!output_text_line_pop())
@@ -1179,6 +1311,9 @@ static bool output_text_write_code_block(struct manual_data *object, int column)
 	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
 		return false;
 
+	if (!output_text_line_set_column_flags(0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_PREFORMAT))
+		return false;
+
 	if (!output_text_line_reset())
 		return false;
 
@@ -1187,7 +1322,7 @@ static bool output_text_write_code_block(struct manual_data *object, int column)
 	if (!output_text_write_text(0, object->type, object))
 		return false;
 
-	if (!output_text_line_write(true, false))
+	if (!output_text_line_write(false, false))
 		return false;
 
 	if (object->title == NULL) {
@@ -1215,7 +1350,7 @@ static bool output_text_write_code_block(struct manual_data *object, int column)
 	if (!output_text_write_title(0, object, true, true))
 		return false;
 
-	if (!output_text_line_write(true, false))
+	if (!output_text_line_write(false, false))
 		return false;
 
 	if (!output_text_line_pop())
@@ -1638,6 +1773,10 @@ static const char *output_text_convert_entity(enum manual_entity_type entity)
 		return ">=";
 	case MANUAL_ENTITY_MINUS:
 		return "-";
+	case MANUAL_ENTITY_PLUSMN:
+		return "+/-";
+	case MANUAL_ENTITY_COPY:
+		return "(C)";
 	case MANUAL_ENTITY_NDASH:
 		return ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY;
 	case MANUAL_ENTITY_MDASH:

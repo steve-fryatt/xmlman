@@ -286,6 +286,62 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 					parse_xml_set_error(parser);
 				}
 				break;
+			case PARSE_ELEMENT_CREDIT:
+				resources = manual_data_get_resources(*manual);
+				if (resources != NULL) {
+					if (resources->credit == NULL) {
+						resources->credit = parse_block_object(parser);
+						parse_link_item(NULL, *manual, resources->credit);
+					} else {
+						msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
+						parse_xml_set_error(parser);
+					}
+				} else {
+					parse_xml_set_error(parser);
+				}
+				break;
+			case PARSE_ELEMENT_DATE:
+				resources = manual_data_get_resources(*manual);
+				if (resources != NULL) {
+					if (resources->date == NULL) {
+						resources->date = parse_block_object(parser);
+						parse_link_item(NULL, *manual, resources->date);
+					} else {
+						msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
+						parse_xml_set_error(parser);
+					}
+				} else {
+					parse_xml_set_error(parser);
+				}
+				break;
+			case PARSE_ELEMENT_STRAPLINE:
+				resources = manual_data_get_resources(*manual);
+				if (resources != NULL) {
+					if (resources->strapline == NULL) {
+						resources->strapline = parse_block_object(parser);
+						parse_link_item(NULL, *manual, resources->strapline);
+					} else {
+						msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
+						parse_xml_set_error(parser);
+					}
+				} else {
+					parse_xml_set_error(parser);
+				}
+				break;
+			case PARSE_ELEMENT_VERSION:
+				resources = manual_data_get_resources(*manual);
+				if (resources != NULL) {
+					if (resources->version == NULL) {
+						resources->version = parse_block_object(parser);
+						parse_link_item(NULL, *manual, resources->version);
+					} else {
+						msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
+						parse_xml_set_error(parser);
+					}
+				} else {
+					parse_xml_set_error(parser);
+				}
+				break;
 			case PARSE_ELEMENT_SUMMARY:
 				resources = manual_data_get_resources(*manual);
 				if (resources != NULL) {
@@ -1410,6 +1466,18 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 		break;
 	case PARSE_ELEMENT_SUMMARY:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_SUMMARY);
+		break;
+	case PARSE_ELEMENT_STRAPLINE:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_STRAPLINE);
+		break;
+	case PARSE_ELEMENT_CREDIT:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_CREDIT);
+		break;
+	case PARSE_ELEMENT_VERSION:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_VERSION);
+		break;
+	case PARSE_ELEMENT_DATE:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_DATE);
 		break;
 	case PARSE_ELEMENT_COL:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN);

@@ -84,9 +84,11 @@ static struct filename *output_html_root_filename;
 static bool output_html_write_manual(struct manual_data *manual, struct filename *folder);
 static bool output_html_write_file(struct manual_data *object, struct filename *folder, bool single_file);
 static bool output_html_write_section_object(struct manual_data *object, int level, bool root);
-static bool output_html_write_head(struct manual_data *manual);
+static bool output_html_write_file_head(struct manual_data *manual);
+static bool output_html_write_page_head(struct manual_data *manual, int level);
 static bool output_html_write_stylesheet_link(struct manual_data *manual);
-static bool output_html_write_foot(struct manual_data *manual);
+static bool output_html_write_page_foot(struct manual_data *manual);
+static bool output_html_write_file_foot(struct manual_data *manual);
 static bool output_html_write_heading(struct manual_data *node, int level);
 static bool output_html_write_chapter_list(struct manual_data *object, int level);
 static bool output_html_write_block_collection_object(struct manual_data *object);
@@ -261,7 +263,7 @@ static bool output_html_write_file(struct manual_data *object, struct filename *
 
 	/* Write the file header. */
 
-	if (!output_html_write_head(object)) {
+	if (!output_html_write_file_head(object)) {
 		output_html_file_close();
 		filename_destroy(foldername);
 		filename_destroy(filename);
@@ -279,7 +281,7 @@ static bool output_html_write_file(struct manual_data *object, struct filename *
 
 	/* Output the file footer. */
 
-	if (!output_html_write_foot(object)) {
+	if (!output_html_write_file_foot(object)) {
 		output_html_file_close();
 		filename_destroy(foldername);
 		filename_destroy(filename);
@@ -332,13 +334,21 @@ static bool output_html_write_section_object(struct manual_data *object, int lev
 		return false;
 	}
 
-	/* Write out the object heading. */
+	/* Write out the object heading. At the top of the file, this is
+	 * the full page heading; lower down, it's just a heading line.
+	 */
 
-	if (object->title != NULL) {
-		if (!root && !output_html_file_write_newline())
+	if (root == true) {
+		if (!output_html_write_page_head(object, level))
+			return false;
+	} else if (object->title != NULL) {
+		if (!output_html_file_write_newline())
 			return false;
 
 		if (!output_html_write_heading(object, level))
+			return false;
+
+		if (!output_html_file_write_newline())
 			return false;
 	}
 
@@ -380,7 +390,7 @@ static bool output_html_write_section_object(struct manual_data *object, int lev
 			case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 			case MANUAL_DATA_OBJECT_TYPE_INDEX:
 			case MANUAL_DATA_OBJECT_TYPE_SECTION:
-				if (!output_html_write_section_object(block, level + 1, false))
+				if (!output_html_write_section_object(block, manual_data_get_nesting_level(block, level), false))
 					return false;
 				break;
 
@@ -394,7 +404,7 @@ static bool output_html_write_section_object(struct manual_data *object, int lev
 
 				/* The chapter list is treated like a section, so we always bump the level. */
 
-				if (!output_html_write_chapter_list(block, level + 1))
+				if (!output_html_write_chapter_list(block, manual_data_get_nesting_level(block, level)))
 					return false;
 				break;
 
@@ -470,6 +480,11 @@ static bool output_html_write_section_object(struct manual_data *object, int lev
 		}
 	}
 
+	/* If this is the file root, write the page footer out. */
+
+	if (root == true && !output_html_write_page_foot(object))
+		return false;
+
 	return true;
 }
 
@@ -482,7 +497,7 @@ static bool output_html_write_section_object(struct manual_data *object, int lev
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-static bool output_html_write_head(struct manual_data *manual)
+static bool output_html_write_file_head(struct manual_data *manual)
 {
 	if (manual == NULL)
 		return false;
@@ -496,7 +511,7 @@ static bool output_html_write_head(struct manual_data *manual)
 	if (!output_html_file_write_plain("<head>") || !output_html_file_write_newline())
 		return false;
 
-	if (!output_html_write_heading(manual, 0))
+	if (manual->title != NULL && !output_html_write_heading(manual, 0))
 		return false;
 
 	if (!output_html_write_stylesheet_link(manual))
@@ -506,6 +521,99 @@ static bool output_html_write_head(struct manual_data *manual)
 		return false;
 
 	if (!output_html_file_write_plain("<body>") || !output_html_file_write_newline())
+		return false;
+
+	return true;
+}
+
+
+/**
+ * Write an HTML page head block out. This follows the body, and
+ * contains the <div class="head">... down to the </div></div class"body">.
+ *
+ * \param *manual	The manual to base the block on.
+ * \param level		The level to write the heading at.
+ * \return		TRUE if successful, otherwise FALSE.
+ */
+
+static bool output_html_write_page_head(struct manual_data *manual, int level)
+{
+	if (manual == NULL)
+		return false;
+
+	if (!output_html_file_write_plain("<div id=\"head\">") || !output_html_file_write_newline())
+		return false;
+
+	if (manual->type == MANUAL_DATA_OBJECT_TYPE_MANUAL && manual->chapter.resources != NULL) {
+		if (!output_html_file_write_plain("<div class=\"title-flex\">"))
+			return false;
+	}
+
+	if (manual->title != NULL && !output_html_write_heading(manual, level))
+		return false;
+
+	if (manual->type == MANUAL_DATA_OBJECT_TYPE_MANUAL && manual->chapter.resources != NULL) {
+		if (!output_html_file_write_plain("<div class=\"title-side\">") || !output_html_file_write_newline())
+			return false;
+
+		/* Write the date and version here. */
+
+		if (manual->chapter.resources->version != NULL) {
+			if (!output_html_file_write_plain("<div class=\"version\">"))
+				return false;
+
+			if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_VERSION, manual->chapter.resources->version))
+				return false;
+
+			if (!output_html_file_write_plain("</div>") || !output_html_file_write_newline())
+				return false;
+		}
+
+		if (manual->chapter.resources->date != NULL) {
+			if (!output_html_file_write_plain("<div class=\"date\">"))
+				return false;
+
+			if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_DATE, manual->chapter.resources->date))
+				return false;
+
+			if (!output_html_file_write_plain("</div>") || !output_html_file_write_newline())
+				return false;
+		}
+
+		if (!output_html_file_write_plain("</div></div>") || !output_html_file_write_newline())
+			return false;
+
+		/* Write the strapline. */
+
+		if (manual->chapter.resources->strapline != NULL) {
+			if (!output_html_file_write_plain("<div class=\"strapline\">"))
+				return false;
+
+			if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_STRAPLINE, manual->chapter.resources->strapline))
+				return false;
+
+			if (!output_html_file_write_plain("</div>") || !output_html_file_write_newline())
+				return false;
+		}
+
+		/* Write the credit line. */
+
+		if (manual->chapter.resources->credit != NULL) {
+			if (!output_html_file_write_plain("<div class=\"credit\">"))
+				return false;
+
+			if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_CREDIT, manual->chapter.resources->credit))
+				return false;
+
+			if (!output_html_file_write_plain("</div>") || !output_html_file_write_newline())
+				return false;
+		}
+	}
+
+	if (!output_html_file_write_plain("</div>") || !output_html_file_write_newline() || !output_html_file_write_newline())
+		return false;
+
+	if (!output_html_file_write_plain("<div id=\"body\">") || !output_html_file_write_newline())
 		return false;
 
 	return true;
@@ -590,6 +698,31 @@ static bool output_html_write_stylesheet_link(struct manual_data *manual)
 
 
 /**
+ * Write an HTML page foot block out. This ends the <div id="body">
+ * section and runs down to just before the </body> tag.
+ *
+ * \param *manual	The manual to base the block on.
+ * \return		TRUE if successful, otherwise FALSE.
+ */
+
+static bool output_html_write_page_foot(struct manual_data *manual)
+{
+	if (manual == NULL)
+		return false;
+
+	if (!output_html_file_write_plain("</div>") || !output_html_file_write_newline())
+		return false;
+
+	if (!output_html_file_write_plain("<div id=\"foot\">") || !output_html_file_write_newline())
+		return false;
+
+	if (!output_html_file_write_plain("</div>") || !output_html_file_write_newline())
+		return false;
+
+	return true;
+}
+
+/**
  * Write an HTML file foot block out. This starts with the closing
  * </body> and runs to the end of the file.
  *
@@ -597,7 +730,7 @@ static bool output_html_write_stylesheet_link(struct manual_data *manual)
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-static bool output_html_write_foot(struct manual_data *manual)
+static bool output_html_write_file_foot(struct manual_data *manual)
 {
 	if (manual == NULL)
 		return false;
@@ -605,10 +738,8 @@ static bool output_html_write_foot(struct manual_data *manual)
 	if (!output_html_file_write_plain("</body>") || !output_html_file_write_newline())
 		return false;
 
-	if (!output_html_file_write_plain("</html>") || !output_html_file_write_newline()) {
-		output_html_file_close();
+	if (!output_html_file_write_plain("</html>") || !output_html_file_write_newline())
 		return false;
-	}
 
 	return true;
 }
@@ -1741,6 +1872,10 @@ static const char *output_html_convert_entity(enum manual_entity_type entity)
 		return "&ge;";
 	case MANUAL_ENTITY_MINUS:
 		return "&minus;";
+	case MANUAL_ENTITY_PLUSMN:
+		return "&plusmn;";
+	case MANUAL_ENTITY_COPY:
+		return "&copy;";
 	case MANUAL_ENTITY_NDASH:
 		return "&ndash;";
 	case MANUAL_ENTITY_MDASH:

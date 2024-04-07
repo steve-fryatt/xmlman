@@ -75,6 +75,11 @@ struct output_text_line_column {
 	int					width;
 
 	/**
+	 * The hanging indent to apply to subsequent lines.
+	 */
+	int					hanging_indent;
+
+	/**
 	 * The column's text buffer.
 	 */
 	char					*text;
@@ -94,6 +99,11 @@ struct output_text_line_column {
 	 * The current maximum written width, in charaters.
 	 */
 	int					written_width;
+
+	/**
+	 * The number of spare lines at the foot of a formatted column.
+	 */
+	int					blank_rows;
 
 	/**
 	 * Pointer to the next column structure, or NULL.
@@ -157,6 +167,12 @@ struct output_text_line {
 
 #define OUTPUT_TEXT_LINE_COLUMN_BLOCK_SIZE 2048
 
+/**
+ * The minimum column width in which hypjenation will occur.
+ */
+
+#define OUTPUT_TEXT_LINE_HYPHENATION_LIMIT 3
+
 /* Global Variables. */
 
 /**
@@ -183,9 +199,11 @@ static struct output_text_line *output_text_line_create(int page_width, int left
 static void output_text_line_destroy(struct output_text_line *line);
 static bool output_text_line_add_column_text(struct output_text_line_column *column, char *text);
 static bool output_text_line_update_column_memory(struct output_text_line_column *column);
+static bool output_text_line_set_column_hanging_indent(struct output_text_line_column *column);
 static struct output_text_line_column* output_text_line_find_column(struct output_text_line *line, int column);
-static bool output_text_line_write_line(struct output_text_line *line, bool pre, bool underline);
-static bool output_text_line_write_column(struct output_text_line_column *column, bool pre);
+static bool output_text_line_size_columns(struct output_text_line *line);
+static bool output_text_line_write_line(struct output_text_line *line, bool underline);
+static bool output_text_line_write_column(struct output_text_line_column *column, bool trial);
 static bool output_text_line_write_column_underline(struct output_text_line_column *column);
 static bool output_text_line_pad_to_column(struct output_text_line_column *column);
 static bool output_text_line_pad_to_position(struct output_text_line *line, int position);
@@ -230,6 +248,35 @@ void output_text_line_close(void)
 
 	while (output_text_line_stack != NULL)
 		output_text_line_pop();
+}
+
+/**
+ * Push a new output line on to the stack, insetting it the given number
+ * of character positions relative to the start of the file line.
+ * 
+ * \param inset		The number of character positions to inset the line.
+ * \return		TRUE if successful; else FALSE.
+ */
+
+bool output_text_line_push_absolute(int inset)
+{
+	int left_margin = 0;
+	struct output_text_line *line = NULL;
+
+	line = output_text_line_create(output_text_line_page_width, inset);
+	if (line == NULL)
+		return false;
+
+	if (output_text_line_stack != NULL)
+		left_margin = output_text_line_stack->left_margin;
+
+	if (inset < left_margin)
+		msg_report(MSG_TEXT_LINE_HANGING, inset, left_margin);
+
+	line->next = output_text_line_stack;
+	output_text_line_stack = line;
+
+	return true;
 }
 
 /**
@@ -330,7 +377,7 @@ bool output_text_line_pop(void)
 
 static struct output_text_line *output_text_line_create(int page_width, int left_margin)
 {
-	struct output_text_line		*line = NULL;
+	struct output_text_line *line = NULL;
 
 	line = malloc(sizeof(struct output_text_line));
 	if (line == NULL) {
@@ -468,6 +515,8 @@ bool output_text_line_add_column(int margin, int width)
 	column->size = 0;
 	column->write_ptr = NULL;
 	column->written_width = 0;
+	column->hanging_indent = 0;
+	column->blank_rows = 0;
 	column->next = NULL;
 
 	return output_text_line_update_column_memory(column);
@@ -508,7 +557,7 @@ bool output_text_line_set_column_flags(int column, enum output_text_line_column_
 
 bool output_text_line_reset(void)
 {
-	struct output_text_line_column	*column = NULL, *previous = NULL;
+	struct output_text_line_column *column = NULL, *previous = NULL;
 	int used_width = 0, free_width = 0, auto_width = 0, auto_columns = 0;
 	struct output_text_line *line = output_text_line_stack;
 
@@ -533,7 +582,7 @@ bool output_text_line_reset(void)
 	}
 
 	free_width = line->page_width - used_width;
-	auto_width = free_width / auto_columns;
+	auto_width = (auto_columns == 0) ? free_width : free_width / auto_columns;
 
 	/* Assign the positions and widths. */
 
@@ -569,6 +618,8 @@ bool output_text_line_reset(void)
 			column->text[0] = '\0';
 
 		column->written_width = 0;
+		column->blank_rows = 0;
+		column->hanging_indent = 0;
 
 		previous = column;
 		column = column->next;
@@ -716,6 +767,73 @@ static bool output_text_line_update_column_memory(struct output_text_line_column
 }
 
 /**
+ * Set a hanging indent in a column, based on the current text
+ * width. This will be ignored if it falls outside of the width
+ * of the column.
+ *
+ * \param column	The index of the column to update.
+ * \return		True on success; False on error.
+ */
+
+bool output_text_line_set_hanging_indent(int column)
+{
+	struct output_text_line_column	*col = NULL;
+	struct output_text_line *line = output_text_line_stack;
+
+	if (line == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_REF);
+		return false;
+	}
+
+	if (line->is_prepared == false) {
+		msg_report(MSG_TEXT_LINE_UNPREPARED);
+		return false;
+	}
+
+	col = output_text_line_find_column(line, column);
+	if (col == NULL)
+		return false;
+
+	line->has_content = true;
+
+	return output_text_line_set_column_hanging_indent(col);
+}
+
+/**
+ * Set a hanging indent in a column, based on the current text
+ * width. This will be ignored if it falls outside of the width
+ * of the column.
+ *
+ * \param column	The column instance to be updated.
+ * \return		True on success; False on error.
+ */
+
+static bool output_text_line_set_column_hanging_indent(struct output_text_line_column *column)
+{
+	int width = 0;
+
+	if (column == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_COL_REF);
+		return false;
+	}
+
+	if (column->flags & OUTPUT_TEXT_LINE_COLUMN_FLAGS_RIGHT || column->flags & OUTPUT_TEXT_LINE_COLUMN_FLAGS_RIGHT) {
+		msg_report(MSG_TEXT_LINE_HANGING_LEFT);
+		return false;
+	}
+
+	width = encoding_get_utf8_string_length(column->text);
+	if (width >= column->width) {
+		msg_report(MSG_TEXT_LINE_HANGING_TOO_LATE);
+		return false;
+	}
+
+	column->hanging_indent = width;
+
+	return true;
+}
+
+/**
  * Find a column instance block based on the column index in a line.
  *
  * \param *line		The current line instance.
@@ -750,12 +868,13 @@ static struct output_text_line_column* output_text_line_find_column(struct outpu
 /**
  * Write the line at the top of the stack to the output.
  *
- * \param pre		Is this preformatted text?
- * \param title		True to underline the text.
+ * \param underline	True to underline the text.
+ * \param align_bottom	True to align the text to the bottom
+ *			of the columns in the row.
  * \return		True on success; False on error.
  */
 
-bool output_text_line_write(bool pre, bool title)
+bool output_text_line_write(bool underline, bool align_bottom)
 {
 	struct output_text_line *line = output_text_line_stack;
 
@@ -764,19 +883,22 @@ bool output_text_line_write(bool pre, bool title)
 		return false;
 	}
 
+	if (align_bottom && !output_text_line_size_columns(line))
+		return false;
+
 	/* Write the line content to the file. */
 
 	do {
 		line->complete = true;
 
-		if (!output_text_line_write_line(line, pre, false))
+		if (!output_text_line_write_line(line, false))
 			return false;
 	} while (line->complete == false);
 
 	/* Perform any underlining that's required. */
 
-	if (title == true) {
-		if (!output_text_line_write_line(line, pre, true))
+	if (underline == true) {
+		if (!output_text_line_write_line(line, true))
 			return false;
 	}
 
@@ -789,17 +911,71 @@ bool output_text_line_write(bool pre, bool title)
 }
 
 /**
+ * Calculate the size in rows of the text when formatted into
+ * each of the columns, and update blank_rows to be the number
+ * of spare rows in each column.
+ *
+ * \param *line		The current line instance.
+ */
+
+static bool output_text_line_size_columns(struct output_text_line *line)
+{
+	struct output_text_line_column *column = NULL;
+	int max_count = 0;
+
+	if (line == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_REF);
+		return false;
+	}
+
+	/* Count the lines taken by the text in the column when formatted. */
+
+	column = line->columns;
+
+	while (column != NULL) 
+	{
+		column->blank_rows = 0;
+
+		while (column->write_ptr != NULL) {
+			if (!output_text_line_write_column(column, true))
+				return false;
+
+			column->blank_rows++;
+		}
+
+		column->write_ptr = column->text;
+
+		if (column->blank_rows > max_count)
+			max_count = column->blank_rows;
+
+		column = column->next;
+	}
+
+	/* Calculate the blank rows in each column relative to the longest one. */
+
+	column = line->columns;
+
+	while (column != NULL) 
+	{
+		column->blank_rows = max_count - column->blank_rows;
+
+		column = column->next;
+	}
+
+	return true;
+}
+
+/**
  * Write one line from the current block to the output.
  *
  * \param *line		The current line instance.
- * \param pre		Is this preformatted text?
  * \param underline	True to output an underline; False to output content.
  * \return		True on success; False on error.
  */
 
-static bool output_text_line_write_line(struct output_text_line *line, bool pre, bool underline)
+static bool output_text_line_write_line(struct output_text_line *line, bool underline)
 {
-	struct output_text_line_column	*column = NULL;
+	struct output_text_line_column *column = NULL;
 
 	if (line == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_REF);
@@ -811,12 +987,16 @@ static bool output_text_line_write_line(struct output_text_line *line, bool pre,
 	column = line->columns;
 
 	while (column != NULL) {
-		if (underline == true) {
-			if (!output_text_line_write_column_underline(column))
-				return false;
+		if (column->blank_rows > 0) {
+			column->blank_rows--;
 		} else {
-			if (!output_text_line_write_column(column, pre))
-				return false;
+			if (underline == true) {
+				if (!output_text_line_write_column_underline(column))
+					return false;
+			} else {
+				if (!output_text_line_write_column(column, false))
+					return false;
+			}
 		}
 
 		column = column->next;
@@ -831,49 +1011,64 @@ static bool output_text_line_write_line(struct output_text_line *line, bool pre,
  * Write one column from a line to the output.
  *
  * \param *column	The current column instance.
- * \param pre		Is this preformatted text?
+ * \param trial		Is this a trial run?
  * \return		True on success; False on error.
  */
 
-static bool output_text_line_write_column(struct output_text_line_column *column, bool pre)
+static bool output_text_line_write_column(struct output_text_line_column *column, bool trial)
 {
-	int	width, breakpoint, c;
+	int	available_width, written_width, breakpoint, c;
 	char	*scan_ptr;
-	bool	hyphenate = false, skip = false, complete = false;
+	bool	hyphenate = false, skip = false, complete = false, preformat = false;
 
 	if (column == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_COL_REF);
 		return false;
 	}
 
+	/* The line is already fully written. */
+
 	if (column->write_ptr == NULL)
 		return true;
 
+	/* If there's no width, complete the line and exit. */
+
+	available_width = (column->write_ptr == column->text) ?
+			column->width : column->width - column->hanging_indent;
+
+	if (available_width <= 0) {
+		column->write_ptr = NULL;
+		return true;
+	}
+
 	/* Find the next chunk of string to be written out. */
 
-	width = 0;
+	if (column->flags & OUTPUT_TEXT_LINE_COLUMN_FLAGS_PREFORMAT)
+		preformat = true;
+
+	written_width = 0;
 	breakpoint = 0;
 
 	scan_ptr = column->write_ptr;
 
 	c = encoding_parse_utf8_string(&scan_ptr);
 
-	while (c != '\0' && c != '\n' && width <= column->width) {
-		width++;
+	while (c != '\0' && c != '\n' && written_width < available_width) {
+		written_width++;
 
 		/* If this is a possible breakpoint... */
 
 		if (c == ' ' || c == '-') {
 			/* If the first character of the column is a space, we skip it. */
 
-			if (pre == false && c == ' ' && width == 1) {
-				width = 0;
+			if (preformat == false && c == ' ' && written_width == 1) {
+				written_width = 0;
 				column->write_ptr = scan_ptr;
 			}
 
 			/* Remember the breakpoint. */
 
-			breakpoint = width - 1;
+			breakpoint = (c == '-') ? written_width : written_width - 1;
 		}
 
 		c = encoding_parse_utf8_string(&scan_ptr);
@@ -881,7 +1076,7 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 
 	/* If there's nothing to output, flag the column as complete and exit. */
 
-	if (c != '\n' && width == 0) {
+	if (c != '\n' && written_width == 0) {
 		column->write_ptr = NULL;
 		return true;
 	}
@@ -889,7 +1084,7 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 	/* We've reached the end of the string. */
 
 	if (c == '\0') {
-		breakpoint = width;
+		breakpoint = written_width;
 		complete = true;
 	}
 
@@ -898,7 +1093,7 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 	 */
 
 	if (c == '\n') {
-		breakpoint = width;
+		breakpoint = written_width;
 		skip = true;
 	}
 
@@ -907,8 +1102,17 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 	 */
 
 	else if (breakpoint == 0) {
-		breakpoint = width - 1;
-		hyphenate = true;
+		if (c == '-' || available_width < OUTPUT_TEXT_LINE_HYPHENATION_LIMIT) {
+			/* If the next character is a hyphen, use it at the start
+			 * of the following line. Or, if there's no space to hyphenate,
+			 * just write the text as it is. Otherwise...
+			 */
+			breakpoint = written_width;
+		} else if (available_width > 1) {
+			/* ...back off one and hyphenate. */
+			breakpoint = written_width - 1;
+			hyphenate = true;
+		}
 	}
 
 	/* Track the maximum line length seen. */
@@ -918,44 +1122,52 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 
 	/* Write the line of text. */
 
-	if (!output_text_line_pad_to_column(column))
-		return false;
-
-	if (column->flags & OUTPUT_TEXT_LINE_COLUMN_FLAGS_RIGHT) {
-		if (!output_text_line_pad_to_position(column->parent, column->start + (column->width - breakpoint)))
+	if (trial == false) {
+		if (!output_text_line_pad_to_column(column))
 			return false;
-	} else if (column->flags & OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE) {
-		if (!output_text_line_pad_to_position(column->parent, column->start + (column->width - breakpoint) / 2))
-			return false;
-	}
 
-	do {
-		c = (breakpoint-- > 0) ? encoding_parse_utf8_string(&(column->write_ptr)) : '\0';
-
-		/* Change the special characters passed in by the formatter. */
-
-		switch (c) {
-		case ENCODING_UC_NBSP:
-			c = ' ';
-			break;
-		case ENCODING_UC_NBHY:
-			c = '-';
-			break;
+		if (column->flags & OUTPUT_TEXT_LINE_COLUMN_FLAGS_RIGHT) {
+			if (!output_text_line_pad_to_position(column->parent, column->start + (column->width - breakpoint)))
+				return false;
+		} else if (column->flags & OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE) {
+			if (!output_text_line_pad_to_position(column->parent, column->start + (column->width - breakpoint) / 2))
+				return false;
+		} else {
+			if (!output_text_line_pad_to_position(column->parent, column->start + (column->width - available_width)))
+				return false;
 		}
 
-		if (c != '\0' && !output_text_line_write_char(column->parent, c))
+		do {
+			c = (breakpoint-- > 0) ? encoding_parse_utf8_string(&(column->write_ptr)) : '\0';
+
+			/* Change the special characters passed in by the formatter. */
+
+			switch (c) {
+			case ENCODING_UC_NBSP:
+				c = ' ';
+				break;
+			case ENCODING_UC_NBHY:
+				c = '-';
+				break;
+			}
+
+			if (c != '\0' && !output_text_line_write_char(column->parent, c))
+				return false;
+		} while (c != '\0');
+
+		/* If the line is to be hyphenated, write the hyphen. */
+
+		if (hyphenate && !output_text_line_write_char(column->parent, '-'))
 			return false;
-	} while (c != '\0');
+	} else {
+		while (breakpoint-- > 0)
+			encoding_parse_utf8_string(&(column->write_ptr));
+	}
 
 	/* Skip past any terminating newline. */
 
 	if (skip)
 		encoding_parse_utf8_string(&(column->write_ptr));
-
-	/* If the line is to be hyphenated, write the hyphen. */
-
-	if (hyphenate && !output_text_line_write_char(column->parent, '-'))
-		return false;
 
 	/* If complete, flag the column as done; else, flag the line as not done. */
 

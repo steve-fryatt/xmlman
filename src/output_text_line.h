@@ -47,7 +47,7 @@ enum output_text_line_column_flags {
 	OUTPUT_TEXT_LINE_COLUMN_FLAGS_NONE = 0,
 	OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE = 1,
 	OUTPUT_TEXT_LINE_COLUMN_FLAGS_RIGHT = 2,
-	UTPUT_TEXT_LINE_COLUMN_FLAGS_FILL_WIDTH = 4
+	OUTPUT_TEXT_LINE_COLUMN_FLAGS_PREFORMAT = 4
 };
 
 /**
@@ -65,6 +65,16 @@ bool output_text_line_open(struct filename *filename, int page_width);
  */
 
 void output_text_line_close(void);
+
+/**
+ * Push a new output line on to the stack, insetting it the given number
+ * of character positions relative to the start of the file line.
+ * 
+ * \param inset		The number of character positions to inset the line.
+ * \return		TRUE if successful; else FALSE.
+ */
+
+bool output_text_line_push_absolute(int inset);
 
 /**
  * Push a new output line on to the stack, insetting it the given number
@@ -155,14 +165,26 @@ bool output_text_line_reset(void);
 bool output_text_line_add_text(int column, char *text);
 
 /**
- * Write the line at the top of the stack to the output.
+ * Set a hanging indent in a column, based on the current text
+ * width. This will be ignored if it falls outside of the width
+ * of the column.
  *
- * \param pre		Is this preformatted text?
- * \param title		True to underline the text.
+ * \param column	The index of the column to update.
  * \return		True on success; False on error.
  */
 
-bool output_text_line_write(bool pre, bool title);
+bool output_text_line_set_hanging_indent(int column);
+
+/**
+ * Write the line at the top of the stack to the output.
+ *
+ * \param underline	True to underline the text.
+ * \param align_bottom	True to align the text to the bottom
+ *			of the columns in the row.
+ * \return		True on success; False on error.
+ */
+
+bool output_text_line_write(bool underline, bool align_bottom);
 
 /**
  * Write a ruleoff to the output, from the current line's left margin to

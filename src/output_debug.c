@@ -1,4 +1,4 @@
-/* Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -110,6 +110,22 @@ static void output_debug_write_node(struct manual_data *parent, struct manual_da
 				node->type == MANUAL_DATA_OBJECT_TYPE_INDEX || node->type == MANUAL_DATA_OBJECT_TYPE_SECTION) &&
 				node->chapter.resources != NULL && node->chapter.resources->summary != NULL)
 			output_debug_write_node(node, node->chapter.resources->summary, depth + 1, new_indent);
+
+		if ((node->type == MANUAL_DATA_OBJECT_TYPE_MANUAL) &&
+				node->chapter.resources != NULL && node->chapter.resources->strapline != NULL)
+			output_debug_write_node(node, node->chapter.resources->strapline, depth + 1, new_indent);
+
+		if ((node->type == MANUAL_DATA_OBJECT_TYPE_MANUAL) &&
+				node->chapter.resources != NULL && node->chapter.resources->credit != NULL)
+			output_debug_write_node(node, node->chapter.resources->credit, depth + 1, new_indent);
+
+		if ((node->type == MANUAL_DATA_OBJECT_TYPE_MANUAL) &&
+				node->chapter.resources != NULL && node->chapter.resources->version != NULL)
+			output_debug_write_node(node, node->chapter.resources->version, depth + 1, new_indent);
+
+		if ((node->type == MANUAL_DATA_OBJECT_TYPE_MANUAL) &&
+				node->chapter.resources != NULL && node->chapter.resources->date != NULL)
+			output_debug_write_node(node, node->chapter.resources->date, depth + 1, new_indent);
 
 		if (node->type == MANUAL_DATA_OBJECT_TYPE_LINK && node->chunk.link != NULL)
 			output_debug_write_node(node, node->chunk.link, depth + 1, new_indent);

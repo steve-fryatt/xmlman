@@ -89,8 +89,10 @@ static char *output_strong_unordered_list_bullets[] = { ENCODING_UTF8_BULLET, EN
 static bool output_strong_write_manual(struct manual_data *manual);
 static bool output_strong_write_file(struct manual_data *object);
 static bool output_strong_write_object(struct manual_data *object, int level, bool include_id);
-static bool output_strong_write_head(struct manual_data *manual);
-static bool output_strong_write_foot(struct manual_data *manual);
+static bool output_strong_write_file_head(struct manual_data *manual);
+static bool output_strong_write_page_head(struct manual_data *manual, int level);
+static bool output_strong_write_page_foot(struct manual_data *manual);
+static bool output_strong_write_file_foot(struct manual_data *manual);
 static bool output_strong_write_heading(struct manual_data *node, int level, bool root);
 static bool output_strong_write_chapter_list(struct manual_data *object, int level);
 static bool output_strong_write_block_collection_object(struct manual_data *object, int level);
@@ -233,7 +235,7 @@ static bool output_strong_write_file(struct manual_data *object)
 
 	/* Write the file header. */
 
-	if (!output_strong_write_head(object)) {
+	if (!output_strong_write_file_head(object)) {
 		output_strong_file_sub_close();
 		return false;
 	}
@@ -253,7 +255,7 @@ static bool output_strong_write_file(struct manual_data *object)
 
 	/* Output the file footer. */
 
-	if (!output_strong_write_foot(object)) {
+	if (!output_strong_write_file_foot(object)) {
 		output_strong_file_sub_close();
 		return false;
 	}
@@ -305,13 +307,18 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 		return false;
 	}
 
-	/* Write out the object heading. */
+	/* Write out the object heading. At the top of the file, this is
+	 * the full page heading; lower down, it's just a heading line.
+	 */
 
-	if (object->title != NULL) {
+	if (root == true) {
+		if (!output_strong_write_page_head(object, level))
+			return false;
+	} else if (object->title != NULL) {
 		if (!output_strong_file_write_newline())
 			return false;
 
-		if (!output_strong_write_heading(object, level, !root))
+		if (!output_strong_write_heading(object, level, true))
 			return false;
 	}
 
@@ -353,7 +360,7 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 			case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
 			case MANUAL_DATA_OBJECT_TYPE_INDEX:
 			case MANUAL_DATA_OBJECT_TYPE_SECTION:
-				if (!output_strong_write_object(block, level + 1, false))
+				if (!output_strong_write_object(block, manual_data_get_nesting_level(block, level), false))
 					return false;
 				break;
 
@@ -367,7 +374,7 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 
 				/* The chapter list is treated like a section, so we always bump the level. */
 
-				if (!output_strong_write_chapter_list(block, level + 1))
+				if (!output_strong_write_chapter_list(block, manual_data_get_nesting_level(block, level)))
 					return false;
 				break;
 
@@ -431,30 +438,145 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 		}
 	}
 
+	/* If this is the file root, write the page footer out. */
+
+	if (root == true && !output_strong_write_page_foot(object))
+		return false;
+
 	return true;
 }
 
 
 /**
- * Write a StrongHelp file head block out.
+ * Write a StrongHelp file head block out. This puts the root object
+ * title into the window title bar location.
  *
  * \param *manual	The manual to base the block on.
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-static bool output_strong_write_head(struct manual_data *manual)
+static bool output_strong_write_file_head(struct manual_data *manual)
 {
 	if (manual == NULL)
 		return false;
 
-//	if (!output_strong_file_write_plain("<head>") || !output_strong_file_write_newline())
-//		return false;
+	/* Write out the titlebar name to the first line of the file. */
 
-	if (!output_strong_write_heading(manual, 0, false))
+	if (manual->title != NULL && !output_strong_write_heading(manual, 0, false))
 		return false;
 
-//	if (!output_strong_file_write_plain("</head>") || !output_strong_file_write_newline())
-//		return false;
+	return true;
+}
+
+
+/**
+ * Write a StrongHelp page head block out. This follows the
+ * title bar text, and for a manual root page writes the page heading,
+ * strapline, version and date information followed by a rule-off.
+ *
+ * \param *manual	The manual to base the block on.
+ * \param level		The level to write the heading at.
+ * \return		TRUE if successful, otherwise FALSE.
+ */
+
+static bool output_strong_write_page_head(struct manual_data *manual, int level)
+{
+	if (manual == NULL)
+		return false;
+
+	/* Write out the object heading. */
+
+	if (manual->title != NULL) {
+		if (!output_strong_write_heading(manual, level, false))
+			return false;
+	}
+
+	/* Write out the details. */
+
+	if (manual->type == MANUAL_DATA_OBJECT_TYPE_MANUAL && manual->chapter.resources != NULL) {
+		if (!output_strong_file_write_plain("#Align Centre") || !output_strong_file_write_newline())
+			return false;
+
+		/* Write the strapline. */
+
+		if (manual->chapter.resources->strapline != NULL) {
+			if (!output_strong_file_write_plain("{f*/}"))
+				return false;
+
+			if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_STRAPLINE, manual->chapter.resources->strapline))
+				return false;
+
+			if (!output_strong_file_write_plain("{f}"))
+				return false;
+
+			if (!output_strong_file_write_text(ENCODING_UTF8_NBSP) || !output_strong_file_write_newline())
+				return false;
+		}
+
+		/* Write the version and date. */
+
+		if (manual->chapter.resources->version != NULL || manual->chapter.resources->date != NULL) {
+			if (manual->chapter.resources->version != NULL) {
+				if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_VERSION, manual->chapter.resources->version))
+					return false;
+			}
+
+			if (manual->chapter.resources->version != NULL && manual->chapter.resources->date != NULL) {
+				if (!output_strong_file_write_plain(" ("))
+					return false;
+			}
+
+			if (manual->chapter.resources->date != NULL) {
+				if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_DATE, manual->chapter.resources->date))
+					return false;
+			}
+
+			if (manual->chapter.resources->version != NULL && manual->chapter.resources->date != NULL) {
+				if (!output_strong_file_write_plain(")"))
+					return false;
+			}
+
+			if (!output_strong_file_write_text(ENCODING_UTF8_NBSP) || !output_strong_file_write_newline())
+				return false;
+		}
+
+		if (!output_strong_file_write_plain("#Line;Align Left") || !output_strong_file_write_newline())
+			return false;
+
+	}
+
+	return true;
+}
+
+
+/**
+ * Write a StrongHelp page foot block out. If the page is at the
+ * root of the manual, this draws a rule off, centres the content and
+ * writes the credit line to the page.
+ *
+ * \param *manual	The manual to base the block on.
+ * \return		TRUE if successful, otherwise FALSE.
+ */
+
+static bool output_strong_write_page_foot(struct manual_data *manual)
+{
+	if (manual == NULL)
+		return false;
+
+	if (manual->type == MANUAL_DATA_OBJECT_TYPE_MANUAL && manual->chapter.resources != NULL) {
+		if (!output_strong_file_write_newline())
+			return false;
+
+		if (!output_strong_file_write_plain("#Align Centre;Line") || !output_strong_file_write_newline())
+			return false;
+
+		/* Write the credit. */
+
+		if (manual->chapter.resources->strapline != NULL) {
+			if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_CREDIT, manual->chapter.resources->credit))
+				return false;
+		}
+	}
 
 	return true;
 }
@@ -466,7 +588,7 @@ static bool output_strong_write_head(struct manual_data *manual)
  * \return		TRUE if successful, otherwise FALSE.
  */
 
-static bool output_strong_write_foot(struct manual_data *manual)
+static bool output_strong_write_file_foot(struct manual_data *manual)
 {
 	if (manual == NULL)
 		return false;
@@ -1339,8 +1461,20 @@ static const char *output_strong_convert_entity(enum manual_entity_type entity)
 		return ENCODING_UTF8_LDQUO;
 	case MANUAL_ENTITY_RDQUO:
 		return ENCODING_UTF8_RDQUO;
+	case MANUAL_ENTITY_LT:
+		return "<";
+	case MANUAL_ENTITY_GT:
+		return ">";
+	case MANUAL_ENTITY_LE:
+		return ENCODING_UTF8_LTEQ;
+	case MANUAL_ENTITY_GE:
+		return ENCODING_UTF8_GTEQ;
 	case MANUAL_ENTITY_MINUS:
 		return ENCODING_UTF8_MINUS;
+	case MANUAL_ENTITY_PLUSMN:
+		return ENCODING_UTF8_PLUSMINUS;
+	case MANUAL_ENTITY_COPY:
+		return ENCODING_UTF8_COPY;
 	case MANUAL_ENTITY_NDASH:
 		return ENCODING_UTF8_NDASH;
 	case MANUAL_ENTITY_MDASH:

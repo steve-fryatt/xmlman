@@ -46,6 +46,10 @@ enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_SECTION,
 	MANUAL_DATA_OBJECT_TYPE_TITLE,
 	MANUAL_DATA_OBJECT_TYPE_SUMMARY,
+	MANUAL_DATA_OBJECT_TYPE_STRAPLINE,
+	MANUAL_DATA_OBJECT_TYPE_CREDIT,
+	MANUAL_DATA_OBJECT_TYPE_VERSION,
+	MANUAL_DATA_OBJECT_TYPE_DATE,
 	MANUAL_DATA_OBJECT_TYPE_CONTENTS,
 	MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST,
 	MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST,
@@ -150,9 +154,29 @@ struct manual_data_resources {
 	struct filename				*downloads;
 
 	/**
-	 * The object summary, or NULL.
+	 * The object summary text, or NULL.
 	 */
 	struct manual_data			*summary;
+
+	/**
+	 * The object strapline text, or NULL.
+	 */
+	struct manual_data			*strapline;
+
+	/**
+	 * The object credit text, or NULL.
+	 */
+	struct manual_data			*credit;
+
+	/**
+	 * The object version text, or NULL.
+	 */
+	struct manual_data			*version;
+
+	/**
+	 * The object date text, or NULL.
+	 */
+	struct manual_data			*date;
 };
 
 /**
@@ -314,6 +338,17 @@ struct manual_data_resources *manual_data_get_resources(struct manual_data *obje
  */
 
 const char *manual_data_find_object_name(enum manual_data_object_type type);
+
+/**
+ * Given a node and a current nesting level for the parent node,
+ * determine the nesting level if the node is descended into.
+ *
+ * \param *node		The node of interest.
+ * \param current_level	The nesting level of the parent node.
+ * \return		The new nesting level.
+ */
+
+int manual_data_get_nesting_level(struct manual_data *node, int current_level);
 
 /**
  * Given a node, return a pointer to its display number in string format,

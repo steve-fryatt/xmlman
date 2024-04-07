@@ -145,6 +145,17 @@ bool manual_ids_add_node(struct manual_data *node)
 		return false;
 	}
 
+	/* Check for reserved IDs. These are all used by the
+	 * HTML output for page structure.
+	 */
+
+	if (strcmp(node->chapter.id, "head") == 0 ||
+			strcmp(node->chapter.id, "body") == 0 ||
+			strcmp(node->chapter.id, "foot") == 0) {
+		msg_report(MSG_ID_RESERVED, node->chapter.id);
+		return false;
+	}
+
 	/* Check that the ID isn't in the table already. */
 
 	if (manual_ids_find_id(node->chapter.id) != NULL) {

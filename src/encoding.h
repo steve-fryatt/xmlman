@@ -100,6 +100,21 @@
 #define ENCODING_UTF8_TIMES "\xc3\x97"
 
 /**
+ * UTF8 Plus/Minus Sequence
+ */
+#define ENCODING_UTF8_PLUSMINUS "\xc2\xb1"
+
+/**
+ * UTF8 Less Than Or Equal To Sequence
+ */
+#define ENCODING_UTF8_LTEQ "\xe2\x89\xa4"
+
+/**
+ * UTF8 Less Than Or Equal To Sequence
+ */
+#define ENCODING_UTF8_GTEQ "\xe2\x89\xa5"
+
+/**
  * UTF8 Bullet Sequence
  */
 #define ENCODING_UTF8_BULLET "\xe2\x80\xa2"
@@ -108,6 +123,11 @@
  * UTF8 Middot Sequence
  */
 #define ENCODING_UTF8_MIDDOT "\xc2\xb7"
+
+/**
+ * UTF8 Copyright Sequence
+ */
+#define ENCODING_UTF8_COPY "\xc2\xa9"
 
 /**
  * A list of possible target encodings.
