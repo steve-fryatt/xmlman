@@ -208,6 +208,7 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), "Outer");
@@ -407,6 +408,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
@@ -615,6 +617,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
@@ -775,6 +778,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
@@ -901,6 +905,7 @@ static struct manual_data *parse_block_collection_object(struct parse_xml_block 
 
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 
 		default:
@@ -991,6 +996,7 @@ static struct manual_data *parse_list(struct parse_xml_block *parser)
 
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 
 		default:
@@ -1099,6 +1105,7 @@ static struct manual_data *parse_table(struct parse_xml_block *parser)
 
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 
 		default:
@@ -1229,6 +1236,7 @@ static struct manual_data *parse_table_column_set(struct parse_xml_block *parser
 
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 
 		default:
@@ -1315,6 +1323,7 @@ static struct manual_data *parse_table_row(struct parse_xml_block *parser)
 
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 
 		default:
@@ -1418,6 +1427,7 @@ static struct manual_data *parse_code_block(struct parse_xml_block *parser)
 			break;
 
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 
 		default:
@@ -1697,6 +1707,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 			break;
 
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 
 		default:
@@ -1809,6 +1820,7 @@ static void parse_unknown(struct parse_xml_block *parser)
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), "Unknown");
@@ -1907,6 +1919,7 @@ static void parse_resources(struct parse_xml_block *parser, struct manual_data_r
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
@@ -1998,6 +2011,7 @@ static void parse_mode_resources(struct parse_xml_block *parser, enum modes_type
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
@@ -2105,6 +2119,7 @@ static struct manual_data *parse_single_level_attribute(struct parse_xml_block *
 			break;
 
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 
 		default:
@@ -2196,6 +2211,7 @@ static bool parse_fetch_single_level_block(struct parse_xml_block *parser, char 
 			buffer[end] = '\0';
 			break;
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_EOF:
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
