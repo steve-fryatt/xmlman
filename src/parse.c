@@ -1491,32 +1491,68 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 	case PARSE_ELEMENT_CODE:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_CODE);
 		break;
+	case PARSE_ELEMENT_COMMAND:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_COMMAND);
+		break;
+	case PARSE_ELEMENT_CONST:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_CONSTANT);
+		break;
+	case PARSE_ELEMENT_EM:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS);
+		break;
 	case PARSE_ELEMENT_ENTRY:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_USER_ENTRY);
 		break;
-	case PARSE_ELEMENT_EMPHASIS:
-		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS);
+	case PARSE_ELEMENT_EVENT:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_EVENT);
 		break;
 	case PARSE_ELEMENT_FILE:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_FILENAME);
 		break;
+	case PARSE_ELEMENT_FUNCTION:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_FUNCTION);
+		break;
 	case PARSE_ELEMENT_ICON:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_ICON);
+		break;
+	case PARSE_ELEMENT_INTRO:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_INTRO);
 		break;
 	case PARSE_ELEMENT_KEY:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_KEY);
 		break;
+	case PARSE_ELEMENT_KEYWORD:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_KEYWORD);
+		break;
 	case PARSE_ELEMENT_LINK:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_LINK);
 		break;
+	case PARSE_ELEMENT_MATHS:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_MATHS);
+		break;
+	case PARSE_ELEMENT_MENU:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_MENU);
+		break;
+	case PARSE_ELEMENT_MESSAGE:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_MESSAGE);
+		break;
 	case PARSE_ELEMENT_MOUSE:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_MOUSE);
+		break;
+	case PARSE_ELEMENT_NAME:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_NAME);
 		break;
 	case PARSE_ELEMENT_REF:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_REFERENCE);
 		break;
 	case PARSE_ELEMENT_STRONG:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS);
+		break;
+	case PARSE_ELEMENT_SWI:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_SWI);
+		break;
+	case PARSE_ELEMENT_TYPE:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TYPE);
 		break;
 	case PARSE_ELEMENT_VARIABLE:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_VARIABLE);
@@ -1589,15 +1625,27 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 			switch (element) {
 			case PARSE_ELEMENT_CITE:
 			case PARSE_ELEMENT_CODE:
+			case PARSE_ELEMENT_COMMAND:
+			case PARSE_ELEMENT_CONST:
+			case PARSE_ELEMENT_EM:
 			case PARSE_ELEMENT_ENTRY:
-			case PARSE_ELEMENT_EMPHASIS:
+			case PARSE_ELEMENT_EVENT:
 			case PARSE_ELEMENT_FILE:
+			case PARSE_ELEMENT_FUNCTION:
 			case PARSE_ELEMENT_ICON:
+			case PARSE_ELEMENT_INTRO:
 			case PARSE_ELEMENT_KEY:
+			case PARSE_ELEMENT_KEYWORD:
 			case PARSE_ELEMENT_LINK:
+			case PARSE_ELEMENT_MATHS:
+			case PARSE_ELEMENT_MENU:
+			case PARSE_ELEMENT_MESSAGE:
 			case PARSE_ELEMENT_MOUSE:
+			case PARSE_ELEMENT_NAME:
 			case PARSE_ELEMENT_REF:
 			case PARSE_ELEMENT_STRONG:
+			case PARSE_ELEMENT_SWI:
+			case PARSE_ELEMENT_TYPE:
 			case PARSE_ELEMENT_VARIABLE:
 			case PARSE_ELEMENT_WINDOW:
 				item = parse_block_object(parser);
