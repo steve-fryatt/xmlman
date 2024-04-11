@@ -197,9 +197,10 @@ static int output_text_line_page_width = 0;
 
 static struct output_text_line *output_text_line_create(int page_width, int left_margin);
 static void output_text_line_destroy(struct output_text_line *line);
+static bool output_text_line_set_column_widths(struct output_text_line *line);
 static bool output_text_line_add_column_text(struct output_text_line_column *column, char *text);
 static bool output_text_line_update_column_memory(struct output_text_line_column *column);
-static bool output_text_line_set_column_hanging_indent(struct output_text_line_column *column);
+static bool output_text_line_set_column_hanging_indent(struct output_text_line_column *column, int spaces);
 static struct output_text_line_column* output_text_line_find_column(struct output_text_line *line, int column);
 static bool output_text_line_size_columns(struct output_text_line *line);
 static bool output_text_line_write_line(struct output_text_line *line, bool underline);
@@ -557,9 +558,88 @@ bool output_text_line_set_column_flags(int column, enum output_text_line_column_
 
 bool output_text_line_reset(void)
 {
+	struct output_text_line_column *column = NULL;
+	struct output_text_line *line = output_text_line_stack;
+
+	if (line == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_REF);
+		return false;
+	}
+
+	/* Initialise the write pointer, written width count, row counts
+	 * and hanging indents.
+	 */
+
+	column = line->columns;
+
+	while (column != NULL) {
+		column->write_ptr = column->text;
+
+		if (column->text != NULL && column->size > 0)
+			column->text[0] = '\0';
+
+		column->written_width = 0;
+		column->blank_rows = 0;
+		column->hanging_indent = 0;
+
+		column = column->next;
+	}
+
+	/* Calculate the column widths. */
+
+	if (!output_text_line_set_column_widths(line))
+		return false;
+
+	/* Mark the line as prepared. */
+
+	line->is_prepared = true;
+
+	return true;
+}
+
+/**
+ * Set the display width of a column to the length of the text that
+ * is in its output buffer.
+ *
+ * \param column	The index of the column to be updated.
+ * \return		True if successful; else False.
+ */
+
+bool output_text_line_set_column_width(int column)
+{
+	struct output_text_line_column *col = NULL;
+	struct output_text_line *line = output_text_line_stack;
+
+	if (line == NULL) {
+		msg_report(MSG_TEXT_LINE_BAD_REF);
+		return false;
+	}
+
+	col = output_text_line_find_column(line, column);
+	if (col == NULL)
+		return false;
+		
+	col->requested_width = encoding_get_utf8_string_length(col->text);
+
+	/* Recalculate the column widths. */
+
+	if (!output_text_line_set_column_widths(line))
+		return false;
+
+}
+
+/**
+ * Set the widths of the columns in a line.
+ *
+ * \param *line		The line instance to work on.
+ * \return		True if successful; else False.
+ */
+
+static bool output_text_line_set_column_widths(struct output_text_line *line)
+{
 	struct output_text_line_column *column = NULL, *previous = NULL;
 	int used_width = 0, free_width = 0, auto_width = 0, auto_columns = 0;
-	struct output_text_line *line = output_text_line_stack;
+	bool success = true;
 
 	if (line == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_REF);
@@ -610,26 +690,17 @@ bool output_text_line_reset(void)
 			return false;
 		}
 
-		/* Initialise the write pointer and written width count. */
-
-		column->write_ptr = column->text;
-
-		if (column->text != NULL && column->size > 0)
-			column->text[0] = '\0';
-
-		column->written_width = 0;
-		column->blank_rows = 0;
-		column->hanging_indent = 0;
+		if (column->hanging_indent > column->width) {
+			column->hanging_indent = 0;
+			msg_report(MSG_TEXT_LINE_HANGING_TOO_LATE);
+			success = false;
+		}
 
 		previous = column;
 		column = column->next;
 	}
 
-	/* Mark the line as prepared. */
-
-	line->is_prepared = true;
-
-	return true;
+	return success;
 }
 
 /**
@@ -771,11 +842,16 @@ static bool output_text_line_update_column_memory(struct output_text_line_column
  * width. This will be ignored if it falls outside of the width
  * of the column.
  *
+ * The algorithm will either count spaces and stop after including
+ * the last one, or include the whole text.
+ *
  * \param column	The index of the column to update.
+ * \param spaces	The number of spaces to include, or zero
+ *			for all of the text.
  * \return		True on success; False on error.
  */
 
-bool output_text_line_set_hanging_indent(int column)
+bool output_text_line_set_hanging_indent(int column, int spaces)
 {
 	struct output_text_line_column	*col = NULL;
 	struct output_text_line *line = output_text_line_stack;
@@ -796,7 +872,7 @@ bool output_text_line_set_hanging_indent(int column)
 
 	line->has_content = true;
 
-	return output_text_line_set_column_hanging_indent(col);
+	return output_text_line_set_column_hanging_indent(col, spaces);
 }
 
 /**
@@ -808,9 +884,10 @@ bool output_text_line_set_hanging_indent(int column)
  * \return		True on success; False on error.
  */
 
-static bool output_text_line_set_column_hanging_indent(struct output_text_line_column *column)
+static bool output_text_line_set_column_hanging_indent(struct output_text_line_column *column, int spaces)
 {
-	int width = 0;
+	int c, width;
+	char *text;
 
 	if (column == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_COL_REF);
@@ -822,7 +899,26 @@ static bool output_text_line_set_column_hanging_indent(struct output_text_line_c
 		return false;
 	}
 
-	width = encoding_get_utf8_string_length(column->text);
+	/* Calculate the width. Either do it the hard way if we're counting
+	 * spaces, or just pass it to the encoding module to sort out.
+	 */
+
+	if (spaces > 0) {
+		text = column->text;
+		width = 0;
+
+		do {
+			c = encoding_parse_utf8_string(&text);
+			if (c == ' ' && spaces > 0)
+				spaces--;
+
+			if (c != '\0')
+				width++;
+		} while (c != '\0' && spaces > 0);
+	} else {
+		width = encoding_get_utf8_string_length(column->text);
+	}
+
 	if (width >= column->width) {
 		msg_report(MSG_TEXT_LINE_HANGING_TOO_LATE);
 		return false;
@@ -1059,16 +1155,16 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 		/* If this is a possible breakpoint... */
 
 		if (c == ' ' || c == '-') {
-			/* If the first character of the column is a space, we skip it. */
+			
 
 			if (preformat == false && c == ' ' && written_width == 1) {
+				/* If the first character of the column is a space, we skip it. */
 				written_width = 0;
 				column->write_ptr = scan_ptr;
+			} else {
+				/* Otherwise, we remember the breakpoint. */
+				breakpoint = (c == '-') ? written_width : written_width - 1;
 			}
-
-			/* Remember the breakpoint. */
-
-			breakpoint = (c == '-') ? written_width : written_width - 1;
 		}
 
 		c = encoding_parse_utf8_string(&scan_ptr);

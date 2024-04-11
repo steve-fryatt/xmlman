@@ -154,6 +154,16 @@ bool output_text_line_set_column_flags(int column, enum output_text_line_column_
 bool output_text_line_reset(void);
 
 /**
+ * Set the display width of a column to the length of the text that
+ * is in its output buffer.
+ *
+ * \param column	The index of the column to be updated.
+ * \return		True if successful; else False.
+ */
+
+bool output_text_line_set_column_width(int column);
+
+/**
  * Add text to a column at the top of the stack, to be proessed when
  * the line is complete.
  *
@@ -169,11 +179,16 @@ bool output_text_line_add_text(int column, char *text);
  * width. This will be ignored if it falls outside of the width
  * of the column.
  *
+ * The algorithm will either count spaces and stop after including
+ * the last one, or include the whole text.
+ *
  * \param column	The index of the column to update.
+ * \param spaces	The number of spaces to include, or zero
+ *			for all of the text.
  * \return		True on success; False on error.
  */
 
-bool output_text_line_set_hanging_indent(int column);
+bool output_text_line_set_hanging_indent(int column, int spaces);
 
 /**
  * Write the line at the top of the stack to the output.

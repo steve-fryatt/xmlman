@@ -569,6 +569,8 @@ static bool output_text_write_page_head(struct manual_data *manual, int level)
 	if (!output_text_line_reset())
 		return false;
 
+	/* The ruleoff above the heading. */
+
 	if (manual->type == MANUAL_DATA_OBJECT_TYPE_MANUAL && manual->chapter.resources != NULL) {
 		if (!output_text_line_write_ruleoff('='))
 			return false;
@@ -582,7 +584,7 @@ static bool output_text_write_page_head(struct manual_data *manual, int level)
 	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
 		return false;
 
-	if (!output_text_line_add_column(1, 17))
+	if (!output_text_line_add_column(1, 1)) // Nominal width; we'll resize to content later
 		return false;
 
 	if (!output_text_line_set_column_flags(1, OUTPUT_TEXT_LINE_COLUMN_FLAGS_RIGHT))
@@ -595,24 +597,37 @@ static bool output_text_write_page_head(struct manual_data *manual, int level)
 		if (!output_text_write_title(0, manual, false, true))
 			return false;
 
+		/* If there's a strapline to follow, add a dash and then set a hanging
+		 * indent so that the strapline wraps outside of the title.
+		 */
+
 		if (manual->type == MANUAL_DATA_OBJECT_TYPE_MANUAL && manual->chapter.resources != NULL &&
 				manual->chapter.resources->strapline != NULL) {
 			if (!output_text_line_add_text(0, " - "))
 				return false;
 
-			if (!output_text_line_set_hanging_indent(0))
+			if (!output_text_line_set_hanging_indent(0, 0))
 				return false;
 		}
 	}
 
 	if (manual->type == MANUAL_DATA_OBJECT_TYPE_MANUAL && manual->chapter.resources != NULL) {
+		/* Write the strapline on the left, following the title. */
+
 		if (manual->chapter.resources->strapline != NULL) {
 			if (!output_text_write_text(0, MANUAL_DATA_OBJECT_TYPE_STRAPLINE, manual->chapter.resources->strapline))
 				return false;
 		}
 
+		/* Write the version on the right. */
+
 		if (manual->chapter.resources->version != NULL) {
 			if (!output_text_write_text(1, MANUAL_DATA_OBJECT_TYPE_VERSION, manual->chapter.resources->version))
+				return false;
+
+			/* Set the version field width to fit the version. */
+
+			if (!output_text_line_set_column_width(1))
 				return false;
 		}
 	}
@@ -620,21 +635,43 @@ static bool output_text_write_page_head(struct manual_data *manual, int level)
 	if (!output_text_line_write(false, false))
 		return false;
 
+	/* Bottom line of the heading, holding credits and date. */
+
 	if (manual->type == MANUAL_DATA_OBJECT_TYPE_MANUAL && manual->chapter.resources != NULL &&
 			(manual->chapter.resources->credit != NULL || manual->chapter.resources->date != NULL)) {
-		if (!output_text_line_write_newline())
+		if (!output_text_line_write_newline()) // Blank line between top and bottom
 			return false;
 
 		if (!output_text_line_reset())
 			return false;
 
+		/* Write the credit on the left. */
+
 		if (manual->chapter.resources->credit != NULL) {
 			if (!output_text_write_text(0, MANUAL_DATA_OBJECT_TYPE_CREDIT, manual->chapter.resources->credit))
 				return false;
+
+			/* If the first item in the line is an entity (eg. a (C) symbol),
+			 * push a hanging indent out to beyond the first space after that.
+			 * so that line wrapped text indents on the symbol.
+			 */
+
+			if (manual->chapter.resources->credit->first_child != NULL &&
+					manual->chapter.resources->credit->first_child->type == MANUAL_DATA_OBJECT_TYPE_ENTITY) {
+				if (!output_text_line_set_hanging_indent(0, 1))
+					return false;
+			}
 		}
+
+		/* Write the date on the right. */
 
 		if (manual->chapter.resources->date != NULL) {
 			if (!output_text_write_text(1, MANUAL_DATA_OBJECT_TYPE_DATE, manual->chapter.resources->date))
+				return false;
+
+			/* Set the date field width to fit the date. */
+
+			if (!output_text_line_set_column_width(1))
 				return false;
 		}
 
@@ -644,6 +681,8 @@ static bool output_text_write_page_head(struct manual_data *manual, int level)
 
 	if (!output_text_line_pop())
 		return false;
+
+	/* The ruleoff below the heading. */
 
 	if (manual->type == MANUAL_DATA_OBJECT_TYPE_MANUAL && manual->chapter.resources != NULL) {
 		if (!output_text_line_write_ruleoff('='))
