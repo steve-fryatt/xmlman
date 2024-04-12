@@ -1,4 +1,4 @@
-/* Copyright 2018-2021, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -171,6 +171,22 @@ size_t parse_xml_copy_attribute_text(struct parse_xml_block *instance, const cha
  */
 
 bool parse_xml_test_boolean_attribute(struct parse_xml_block *instance, const char *name, char *value_true, char *value_false);
+
+/**
+ * Parse an attribute as if it is an integer value; not present will return
+ * the default value.
+ * 
+ * Errors result in PARSE_XML_RESULT_ERROR being set.
+ * 
+ * \param *instance	Pointer to the instance to be used.
+ * \param *name		The name of the attribute to be matched.
+ * \param deflt		The value which should be returned by default.
+ * \param minimum	The minimum acceptable value.
+ * \param maximum	The maximum acceptable value.
+ * \return		The value read.
+ */
+
+int parse_xml_read_integer_attribute(struct parse_xml_block *instance, const char *name, int deflt, int minimum, int maxumum);
 
 /**
  * Read the details of the current entity parsed from

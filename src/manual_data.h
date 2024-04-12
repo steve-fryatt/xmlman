@@ -204,13 +204,25 @@ struct manual_data_chunk {
 	union {
 		/**
 		 * Pointer to the target object's ID, or NULL if none has been set.
+		 *
+		 * Used by REFERENCE objects
 		 */
 		char				*id;
 
 		/**
 		 * Pointer to the target link text, or NULL if none has been set.
+		 *
+		 * Used by LINK objects.
 		 */
 		struct manual_data		*link;
+
+		/**
+		 * The width of an object.
+		 *
+		 * Used by TABLE_COLUMN_DEFINITION objects, where zero or less
+		 * means "don't care".
+		 */
+		int width;
 	};
 
 	union {

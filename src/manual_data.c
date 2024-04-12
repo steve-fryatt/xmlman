@@ -175,6 +175,10 @@ struct manual_data *manual_data_create(enum manual_data_object_type type)
 		data->chapter.columns = NULL;
 		break;
 
+	case MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_DEFINITION:
+		data->chunk.width = 0;
+		break;
+
 	case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
 		data->chapter.id = NULL;
 		break;

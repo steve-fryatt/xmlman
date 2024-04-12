@@ -533,6 +533,61 @@ bool parse_xml_test_boolean_attribute(struct parse_xml_block *instance, const ch
 }
 
 /**
+ * Parse an attribute as if it is an integer value; not present will return
+ * the default value.
+ * 
+ * Errors result in PARSE_XML_RESULT_ERROR being set.
+ * 
+ * \param *instance	Pointer to the instance to be used.
+ * \param *name		The name of the attribute to be matched.
+ * \param deflt		The value which should be returned by default.
+ * \param minimum	The minimum acceptable value.
+ * \param maximum	The maximum acceptable value.
+ * \return		The value read.
+ */
+
+int parse_xml_read_integer_attribute(struct parse_xml_block *instance, const char *name, int deflt, int minimum, int maxumum)
+{
+	char *endptr = NULL;
+	long value;
+
+	struct parse_xml_attribute *attribute;
+	char buffer[PARSE_XML_MAX_ATTRIBUTE_VAL_LEN];
+
+	if (instance == NULL || instance->file == NULL) {
+		if (instance != NULL)
+			instance->current_mode = PARSE_XML_RESULT_ERROR;
+		return deflt;
+	}
+
+	attribute = parse_xml_find_attribute(instance, name);
+	if (attribute == NULL)
+		return deflt;
+
+	parse_xml_copy_text_to_buffer(instance, attribute->start, attribute->length, buffer, PARSE_XML_MAX_ATTRIBUTE_VAL_LEN);
+
+	value = strtol(buffer, &endptr, 10);
+
+	/* Did the value parse OK? */
+
+	if (*endptr != '\0') {
+		msg_report(MSG_BAD_ATTRIBUTE_VALUE, buffer, attribute->name);
+		instance->current_mode = PARSE_XML_RESULT_ERROR;
+		return deflt;
+	}
+
+	/* Is the value in bounds? */
+
+	if (value < minimum || value > maxumum) {
+		msg_report(MSG_BAD_ATTRIBUTE_VALUE, buffer, attribute->name);
+		instance->current_mode = PARSE_XML_RESULT_ERROR;
+		return deflt;
+	}
+
+	return value & 0xffffffff;
+}
+
+/**
  * Locate an attribute for the current entity.
  * 
  * \param *instance	Pointer to the instance to be used.

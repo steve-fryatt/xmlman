@@ -1181,7 +1181,8 @@ static bool output_text_write_table(struct manual_data *object, int target_colum
 	while (column != NULL) {
 		switch (column->type) {
 		case MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_DEFINITION:
-			if (!output_text_line_add_column((column->previous == NULL) ? 0 : 1, OUTPUT_TEXT_LINE_FULL_WIDTH))
+			if (!output_text_line_add_column((column->previous == NULL) ? 0 : 1,
+					(column->chunk.width > 0) ? column->chunk.width : OUTPUT_TEXT_LINE_FULL_WIDTH))
 				return false;
 			break;
 
@@ -1220,7 +1221,7 @@ static bool output_text_write_table(struct manual_data *object, int target_colum
 		column = column->next;
 	}
 
-	if (!output_text_line_write(false, false))
+	if (!output_text_line_write(false, true))
 		return false;
 
 	if (!output_text_line_write_ruleoff('-'))

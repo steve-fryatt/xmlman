@@ -1597,6 +1597,9 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 	case PARSE_ELEMENT_REF:
 		new_block->chunk.id = parse_xml_get_attribute_text(parser, "id");
 		break;
+	case PARSE_ELEMENT_COLDEF:
+		new_block->chunk.width = parse_xml_read_integer_attribute(parser, "width", 0, 0, 1000);
+		break;
 	}
 
 	/* Process the content within the new object. */
