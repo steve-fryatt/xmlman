@@ -97,6 +97,7 @@ static bool output_strong_write_heading(struct manual_data *node, int level, boo
 static bool output_strong_write_chapter_list(struct manual_data *object, int level);
 static bool output_strong_write_block_collection_object(struct manual_data *object, int level);
 static bool output_strong_write_footnote(struct manual_data *object);
+static bool output_strong_write_callout(struct manual_data *object);
 static bool output_strong_write_list(struct manual_data *object, int level);
 static bool output_strong_write_code_block(struct manual_data *object);
 static bool output_strong_write_paragraph(struct manual_data *object);
@@ -400,6 +401,18 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 				}
 
 				if (!output_strong_write_list(block, 0))
+					return false;
+				break;
+
+			case MANUAL_DATA_OBJECT_TYPE_CALLOUT:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_strong_write_callout(block))
 					return false;
 				break;
 
@@ -870,6 +883,110 @@ static bool output_strong_write_footnote(struct manual_data *object)
 	/* Output the note body. */
 
 	if (!output_strong_write_block_collection_object(object, 0))
+		return false;
+
+	return true;
+}
+
+/**
+ * Process the contents of a callout and write it out.
+ *
+ * \param *object		The object to process.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_strong_write_callout(struct manual_data *object)
+{
+	struct manual_data *block, *title;
+
+	if (object == NULL || object->first_child == NULL)
+		return true;
+
+	/* Confirm that this is a suitable object. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_CALLOUT:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_CALLOUT),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Output the callout block. */
+
+	if (!output_strong_file_write_newline())
+		return false;
+
+	if (!output_strong_file_write_plain("#Indent +2"))
+		return false;
+
+	if (!output_strong_file_write_newline())
+		return false;
+
+	if (object->title == NULL) {
+		title = manual_data_get_callout_name(object);
+	} else {
+		title = object->title;
+	}
+
+	if (title != NULL) {
+		if (!output_strong_file_write_plain("{f*}"))
+			return false;
+
+		if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, title))
+			return false;
+
+		if (!output_strong_file_write_plain("{f}"))
+			return false;
+
+		if (!output_strong_file_write_newline())
+			return false;
+	}
+
+	/* Write the contents. */
+
+	block = object->first_child;
+
+	/* If changing this switch, note the analogous list in
+	 * output_html_write_block_collection_object() which
+	 * covers similar block level objects.
+	 */
+
+	while (block != NULL) {
+		switch (block->type) {
+		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+			if (!output_strong_write_paragraph(block))
+				return false;
+			break;
+
+		case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
+		case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+			if (!output_strong_write_list(block, 0))
+				return false;
+			break;
+
+		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+			if (!output_strong_write_code_block(block))
+				return false;
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(block->type),
+					manual_data_find_object_name(object->type));
+			break;
+		}
+
+		block = block->next;
+	}
+
+	/* Reset the indent. */
+
+	if (!output_strong_file_write_newline())
+		return false;
+
+	if (!output_strong_file_write_plain("#Indent") || !output_strong_file_write_newline())
 		return false;
 
 	return true;

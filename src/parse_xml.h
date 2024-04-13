@@ -189,6 +189,21 @@ bool parse_xml_test_boolean_attribute(struct parse_xml_block *instance, const ch
 int parse_xml_read_integer_attribute(struct parse_xml_block *instance, const char *name, int deflt, int minimum, int maxumum);
 
 /**
+ * Parse an attribute for one of a set of possible values, returning
+ * the index into the set, or -1 if not present.
+ * 
+ * Errors and invalid values result in PARSE_XML_RESULT_ERROR being set.
+ * 
+ * \param *instance	Pointer to the instance to be used.
+ * \param *name		The name of the attribute to be matched.
+ * \param count		The number of possible values supplied.
+ * \param ...		The possible values as pointers to strings.
+ * \return		The value read.
+ */
+
+int parse_xml_read_option_attribute(struct parse_xml_block *instance, const char *name, int count, ...);
+
+/**
  * Read the details of the current entity parsed from
  * the file.
  * 

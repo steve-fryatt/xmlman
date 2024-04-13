@@ -60,6 +60,12 @@ struct manual_data_object_type_definition {
 };
 
 /**
+ * Two manual chunks for use when returning arbitary text items.
+ */
+
+struct manual_data manual_data_chunk_list, manual_data_chunk_text;
+
+/**
  * The list of known object type definitions.
  */
 
@@ -84,6 +90,7 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_SET,		"Table Column Set"},
 	{MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_DEFINITION,	"Table Column Definition"},
 	{MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK,			"Code Block"},
+	{MANUAL_DATA_OBJECT_TYPE_CALLOUT,			"Callout"},
 	{MANUAL_DATA_OBJECT_TYPE_FOOTNOTE,			"Footnote"},
 	{MANUAL_DATA_OBJECT_TYPE_PARAGRAPH,			"Paragraph"},
 	{MANUAL_DATA_OBJECT_TYPE_LINE_BREAK,			"Line Break"},
@@ -683,4 +690,78 @@ bool manual_data_nodes_share_file(struct manual_data *node1, struct manual_data 
 	 */
 
 	return (node1 == node2) ? true : false;
+}
+
+/**
+ * Given a callout node, return an appropriate callout name in
+ * the form of a set of node chunks.
+ * 
+ * \param *callout	Pointer to the callout node.
+ * \return		Pointer to the callout name.
+ */
+
+struct manual_data *manual_data_get_callout_name(struct manual_data* callout)
+{
+	char *title;
+
+	if (callout == NULL || callout->type != MANUAL_DATA_OBJECT_TYPE_CALLOUT)
+		return NULL;
+
+	switch (callout->chunk.flags & MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE) {
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_ATTENTION:
+		title = "Attention";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_CAUTION:
+		title = "Caution";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_DANGER:
+		title = "Danger";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_ERROR:
+		title = "Error";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_HINT:
+		title = "Hint";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_IMPORTANT:
+		title = "Important";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_NOTE:
+		title = "Note";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_SEEALSO:
+		title = "See Also";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_TIP:
+		title = "Tip";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_WARNING:
+		title = "Warning";
+		break;
+	default:
+		title = "";
+		break;
+	}
+
+	manual_data_chunk_list.type = MANUAL_DATA_OBJECT_TYPE_TITLE;
+	manual_data_chunk_list.index = 0;
+	manual_data_chunk_list.title = NULL;
+	manual_data_chunk_list.first_child = &manual_data_chunk_text;
+	manual_data_chunk_list.parent = callout;
+	manual_data_chunk_list.previous = NULL;
+	manual_data_chunk_list.next = NULL;
+	manual_data_chunk_list.chunk.flags = MANUAL_DATA_OBJECT_FLAGS_NONE;
+	manual_data_chunk_list.chunk.text = NULL;
+
+	manual_data_chunk_text.type = MANUAL_DATA_OBJECT_TYPE_TEXT;
+	manual_data_chunk_text.index = 0;
+	manual_data_chunk_text.title = NULL;
+	manual_data_chunk_text.first_child = NULL;
+	manual_data_chunk_text.parent = &manual_data_chunk_list;
+	manual_data_chunk_text.previous = NULL;
+	manual_data_chunk_text.next = NULL;
+	manual_data_chunk_text.chunk.flags = MANUAL_DATA_OBJECT_FLAGS_NONE;
+	manual_data_chunk_text.chunk.text = title;
+
+	return &manual_data_chunk_list;
 }

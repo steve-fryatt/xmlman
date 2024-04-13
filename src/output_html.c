@@ -93,6 +93,7 @@ static bool output_html_write_heading(struct manual_data *node, int level);
 static bool output_html_write_chapter_list(struct manual_data *object, int level);
 static bool output_html_write_block_collection_object(struct manual_data *object);
 static bool output_html_write_footnote(struct manual_data *object);
+static bool output_html_write_callout(struct manual_data *object);
 static bool output_html_write_list(struct manual_data *object);
 static bool output_html_write_table(struct manual_data *object);
 static bool output_html_write_code_block(struct manual_data *object);
@@ -442,6 +443,18 @@ static bool output_html_write_section_object(struct manual_data *object, int lev
 				}
 
 				if (!output_html_write_table(block))
+					return false;
+				break;
+
+			case MANUAL_DATA_OBJECT_TYPE_CALLOUT:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_html_write_callout(block))
 					return false;
 				break;
 
@@ -1075,6 +1088,147 @@ static bool output_html_write_footnote(struct manual_data *object)
 		if (!output_html_file_write_plain("</dl>") || !output_html_file_write_newline())
 			return false;
 	}
+
+	return true;
+}
+
+/**
+ * Process the contents of a callout and write it out.
+ *
+ * \param *object		The object to process.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_callout(struct manual_data *object)
+{
+	struct manual_data *block, *title;
+	char* type_style = NULL;
+
+	if (object == NULL || object->first_child == NULL)
+		return true;
+
+	/* Confirm that this is a suitable object. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_CALLOUT:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_CALLOUT),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	switch (object->chunk.flags & MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE) {
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_ATTENTION:
+		type_style = " attention";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_CAUTION:
+		type_style = " caution";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_DANGER:
+		type_style = " danger";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_ERROR:
+		type_style = " error";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_HINT:
+		type_style = " hint";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_IMPORTANT:
+		type_style = " important";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_NOTE:
+		type_style = " note";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_SEEALSO:
+		type_style = " seealso";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_TIP:
+		type_style = " tip";
+		break;
+	case MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_WARNING:
+		type_style = " warning";
+		break;
+	default:
+		type_style = "";
+		break;
+	}
+
+	/* Write out the box heading, */
+
+	if (!output_html_file_write_newline())
+		return false;
+
+	if (!output_html_file_write_plain("<div class=\"callout%s\">", type_style))
+		return false;
+
+	if (object->title == NULL) {
+		title = manual_data_get_callout_name(object);
+	} else {
+		title = object->title;
+	}
+
+	if (title != NULL) {
+		if (!output_html_file_write_newline())
+			return false;
+
+		if (!output_html_file_write_plain("<div class=\"heading\">"))
+			return false;
+
+		if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, title))
+			return false;
+
+		if (!output_html_file_write_plain("</div>") || !output_html_file_write_newline())
+			return false;
+
+		if (!output_html_file_write_newline())
+			return false;
+	}
+
+	if (!output_html_file_write_plain("<div class=\"content\">"))
+		return false;
+
+	/* Write the contents. */
+
+	block = object->first_child;
+
+	/* If changing this switch, note the analogous list in
+	 * output_html_write_block_collection_object() which
+	 * covers similar block level objects.
+	 */
+
+	while (block != NULL) {
+		switch (block->type) {
+		case MANUAL_DATA_OBJECT_TYPE_PARAGRAPH:
+			if (!output_html_write_paragraph(block))
+				return false;
+			break;
+
+		case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
+		case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+			if (!output_html_write_list(block))
+				return false;
+			break;
+
+		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+			if (!output_html_write_code_block(block))
+				return false;
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(block->type),
+					manual_data_find_object_name(object->type));
+			break;
+		}
+
+		block = block->next;
+	}
+
+	/* Close the DIV. */
+
+	if (!output_html_file_write_plain("</div></div>") || !output_html_file_write_newline())
+		return false;
 
 	return true;
 }

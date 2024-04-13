@@ -58,6 +58,7 @@ static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *par
 static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct manual_data *chapter);
 static struct manual_data *parse_section(struct parse_xml_block *parser);
 static struct manual_data *parse_block_collection_object(struct parse_xml_block *parser);
+static struct manual_data *parse_callout(struct parse_xml_block *parser);
 static struct manual_data *parse_list(struct parse_xml_block *parser);
 static struct manual_data *parse_table(struct parse_xml_block *parser);
 static struct manual_data *parse_table_column_set(struct parse_xml_block *parser);
@@ -208,6 +209,7 @@ static bool parse_file(struct filename *filename, struct manual_data **manual, s
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 		default:
@@ -408,6 +410,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 		default:
@@ -617,6 +620,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 		default:
@@ -735,6 +739,10 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 				item = parse_code_block(parser);
 				parse_link_item(&tail, new_section, item);
 				break;
+			case PARSE_ELEMENT_CALLOUT:
+				item = parse_callout(parser);
+				parse_link_item(&tail, new_section, item);
+				break;
 			case PARSE_ELEMENT_FOOTNOTE:
 				item = parse_block_collection_object(parser);
 				parse_link_item(&tail, new_section, item);
@@ -778,6 +786,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 		default:
@@ -905,6 +914,7 @@ static struct manual_data *parse_block_collection_object(struct parse_xml_block 
 
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 
@@ -918,6 +928,150 @@ static struct manual_data *parse_block_collection_object(struct parse_xml_block 
 
 	return new_block;
 
+}
+
+
+/**
+ * Process a callout object (CALLOUT), returning a pointer to the root
+ * of the new data structure.
+ *
+ * \param *parser	Pointer to the parser to use.
+ * \return		Pointer to the new data structure.
+ */
+
+static struct manual_data *parse_callout(struct parse_xml_block *parser)
+{
+	bool done = false;
+	enum parse_xml_result result;
+	enum parse_element_type type, element;
+	struct manual_data *new_box = NULL, *tail = NULL, *item = NULL;
+	char *type_name;
+
+	/* Identify the tag which got us here. */
+
+	type = parse_xml_get_element(parser);
+
+	msg_report(MSG_PARSE_PUSH, "Callout", parse_element_find_tag(type));
+
+	/* Create the new section object. */
+
+	switch (type) {
+	case PARSE_ELEMENT_CALLOUT:
+		new_box = manual_data_create(MANUAL_DATA_OBJECT_TYPE_CALLOUT);
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type), "Section");
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	if (new_box == NULL) {
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	/* Read the box type. */
+
+	switch (parse_xml_read_option_attribute(parser, "type", 10,
+		"attention", "caution", "danger", "error", "hint", "important", "note", "seealso", "tip", "warning")) {
+	case 0:
+		new_box->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_ATTENTION;
+		break;
+	case 1:
+		new_box->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_CAUTION;
+		break;
+	case 2:
+		new_box->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_DANGER;
+		break;
+	case 3:
+		new_box->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_ERROR;
+		break;
+	case 4:
+		new_box->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_HINT;
+		break;
+	case 5:
+		new_box->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_IMPORTANT;
+		break;
+	case 6:
+		new_box->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_NOTE;
+		break;
+	case 7:
+		new_box->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_SEEALSO;
+		break;
+	case 8:
+		new_box->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_TIP;
+		break;
+	case 9:
+		new_box->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_WARNING;
+		break;
+	default:
+		msg_report(MSG_MISSING_ATTRIBUTE, "type");
+		parse_xml_set_error(parser);
+		break;
+	}
+
+	/* Parse the box contents. */
+
+	do {
+		result = parse_xml_read_next_chunk(parser);
+
+		switch (result) {
+		case PARSE_XML_RESULT_TAG_START:
+			element = parse_xml_get_element(parser);
+
+			switch (element) {
+			case PARSE_ELEMENT_TITLE:
+				if (new_box->title == NULL) {
+					new_box->title = parse_block_object(parser);
+					parse_link_item(NULL, new_box, new_box->title);
+				} else {
+					msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
+					parse_xml_set_error(parser);
+				}
+				break;
+			case PARSE_ELEMENT_PARAGRAPH:
+				item = parse_block_object(parser);
+				parse_link_item(&tail, new_box, item);
+				break;
+			case PARSE_ELEMENT_OL:
+			case PARSE_ELEMENT_UL:
+				item = parse_list(parser);
+				parse_link_item(&tail, new_box, item);
+				break;
+			case PARSE_ELEMENT_CODE:
+				item = parse_code_block(parser);
+				parse_link_item(&tail, new_box, item);
+				break;
+			case PARSE_ELEMENT_NONE:
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
+				parse_unknown(parser);
+				break;
+			}
+			break;
+		case PARSE_XML_RESULT_TAG_END:
+			element = parse_xml_get_element(parser);
+
+			if (element == type)
+				done = true;
+			else if (element != PARSE_ELEMENT_NONE)
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+			break;
+		case PARSE_XML_RESULT_WHITESPACE:
+		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
+		case PARSE_XML_RESULT_EOF:
+			break;
+		default:
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
+			break;
+		}
+	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
+
+	msg_report(MSG_PARSE_POP, "Callout", parse_element_find_tag(type));
+
+	return new_box;
 }
 
 /**
@@ -996,6 +1150,7 @@ static struct manual_data *parse_list(struct parse_xml_block *parser)
 
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 
@@ -1105,6 +1260,7 @@ static struct manual_data *parse_table(struct parse_xml_block *parser)
 
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 
@@ -1236,6 +1392,7 @@ static struct manual_data *parse_table_column_set(struct parse_xml_block *parser
 
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 
@@ -1323,6 +1480,7 @@ static struct manual_data *parse_table_row(struct parse_xml_block *parser)
 
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 
@@ -1427,6 +1585,7 @@ static struct manual_data *parse_code_block(struct parse_xml_block *parser)
 			break;
 
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 
@@ -1710,6 +1869,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 			break;
 
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 
@@ -1823,6 +1983,7 @@ static void parse_unknown(struct parse_xml_block *parser)
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 		default:
@@ -1922,6 +2083,7 @@ static void parse_resources(struct parse_xml_block *parser, struct manual_data_r
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 		default:
@@ -2014,6 +2176,7 @@ static void parse_mode_resources(struct parse_xml_block *parser, enum modes_type
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 		default:
@@ -2122,6 +2285,7 @@ static struct manual_data *parse_single_level_attribute(struct parse_xml_block *
 			break;
 
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 
@@ -2214,6 +2378,7 @@ static bool parse_fetch_single_level_block(struct parse_xml_block *parser, char 
 			buffer[end] = '\0';
 			break;
 		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
 		case PARSE_XML_RESULT_EOF:
 			break;
 		default:

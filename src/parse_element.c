@@ -86,6 +86,7 @@ static struct parse_element_definition parse_element_tags[] = {
 	{PARSE_ELEMENT_COLUMNS,		"columns"},
 	{PARSE_ELEMENT_TABLE,		"table"},
 	{PARSE_ELEMENT_FOOTNOTE,	"footnote"},
+	{PARSE_ELEMENT_CALLOUT,		"callout"},
 	{PARSE_ELEMENT_SECTION,		"section"},
 	{PARSE_ELEMENT_TITLE,		"title"},
 	{PARSE_ELEMENT_RESOURCES,	"resources"},

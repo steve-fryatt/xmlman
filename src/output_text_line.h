@@ -81,12 +81,14 @@ bool output_text_line_push_absolute(int inset);
  * of character positions from the left margin of the line below it on
  * the stack.
  * 
- * \param inset		The number of character positions to inset the line
- *			from the parent.
+ * \param left		The number of character positions to inset the line
+ *			from the parent on the left.
+ * \param right		The number of character positions to inset the line
+ *			from the parent on the right.
  * \return		TRUE if successful; else FALSE.
  */
 
-bool output_text_line_push(int inset);
+bool output_text_line_push(int left, int right);
 
 /**
  * Push a new output line on to the stack, insetting it the given number
@@ -94,12 +96,14 @@ bool output_text_line_push(int inset);
  * the line below it on the stack.
  *
  * \param column	The column to align the margin with.
- * \param inset		The number of character positions to inset the line
- * 			from the parent column.
+ * \param left		The number of character positions to inset the line
+ *			from the parent column on the left.
+ * \param right		The number of character positions to inset the line
+ *			from the parent on the right.
  * \return		TRUE if successful; else FALSE.
  */
 
-bool output_text_line_push_to_column(int column, int inset);
+bool output_text_line_push_to_column(int column, int left, int right);
 
 /**
  * Pop a line from the top of the line stack and dispose of it.

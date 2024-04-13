@@ -60,6 +60,7 @@ enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_SET,
 	MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_DEFINITION,
 	MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK,
+	MANUAL_DATA_OBJECT_TYPE_CALLOUT,
 	MANUAL_DATA_OBJECT_TYPE_FOOTNOTE,
 	MANUAL_DATA_OBJECT_TYPE_PARAGRAPH,
 	MANUAL_DATA_OBJECT_TYPE_LINE_BREAK,
@@ -111,7 +112,21 @@ enum manual_data_object_flags {
 	/* Flags relating to Links */
 
 	MANUAL_DATA_OBJECT_FLAGS_LINK_EXTERNAL = 1,
-	MANUAL_DATA_OBJECT_FLAGS_LINK_FLATTEN = 2
+	MANUAL_DATA_OBJECT_FLAGS_LINK_FLATTEN = 2,
+
+	/* Flags relating to Callouts */
+
+	MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE = 0xf, // Type mask
+	MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_ATTENTION = 0,
+	MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_CAUTION = 1,
+	MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_DANGER = 2,
+	MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_ERROR = 3,
+	MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_HINT = 4,
+	MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_IMPORTANT = 5,
+	MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_NOTE = 6,
+	MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_SEEALSO = 7,
+	MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_TIP = 8,
+	MANUAL_DATA_OBJECT_FLAGS_CALLOUT_TYPE_WARNING = 9
 };
 
 /**
@@ -435,5 +450,15 @@ struct manual_data *manual_data_get_node_stylesheet(struct manual_data *node, en
  */
 
 bool manual_data_nodes_share_file(struct manual_data *node1, struct manual_data *node2, enum modes_type type);
+
+/**
+ * Given a callout node, return an appropriate callout name in
+ * the form of a set of node chunks.
+ * 
+ * \param *callout	Pointer to the callout node.
+ * \return		Pointer to the callout name.
+ */
+
+struct manual_data *manual_data_get_callout_name(struct manual_data* callout);
 
 #endif

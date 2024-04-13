@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 
 #include "manual_entity.h"
@@ -585,6 +586,59 @@ int parse_xml_read_integer_attribute(struct parse_xml_block *instance, const cha
 	}
 
 	return value & 0xffffffff;
+}
+
+/**
+ * Parse an attribute for one of a set of possible values, returning
+ * the index into the set, or -1 if not present.
+ * 
+ * Errors and invalid values result in PARSE_XML_RESULT_ERROR being set.
+ * 
+ * \param *instance	Pointer to the instance to be used.
+ * \param *name		The name of the attribute to be matched.
+ * \param count		The number of possible values supplied.
+ * \param ...		The possible values as pointers to strings.
+ * \return		The value read.
+ */
+
+int parse_xml_read_option_attribute(struct parse_xml_block *instance, const char *name, int count, ...)
+{
+	va_list ap;
+	int i, index = -1;
+	struct parse_xml_attribute *attribute;
+	char buffer[PARSE_XML_MAX_ATTRIBUTE_VAL_LEN], *pattern;
+
+	if (instance == NULL || instance->file == NULL) {
+		if (instance != NULL)
+			instance->current_mode = PARSE_XML_RESULT_ERROR;
+		return -1;
+	}
+
+	attribute = parse_xml_find_attribute(instance, name);
+	if (attribute == NULL)
+		return -1;
+
+	parse_xml_copy_text_to_buffer(instance, attribute->start, attribute->length, buffer, PARSE_XML_MAX_ATTRIBUTE_VAL_LEN);
+
+	va_start(ap, count);
+
+	for (i = 0; i < count && index == -1; i++) {
+		pattern = va_arg(ap, char *);
+
+		if (pattern != NULL && strcmp(pattern, buffer) == 0)
+			index = i;
+	}
+
+	va_end(ap);
+
+	/* We need to find a match if attribute is present. */
+
+	if (index == -1) {
+		msg_report(MSG_BAD_ATTRIBUTE_VALUE, buffer, attribute->name);
+		instance->current_mode = PARSE_XML_RESULT_ERROR;
+	}
+
+	return index;
 }
 
 /**
