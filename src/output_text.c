@@ -293,13 +293,6 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 		return false;
 	}
 
-	if (!output_text_line_write_newline()) {
-		output_text_line_close();
-		filename_destroy(foldername);
-		filename_destroy(filename);
-		return false;
-	}
-
 	/* Output the object. */
 
 	if (!output_text_write_object(object, true, OUTPUT_TEXT_BASE_LEVEL)) {
