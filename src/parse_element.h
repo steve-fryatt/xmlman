@@ -32,10 +32,13 @@
 
 /**
  * A list of element types known to the parser.
+ *
+ * The order of the types is alphabetical, with NONE at the
+ * end as an end-stop. It *must* correspond to the order of the
+ * tags in parse_element.c.
  */
 
 enum parse_element_type {
-	PARSE_ELEMENT_NONE,
 	PARSE_ELEMENT_BR,
 	PARSE_ELEMENT_CALLOUT,
 	PARSE_ELEMENT_CHAPTER,
@@ -90,7 +93,8 @@ enum parse_element_type {
 	PARSE_ELEMENT_UL,
 	PARSE_ELEMENT_VARIABLE,
 	PARSE_ELEMENT_VERSION,
-	PARSE_ELEMENT_WINDOW
+	PARSE_ELEMENT_WINDOW,
+	PARSE_ELEMENT_NONE
 };
 
 /**

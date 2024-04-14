@@ -159,7 +159,11 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Attempt to add content into unexpected stack location %d",	false},
 
 	{MSG_ERROR,	"Unknown element '<%s>'",					true},
+	{MSG_ERROR,	"Element definitions out of sequence.",				false},
 	{MSG_ERROR,	"Failed to allocate new manual data node",			false},
+
+	{MSG_ERROR,	"Failed to allocate new search tree node",			false},
+	{MSG_ERROR,	"Attempt to add duplicate key to search tree",			false},
 
 	{MSG_INFO,	"Writing %s output...",						false},
 	{MSG_ERROR,	"Unexpected object type found",					false},

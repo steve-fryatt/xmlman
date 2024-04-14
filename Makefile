@@ -54,6 +54,7 @@ OBJS := args.o			\
 	parse_element.o		\
 	parse_link.o		\
 	parse_xml.o		\
+	search_tree.o		\
 	string.o		\
 	xmlman.o
 
