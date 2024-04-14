@@ -78,6 +78,63 @@
 
 static struct filename *output_html_root_filename;
 
+/**
+ * The default stylesheet, which is embedded into the HTML file
+ * if no external sheet is specified.
+ */
+
+static char *output_html_default_stylesheet[] = {
+	"BODY { font-family: arial, helvetica, sans-serif; background-color: #FFFFFF; margin: 0; padding: 0; color: #000000; }",
+	"DIV#head { margin: 0; padding: 0; border-bottom: 1px solid #000000; }",
+	"DIV#head-liner { max-width: 1000px; margin: 0 auto; padding: 1em; }",
+	"DIV#head DIV.title-flex { display: flex; margin: 0 0 1em; flex-direction: row; flex-wrap: nowrap; justify-content: flex-start; align-items: center; }",
+	"DIV#head DIV.title-flex H1 { margin: 0; padding: 0; flex: 1 1 auto; text-align: left; vertical-align: middle; }",
+	"DIV#head DIV.title.flex DIV.title-right { margin: 0.5em; padding: 0; flex: 0 0 auto; vertical-align: middle; }",
+	"DIV#head DIV.date { margin-top: 0.3em; font-weight: bold; text-align: right; } ",
+	"DIV#head DIV.version { font-weight: bold; text-align: right; }",
+	"DIV#head DIV.strapline { margin-top: 0.5em; font-style: italic; font-weight: bold; }",
+	"DIV#head DIV.credit { margin-top: 0.5em; }",
+	"DIV#body { margin: 0; padding: 0 1em; }",
+	"DIV#body-liner { max-width: 1000px; margin: 1em auto; }",
+	"H1 { text-align: left; font-size: 2em; font-weight: bold; margin-top: 1em; margin-bottom: 1em; }",
+	"H2 { text-align: left; font-size: 1.5em; font-weight: bold; margin-top: 1.5em; margin-bottom: 1em; }",
+	"H3 { text-align: left; font-size: 1em; font-weight: bold; font-style: italic; margin-top: 0.5em; margin-bottom:0; }",
+	"H4 { text-align: left; font-size: 1em; font-style: italic; margin-top: 0.5em; margin-bottom: 0; }",
+	"H5 { text-align: left; font-size: 1em; font-style: italic; margin-top: 0.5em; margin-bottom: 0; }",
+	"H6 { text-align: left; font-size: 1em; font-style: italic; margin-top: 0.5em; margin-bottom: 0; }",
+	"DIV.callout { margin: 0.5em 4em; padding: 0; }",
+	"DIV.callout DIV.heading { margin: 0; padding: 5px; font-weight: bold; }",
+	"DIV.callout DIV.content { margin: 0; padding: 5px; }",
+	"DIV.callout DIV.content :first-child { margin-top: 0; }",
+	"DIV.callout DIV.content :last-child { margin-bottom: 0; }",
+	"DIV.danger, DIV.error { background-color: #DFDFFF; border: 1px solid #6297e7; }",
+	"DIV.danger DIV.heading, DIV.error DIV.heading { color: #ffffff; background-color: #6297e7; }",
+	"DIV.attention, DIV.caution, DIV.warning { background-color: #f5bdac; border: 1px solid #f35424; }",
+	"DIV.attention DIV.heading, DIV.caution DIV.heading, DIV.warning DIV.heading { color: #ffffff; background-color: #f35424; }",
+	"DIV.note, DIV.important { background-color: #DFDFFF; border: 1px solid #6297e7; }",
+	"DIV.note DIV.heading, DIV.important DIV.heading { color: #ffffff; background-color: #6297e7; }",
+	"DIV.hint, DIV.seealso, DIV.tip { background-color: #cff8c9; border: 1px solid #aaf3a1; }",
+	"DIV.hint DIV.heading, DIV.seealso DIV.heading, DIV.tip DIV.heading { color: #000000; background-color: #aaf3a1; }",
+	"DIV.codeblock { padding: 0 2em; text-align: left; font-family: monospace; font-weight: normal; }",
+	"UL.contents-list { padding: 0; list-style-type: none; }",
+	"DL.footnotes { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }",
+	"DL.footnotes DT { margin-left: 0; margin-right: 0; font-size: 1em; font-weight: bold; font-style: italic; }",
+	"DL.footnotes DD { margin-left: 1em; margin-right: 0; }",
+	"TABLE { width: 100%; border-collapse: collapse; border-spacing: 2px; }",
+	"TH { font-weight: bold; text-align: left; }",
+	"TD { text-align: left; }",
+	"TR { vertical-align: middle; border-bottom: 1px solid #DFDFFF; }",
+	"CODE, SPAN.code { font-family: monospace; font-weight: bold; }",
+	"STRONG { font-weight: bold; }",
+	"EM { font-style: italic; }",
+	"SPAN.command { font-weight: bold; }",
+	"SPAN.entry { font-family: monospace; }",
+	"SPAN.filename { font-weight: bold; font-style: italic; }",
+	"SPAN.icon, SPAN.introduction, SPAN.maths, SPAN.menu { font-style: italic; }",
+	"SPAN.key, SPAN.mouse { font-style: unset; }",
+	"SPAN.keyword, SPAN.name, SPAN.window, SPAN.variable { font-weight: bold; }",
+	NULL
+};
 
 /* Static Function Prototypes. */
 
@@ -645,15 +702,30 @@ static bool output_html_write_stylesheet_link(struct manual_data *manual)
 	struct manual_data *sheet_node = NULL;
 	struct filename *sheetname = NULL, *sourcename = NULL, *targetname = NULL, *filename = NULL;
 	char *link = NULL;
+	int line = 0;
 
 	if (manual == NULL)
 		return false;
 
-	/* Find the nearest stylesheet details, and exit if there nothing to do. */
+	/* Find the nearest stylesheet details. If there isn't one, write the default
+	 * sheet and exit. 
+	 */
 
 	sheet_node = manual_data_get_node_stylesheet(manual, MODES_TYPE_HTML);
-	if (sheet_node == NULL)
+	if (sheet_node == NULL) {
+		if (!output_html_file_write_plain("<style>") || !output_html_file_write_newline())
+			return false;
+
+		for (line = 0; output_html_default_stylesheet[line] != NULL; line++) {
+			if (!output_html_file_write_plain("  %s", output_html_default_stylesheet[line]) || !output_html_file_write_newline())
+				return false;
+		}
+
+		if (!output_html_file_write_plain("</style>") || !output_html_file_write_newline())
+			return false;
+
 		return true;
+	}
 
 	sheetname = filename_up(sheet_node->chapter.resources->html.stylesheet, 0);
 	if (sheetname == NULL)
