@@ -192,7 +192,7 @@ struct manual_data *manual_ids_find_node(struct manual_data *node)
 	struct manual_data *target = NULL;
 	struct manual_ids_entry *entry;
 
-	if (node == NULL || node->chunk.id == NULL)
+	if (node == NULL)
 		return NULL;
 
 	/* Only chunk types can have IDs. */
@@ -202,7 +202,12 @@ struct manual_data *manual_ids_find_node(struct manual_data *node)
 		break;
 	default:
 		msg_report(MSG_ID_BAD_REFERENCE, manual_data_find_object_name(node->type));
-		return false;
+		return NULL;
+	}
+
+	if (node->chunk.id == NULL) {
+		msg_report(MSG_ID_MISSING);
+		return NULL;
 	}
 
 	entry = manual_ids_find_id(node->chunk.id);

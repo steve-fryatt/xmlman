@@ -117,6 +117,7 @@ static bool output_text_write_code_block(struct manual_data *object, int column)
 static bool output_text_write_paragraph(struct manual_data *object, int column, bool last_item);
 static bool output_text_write_reference(struct manual_data *target);
 static bool output_text_write_text(int column, enum manual_data_object_type type, struct manual_data *text);
+static bool output_text_write_span_enclosed(int column, enum manual_data_object_type type, char *string, struct manual_data *text);
 static bool output_text_write_inline_link(int column, struct manual_data *link);
 static bool output_text_write_inline_reference(int column, struct manual_data *reference);
 static bool output_text_write_title(int column, struct manual_data *node, bool include_name, bool include_title);
@@ -1643,6 +1644,7 @@ static bool output_text_write_reference(struct manual_data *target)
 static bool output_text_write_text(int column, enum manual_data_object_type type, struct manual_data *text)
 {
 	struct manual_data *chunk;
+	bool success = true;
 
 	/* An empty block doesn't require any output. */
 
@@ -1656,65 +1658,91 @@ static bool output_text_write_text(int column, enum manual_data_object_type type
 
 	chunk = text->first_child;
 
-	while (chunk != NULL) {
+	while (success == true && chunk != NULL) {
 		switch (chunk->type) {
-		case MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS:
-			output_text_line_add_text(column, "/");
-			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, chunk);
-			output_text_line_add_text(column, "/");
-			break;
-		case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
-			output_text_line_add_text(column, "*");
-			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, chunk);
-			output_text_line_add_text(column, "*");
-			break;
 		case MANUAL_DATA_OBJECT_TYPE_CITATION:
-			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_CITATION, chunk);
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_CITATION, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_CODE:
-			output_text_line_add_text(column, "\"");
-			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_CODE, chunk);
-			output_text_line_add_text(column, "\"");
+			success = output_text_write_span_enclosed(column, MANUAL_DATA_OBJECT_TYPE_CODE, "\"", chunk);
 			break;
-		case MANUAL_DATA_OBJECT_TYPE_USER_ENTRY:
-			output_text_line_add_text(column, "\"");
-			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_USER_ENTRY, chunk);
-			output_text_line_add_text(column, "\"");
+		case MANUAL_DATA_OBJECT_TYPE_COMMAND:
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_COMMAND, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_CONSTANT:
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_CONSTANT, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_EVENT:
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_EVENT, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_FILENAME:
-			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_FILENAME, chunk);
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_FILENAME, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_FUNCTION:
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_FUNCTION, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ICON:
-			output_text_line_add_text(column, "'");
-			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_ICON, chunk);
-			output_text_line_add_text(column, "'");
+			success = output_text_write_span_enclosed(column, MANUAL_DATA_OBJECT_TYPE_ICON, "'", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_INTRO:
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_INTRO, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_KEY:
-			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_KEY, chunk);
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_KEY, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_KEYWORD:
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_KEYWORD, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS:
+			success = output_text_write_span_enclosed(column, MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, "/", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_LINK:
-			output_text_write_inline_link(column, chunk);
+			success = output_text_write_inline_link(column, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_MATHS:
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_MATHS, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_MENU:
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_MENU, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_MESSAGE:
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_MESSAGE, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MOUSE:
-			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_MOUSE, chunk);
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_MOUSE, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_NAME:
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_NAME, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_REFERENCE:
-			output_text_write_inline_reference(column, chunk);
+			success = output_text_write_inline_reference(column, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
+			success = output_text_write_span_enclosed(column, MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, "*", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_SWI:
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_SWI, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_TYPE:
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_TYPE, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_USER_ENTRY:
+			success = output_text_write_span_enclosed(column, MANUAL_DATA_OBJECT_TYPE_USER_ENTRY, "\"", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_VARIABLE:
-			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_VARIABLE, chunk);
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_VARIABLE, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_WINDOW:
-			output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_WINDOW, chunk);
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_WINDOW, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_LINE_BREAK:
-			output_text_line_add_text(column, "\n");
+			success = output_text_line_add_text(column, "\n");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
-			output_text_line_add_text(column, chunk->chunk.text);
+			success = output_text_line_add_text(column, chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			output_text_line_add_text(column, (char *) output_text_convert_entity(chunk->chunk.entity));
+			success = output_text_line_add_text(column, (char *) output_text_convert_entity(chunk->chunk.entity));
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK,
@@ -1726,9 +1754,35 @@ static bool output_text_write_text(int column, enum manual_data_object_type type
 		chunk = chunk->next;
 	}
 
-	return true;
+	return success;
 }
 
+/**
+ * Write out a section of text wrapped in {f} tags.
+ * 
+ * \param column		The column in the line to write to.
+ * \param type			The type of block which is expected.
+ * \param *string		The text to enclose the span in.
+ * \param *text			The block of text to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_text_write_span_enclosed(int column, enum manual_data_object_type type, char *string, struct manual_data *text)
+{
+	if (text == NULL || string == NULL)
+		return false;
+
+	if (!output_text_line_add_text(column, string))
+		return false;
+
+	if (!output_text_write_text(column, type, text))
+		return false;
+
+	if (!output_text_line_add_text(column, string))
+		return false;
+
+	return true;
+}
 
 /**
  * Write an inline link to a column in the current output line.
@@ -1812,7 +1866,7 @@ static bool output_text_write_inline_reference(int column, struct manual_data *r
 		return false;
 
 	if (target == NULL)
-		return false;
+		return true;
 
 	/* Write the reference information. */
 

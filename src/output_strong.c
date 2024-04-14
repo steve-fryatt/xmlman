@@ -103,6 +103,7 @@ static bool output_strong_write_code_block(struct manual_data *object);
 static bool output_strong_write_paragraph(struct manual_data *object);
 static bool output_strong_write_reference(struct manual_data *target, char *text);
 static bool output_strong_write_text(enum manual_data_object_type type, struct manual_data *text);
+static bool output_strong_write_span_font(enum manual_data_object_type type, char *font, struct manual_data *text);
 static bool output_strong_write_inline_link(struct manual_data *link);
 static bool output_strong_write_inline_reference(struct manual_data *reference);
 static bool output_strong_write_local_anchor(struct manual_data *source, struct manual_data *target);
@@ -1274,6 +1275,7 @@ static bool output_strong_write_reference(struct manual_data *target, char *text
 static bool output_strong_write_text(enum manual_data_object_type type, struct manual_data *text)
 {
 	struct manual_data *chunk;
+	bool success = true;
 
 	/* An empty block doesn't require any output. */
 
@@ -1287,42 +1289,91 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 
 	chunk = text->first_child;
 
-	while (chunk != NULL) {
+	while (success == true && chunk != NULL) {
 		switch (chunk->type) {
-		case MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS:
-			output_strong_file_write_plain("{f/:");
-			output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, chunk);
-			output_strong_file_write_plain("}");
-			break;
-		case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
-			output_strong_file_write_plain("{f*:");
-			output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, chunk);
-			output_strong_file_write_plain("}");
-			break;
 		case MANUAL_DATA_OBJECT_TYPE_CITATION:
-			output_strong_file_write_plain("{f/:");
-			output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_CITATION, chunk);
-			output_strong_file_write_plain("}");
+			success = output_strong_write_span_font(MANUAL_DATA_OBJECT_TYPE_CITATION, "/", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_CODE:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_CODE, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_COMMAND:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_COMMAND, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_CONSTANT:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_CONSTANT, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_EVENT:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_EVENT, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_FILENAME:
-			output_strong_file_write_plain("{f*:");
-			output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_FILENAME, chunk);
-			output_strong_file_write_plain("}");
+			success = output_strong_write_span_font(MANUAL_DATA_OBJECT_TYPE_FILENAME, "*", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_FUNCTION:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_FUNCTION, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_ICON:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_ICON, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_INTRO:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_INTRO, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_KEY:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_KEY, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_KEYWORD:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_KEYWORD, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS:
+			success = output_strong_write_span_font(MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, "/", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_LINK:
-			output_strong_write_inline_link(chunk);
+			success = output_strong_write_inline_link(chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_MATHS:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_MATHS, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_MENU:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_MENU, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_MESSAGE:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_MESSAGE, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_MOUSE:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_MOUSE, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_NAME:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_NAME, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_REFERENCE:
-			output_strong_write_inline_reference(chunk);
+			success = output_strong_write_inline_reference(chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
+			success = output_strong_write_span_font(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, "*", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_SWI:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_SWI, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_TYPE:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_TYPE, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_USER_ENTRY:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_USER_ENTRY, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_VARIABLE:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_VARIABLE, chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_WINDOW:
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_WINDOW, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_LINE_BREAK:
-			output_strong_file_write_newline();
+			success = output_strong_file_write_newline();
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
-			output_strong_file_write_text(chunk->chunk.text);
+			success = output_strong_file_write_text(chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			output_strong_file_write_text((char *) output_strong_convert_entity(chunk->chunk.entity));
+			success = output_strong_file_write_text((char *) output_strong_convert_entity(chunk->chunk.entity));
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK,
@@ -1333,6 +1384,32 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 
 		chunk = chunk->next;
 	}
+
+	return success;
+}
+
+/**
+ * Write out a section of text wrapped in {f} tags.
+ * 
+ * \param type			The type of block which is expected.
+ * \param *font			The font tag to use.
+ * \param *text			The block of text to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_strong_write_span_font(enum manual_data_object_type type, char *font, struct manual_data *text)
+{
+	if (text == NULL || font == NULL)
+		return false;
+
+	if (!output_strong_file_write_plain("{f%s}"))
+		return false;
+
+	if (!output_strong_write_text(type, text))
+		return false;
+
+	if (!output_strong_file_write_plain("{f}"))
+		return false;
 
 	return true;
 }

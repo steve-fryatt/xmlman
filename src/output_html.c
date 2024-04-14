@@ -1633,6 +1633,7 @@ static bool output_html_write_reference(struct manual_data *source, struct manua
 static bool output_html_write_text(enum manual_data_object_type type, struct manual_data *text)
 {
 	struct manual_data *chunk;
+	bool success = true;
 
 	/* An empty block doesn't require any output. */
 
@@ -1646,56 +1647,91 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 
 	chunk = text->first_child;
 
-	while (chunk != NULL) {
+	while (success == true && chunk != NULL) {
 		switch (chunk->type) {
-		case MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS:
-			output_html_write_span_tag(MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, "em", chunk);
-			break;
-		case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
-			output_html_write_span_tag(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, "strong", chunk);
-			break;
 		case MANUAL_DATA_OBJECT_TYPE_CITATION:
-			output_html_write_span_tag(MANUAL_DATA_OBJECT_TYPE_CITATION, "cite", chunk);
+			success = output_html_write_span_tag(MANUAL_DATA_OBJECT_TYPE_CITATION, "cite", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_CODE:
-			output_html_write_span_tag(MANUAL_DATA_OBJECT_TYPE_CODE, "code", chunk);
+			success = output_html_write_span_tag(MANUAL_DATA_OBJECT_TYPE_CODE, "code", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_COMMAND:
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_COMMAND, "command", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_CONSTANT:
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_CONSTANT, "code", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_EVENT:
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_EVENT, "name", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_FILENAME:
-			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_FILENAME, "filename", chunk);
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_FILENAME, "filename", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_FUNCTION:
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_FUNCTION, "code", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ICON:
-			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_ICON, "icon", chunk);
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_ICON, "icon", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_INTRO:
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_INTRO, "introduction", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_KEY:
-			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_KEY, "key", chunk);
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_KEY, "key", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_KEYWORD:
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_KEYWORD, "keyword", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS:
+			success = output_html_write_span_tag(MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, "em", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_LINK:
-			output_html_write_inline_link(chunk);
+			success = output_html_write_inline_link(chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_MATHS:
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_MATHS, "maths", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_MENU:
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_MENU, "menu", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_MESSAGE:
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_MESSAGE, "name", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MOUSE:
-			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_MOUSE, "mouse", chunk);
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_MOUSE, "mouse", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_NAME:
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_NAME, "name", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_REFERENCE:
-			output_html_write_inline_reference(chunk);
+			success = output_html_write_inline_reference(chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
+			success = output_html_write_span_tag(MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, "strong", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_SWI:
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_SWI, "name", chunk);
+			break;
+		case MANUAL_DATA_OBJECT_TYPE_TYPE:
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_TYPE, "name", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_USER_ENTRY:
-			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_USER_ENTRY, "entry", chunk);
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_USER_ENTRY, "entry", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_VARIABLE:
-			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_VARIABLE, "variable", chunk);
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_VARIABLE, "variable", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_WINDOW:
-			output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_WINDOW, "window", chunk);
+			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_WINDOW, "window", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_LINE_BREAK:
-			output_html_file_write_plain("<br>");
-			output_html_file_write_newline();
+			success = (output_html_file_write_plain("<br>") && output_html_file_write_newline());
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_TEXT:
-			output_html_file_write_text(chunk->chunk.text);
+			success = output_html_file_write_text(chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			output_html_file_write_text((char *) output_html_convert_entity(chunk->chunk.entity));
+			success = output_html_file_write_text((char *) output_html_convert_entity(chunk->chunk.entity));
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK,
@@ -1707,7 +1743,7 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 		chunk = chunk->next;
 	}
 
-	return true;
+	return success;
 }
 
 /**
