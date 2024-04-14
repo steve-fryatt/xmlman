@@ -554,7 +554,7 @@ static bool output_html_write_page_head(struct manual_data *manual, int level)
 	if (manual == NULL)
 		return false;
 
-	if (!output_html_file_write_plain("<div id=\"head\">") || !output_html_file_write_newline())
+	if (!output_html_file_write_plain("<div id=\"head\"><div id=\"head-liner\">") || !output_html_file_write_newline())
 		return false;
 
 	if (manual->type == MANUAL_DATA_OBJECT_TYPE_MANUAL && manual->chapter.resources != NULL) {
@@ -623,10 +623,10 @@ static bool output_html_write_page_head(struct manual_data *manual, int level)
 		}
 	}
 
-	if (!output_html_file_write_plain("</div>") || !output_html_file_write_newline() || !output_html_file_write_newline())
+	if (!output_html_file_write_plain("</div></div>") || !output_html_file_write_newline() || !output_html_file_write_newline())
 		return false;
 
-	if (!output_html_file_write_plain("<div id=\"body\">") || !output_html_file_write_newline())
+	if (!output_html_file_write_plain("<div id=\"body\"><div id=\"body-liner\">") || !output_html_file_write_newline())
 		return false;
 
 	return true;
@@ -723,13 +723,13 @@ static bool output_html_write_page_foot(struct manual_data *manual)
 	if (manual == NULL)
 		return false;
 
-	if (!output_html_file_write_plain("</div>") || !output_html_file_write_newline())
+	if (!output_html_file_write_plain("</div></div>") || !output_html_file_write_newline())
 		return false;
 
-	if (!output_html_file_write_plain("<div id=\"foot\">") || !output_html_file_write_newline())
+	if (!output_html_file_write_plain("<div id=\"foot\"><div id=\"foot-liner\">") || !output_html_file_write_newline())
 		return false;
 
-	if (!output_html_file_write_plain("</div>") || !output_html_file_write_newline())
+	if (!output_html_file_write_plain("</div></div>") || !output_html_file_write_newline())
 		return false;
 
 	return true;

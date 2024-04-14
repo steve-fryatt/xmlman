@@ -150,8 +150,11 @@ bool manual_ids_add_node(struct manual_data *node)
 	 */
 
 	if (strcmp(node->chapter.id, "head") == 0 ||
+			strcmp(node->chapter.id, "head-liner") == 0 ||
 			strcmp(node->chapter.id, "body") == 0 ||
-			strcmp(node->chapter.id, "foot") == 0) {
+			strcmp(node->chapter.id, "body-liner") == 0 ||
+			strcmp(node->chapter.id, "foot") == 0 ||
+			strcmp(node->chapter.id, "foot-liner") == 0) {
 		msg_report(MSG_ID_RESERVED, node->chapter.id);
 		return false;
 	}
