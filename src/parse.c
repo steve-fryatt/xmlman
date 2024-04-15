@@ -406,7 +406,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 			if (element == PARSE_ELEMENT_MANUAL)
 				done = true;
 			else if (element != PARSE_ELEMENT_NONE)
-				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
@@ -616,7 +616,7 @@ static struct manual_data *parse_chapter(struct parse_xml_block *parser, struct 
 			if (element == type)
 				done = true;
 			else if (element != PARSE_ELEMENT_NONE)
-				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
@@ -782,7 +782,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 			if (element == type)
 				done = true;
 			else if (element != PARSE_ELEMENT_NONE)
-				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
@@ -909,7 +909,7 @@ static struct manual_data *parse_block_collection_object(struct parse_xml_block 
 			if (element == type)
 				done = true;
 			else if (element != PARSE_ELEMENT_NONE)
-				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
 			break;
 
 		case PARSE_XML_RESULT_WHITESPACE:
@@ -1056,7 +1056,7 @@ static struct manual_data *parse_callout(struct parse_xml_block *parser)
 			if (element == type)
 				done = true;
 			else if (element != PARSE_ELEMENT_NONE)
-				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
@@ -1145,7 +1145,7 @@ static struct manual_data *parse_list(struct parse_xml_block *parser)
 			if (element == type)
 				done = true;
 			else if (element != PARSE_ELEMENT_NONE)
-				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
 			break;
 
 		case PARSE_XML_RESULT_WHITESPACE:
@@ -1255,7 +1255,7 @@ static struct manual_data *parse_table(struct parse_xml_block *parser)
 			if (element == type)
 				done = true;
 			else if (element != PARSE_ELEMENT_NONE)
-				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
 			break;
 
 		case PARSE_XML_RESULT_WHITESPACE:
@@ -1387,7 +1387,7 @@ static struct manual_data *parse_table_column_set(struct parse_xml_block *parser
 			if (element == type)
 				done = true;
 			else if (element != PARSE_ELEMENT_NONE)
-				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
 			break;
 
 		case PARSE_XML_RESULT_WHITESPACE:
@@ -1475,7 +1475,7 @@ static struct manual_data *parse_table_row(struct parse_xml_block *parser)
 			if (element == type)
 				done = true;
 			else if (element != PARSE_ELEMENT_NONE)
-				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
 			break;
 
 		case PARSE_XML_RESULT_WHITESPACE:
@@ -1581,7 +1581,7 @@ static struct manual_data *parse_code_block(struct parse_xml_block *parser)
 			if (element == type)
 				done = true;
 			else if (element != PARSE_ELEMENT_NONE)
-				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
 			break;
 
 		case PARSE_XML_RESULT_COMMENT:
@@ -1979,7 +1979,7 @@ static void parse_unknown(struct parse_xml_block *parser)
 			if (element == type)
 				done = true;
 			else if (element != PARSE_ELEMENT_NONE)
-				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
@@ -2079,7 +2079,7 @@ static void parse_resources(struct parse_xml_block *parser, struct manual_data_r
 			if (element == type)
 				done = true;
 			else if (element != PARSE_ELEMENT_NONE)
-				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
@@ -2172,7 +2172,7 @@ static void parse_mode_resources(struct parse_xml_block *parser, enum modes_type
 			if (element == type)
 				done = true;
 			else if (element != PARSE_ELEMENT_NONE)
-				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
 			break;
 		case PARSE_XML_RESULT_WHITESPACE:
 		case PARSE_XML_RESULT_COMMENT:
@@ -2343,7 +2343,7 @@ static bool parse_fetch_single_level_block(struct parse_xml_block *parser, char 
 			if (element == type)
 				done = true;
 			else if (element != PARSE_ELEMENT_NONE)
-				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element));
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
 			break;
 		case PARSE_XML_RESULT_TEXT:
 		case PARSE_XML_RESULT_WHITESPACE:
