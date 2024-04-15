@@ -66,6 +66,12 @@ struct manual_data_object_type_definition {
 struct manual_data manual_data_chunk_list, manual_data_chunk_text;
 
 /**
+ * The number of entries in the object type list.
+ */
+
+static int manual_data_max_object_types = -1;
+
+/**
  * The list of known object type definitions.
  */
 
@@ -74,12 +80,14 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_INDEX,				"Index"},
 	{MANUAL_DATA_OBJECT_TYPE_CHAPTER,			"Chapter"},
 	{MANUAL_DATA_OBJECT_TYPE_SECTION,			"Section"},
-	{MANUAL_DATA_OBJECT_TYPE_TITLE,				"Title"},
-	{MANUAL_DATA_OBJECT_TYPE_SUMMARY,			"Summary"},
-	{MANUAL_DATA_OBJECT_TYPE_STRAPLINE,			"Strapline"},
+
 	{MANUAL_DATA_OBJECT_TYPE_CREDIT,			"Credit"},
-	{MANUAL_DATA_OBJECT_TYPE_VERSION,			"Version"},
 	{MANUAL_DATA_OBJECT_TYPE_DATE,				"Date"},
+	{MANUAL_DATA_OBJECT_TYPE_TITLE,				"Title"},
+	{MANUAL_DATA_OBJECT_TYPE_STRAPLINE,			"Strapline"},
+	{MANUAL_DATA_OBJECT_TYPE_SUMMARY,			"Summary"},
+	{MANUAL_DATA_OBJECT_TYPE_VERSION,			"Version"},
+
 	{MANUAL_DATA_OBJECT_TYPE_CONTENTS,			"Contents"},
 	{MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST,			"Ordered List"},
 	{MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST,		"Unordered List"},
@@ -93,32 +101,36 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_CALLOUT,			"Callout"},
 	{MANUAL_DATA_OBJECT_TYPE_FOOTNOTE,			"Footnote"},
 	{MANUAL_DATA_OBJECT_TYPE_PARAGRAPH,			"Paragraph"},
-	{MANUAL_DATA_OBJECT_TYPE_LINE_BREAK,			"Line Break"},
+
 	{MANUAL_DATA_OBJECT_TYPE_CITATION,			"Citation"},
 	{MANUAL_DATA_OBJECT_TYPE_CODE,				"Code"},
-	{MANUAL_DATA_OBJECT_TYPE_USER_ENTRY,			"User Entry"},
-	{MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS,		"Light Emphasis"},
-	{MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS,		"Strong Emphasis"},
-	{MANUAL_DATA_OBJECT_TYPE_FILENAME,			"Filename"},
-	{MANUAL_DATA_OBJECT_TYPE_ICON,				"Icon"},
-	{MANUAL_DATA_OBJECT_TYPE_KEY,				"Key"},
-	{MANUAL_DATA_OBJECT_TYPE_LINK,				"Link"},
-	{MANUAL_DATA_OBJECT_TYPE_MOUSE,				"Mouse"},
-	{MANUAL_DATA_OBJECT_TYPE_REFERENCE,			"Reference"},
-	{MANUAL_DATA_OBJECT_TYPE_VARIABLE,			"Variable"},
-	{MANUAL_DATA_OBJECT_TYPE_WINDOW,			"Window"},
 	{MANUAL_DATA_OBJECT_TYPE_COMMAND,			"Command"},
 	{MANUAL_DATA_OBJECT_TYPE_CONSTANT,			"Constant"},
 	{MANUAL_DATA_OBJECT_TYPE_EVENT,				"Event"},
+	{MANUAL_DATA_OBJECT_TYPE_FILENAME,			"Filename"},
 	{MANUAL_DATA_OBJECT_TYPE_FUNCTION,			"Function"},
+	{MANUAL_DATA_OBJECT_TYPE_ICON,				"Icon"},
 	{MANUAL_DATA_OBJECT_TYPE_INTRO,				"Intro"},
+	{MANUAL_DATA_OBJECT_TYPE_KEY,				"Key"},
 	{MANUAL_DATA_OBJECT_TYPE_KEYWORD,			"Keyword"},
+	{MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS,		"Light Emphasis"},
+	{MANUAL_DATA_OBJECT_TYPE_LINK,				"Link"},
 	{MANUAL_DATA_OBJECT_TYPE_MATHS,				"Maths"},
 	{MANUAL_DATA_OBJECT_TYPE_MENU,				"Menu"},
 	{MANUAL_DATA_OBJECT_TYPE_MESSAGE,			"Message"},
+	{MANUAL_DATA_OBJECT_TYPE_MOUSE,				"Mouse"},
 	{MANUAL_DATA_OBJECT_TYPE_NAME,				"Name"},
+	{MANUAL_DATA_OBJECT_TYPE_REFERENCE,			"Reference"},
+	{MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS,		"Strong Emphasis"},
 	{MANUAL_DATA_OBJECT_TYPE_SWI,				"SWI"},
 	{MANUAL_DATA_OBJECT_TYPE_TYPE,				"Type"},
+	{MANUAL_DATA_OBJECT_TYPE_USER_ENTRY,			"User Entry"},
+	{MANUAL_DATA_OBJECT_TYPE_VARIABLE,			"Variable"},
+	{MANUAL_DATA_OBJECT_TYPE_WINDOW,			"Window"},
+
+	{MANUAL_DATA_OBJECT_TYPE_LINE_BREAK,			"Line Break"},
+	{MANUAL_DATA_OBJECT_TYPE_TEXT,				"Text"},
+	{MANUAL_DATA_OBJECT_TYPE_ENTITY,			"Entity"},
 
 	{MANUAL_DATA_OBJECT_TYPE_RESOURCE_FILE,			"File Resource"},
 	{MANUAL_DATA_OBJECT_TYPE_RESOURCE_FOLDER,		"Folder Resource"},
@@ -128,8 +140,6 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_MULTI_LEVEL_ATTRIBUTE,		"Multi Level Attribute"},
 	{MANUAL_DATA_OBJECT_TYPE_SINGLE_LEVEL_ATTRIBUTE,	"Single Level Attribute"},
 
-	{MANUAL_DATA_OBJECT_TYPE_TEXT,				"Text"},
-	{MANUAL_DATA_OBJECT_TYPE_ENTITY,			"Entity"},
 	{MANUAL_DATA_OBJECT_TYPE_NONE,				"*None*"}
 };
 
@@ -284,9 +294,27 @@ const char *manual_data_find_object_name(enum manual_data_object_type type)
 {
 	int i;
 
-	for (i = 0; manual_data_object_type_names[i].type != MANUAL_DATA_OBJECT_TYPE_NONE && manual_data_object_type_names[i].type != type; i++);
+	if (manual_data_max_object_types <= 0) {
+		for (i = 0; manual_data_object_type_names[i].type != MANUAL_DATA_OBJECT_TYPE_NONE; i++) {
+			if (manual_data_object_type_names[i].type != i) {
+				msg_report(MSG_ELEMENT_OUT_OF_SEQ);
+				return "*error*";
+			}
+		}
 
-	return manual_data_object_type_names[i].name;
+		manual_data_max_object_types = i;
+	}
+
+	if (type < 0 || type >= manual_data_max_object_types)
+		return "*none*";
+
+	/* Look up the object type name.
+	 *
+	 * WARNING: This relies on the array indices matching the values of
+	 * the element enum entries.
+	 */
+
+	return manual_data_object_type_names[type].name;
 }
 
 /**
