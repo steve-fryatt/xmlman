@@ -306,6 +306,7 @@ struct encoding_table {
 	enum encoding_target	encoding;
 	struct encoding_map	*table;
 	const char		*name;
+	const char		*label;
 };
 
 /**
@@ -313,9 +314,9 @@ struct encoding_table {
  */
 
 static struct encoding_table encoding_list[] = {
-	{ENCODING_TARGET_UTF8,		NULL,			"UTF8"},
-	{ENCODING_TARGET_ACORN_LATIN1,	encoding_acorn_latin1,	"AcornL1"},
-	{ENCODING_TARGET_ACORN_LATIN2,	encoding_acorn_latin2,	"AcornL2"}
+	{ENCODING_TARGET_UTF8,		NULL,			"UTF8",		"utf-8"},
+	{ENCODING_TARGET_ACORN_LATIN1,	encoding_acorn_latin1,	"AcornL1",	"iso-8859-1"},
+	{ENCODING_TARGET_ACORN_LATIN2,	encoding_acorn_latin2,	"AcornL2",	"iso-8859-2"}
 };
 
 /**
@@ -338,6 +339,12 @@ static struct encoding_line_end_table encoding_line_end_list[] = {
 	{ENCODING_LINE_END_CRLF,	"\r\n",		"CRLF"},
 	{ENCODING_LINE_END_LFCR,	"\n\r",		"LFCR"}
 };
+
+/**
+ * The currently selected encoding target.
+ */
+
+static enum encoding_target encoding_current_target = ENCODING_TARGET_UTF8;
 
 /**
  * The active encoding map, or NULL to pass out UTF8.
@@ -407,6 +414,10 @@ bool encoding_select_table(enum encoding_target target)
 	if (encoding_list[target].encoding != target)
 		return false;
 
+	/* Set the current encoding. */
+
+	encoding_current_target = target;
+
 	/* Set the current map table. */
 
 	encoding_current_map = encoding_list[target].table;
@@ -448,6 +459,18 @@ bool encoding_select_table(enum encoding_target target)
 	}
 
 	return true;
+}
+
+/**
+ * Return the name of the current encding, in the standard
+ * form recognised in HTML documents.
+ * 
+ * \return			Pointer to the name.
+ */
+
+const char *encoding_get_current_label(void)
+{
+	return encoding_list[encoding_current_target].label;
 }
 
 /**

@@ -581,6 +581,9 @@ static bool output_html_write_file_head(struct manual_data *manual)
 	if (!output_html_file_write_plain("<head>") || !output_html_file_write_newline())
 		return false;
 
+	if (!output_html_file_write_plain("<meta charset=\"%s\">", encoding_get_current_label()) || !output_html_file_write_newline())
+		return false;
+
 	if (manual->title != NULL && !output_html_write_heading(manual, 0))
 		return false;
 

@@ -176,6 +176,15 @@ enum encoding_target encoding_find_target(char *name);
 bool encoding_select_table(enum encoding_target target);
 
 /**
+ * Return the name of the current encding, in the standard
+ * form recognised in HTML documents.
+ * 
+ * \return			Pointer to the name.
+ */
+
+const char *encoding_get_current_label(void);
+
+/**
  * Find a line ending type based on a textual name.
  *
  * \param *name			The line ending name to match.
