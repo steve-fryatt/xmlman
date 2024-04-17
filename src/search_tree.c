@@ -104,10 +104,10 @@ bool search_tree_add_entry(struct search_tree *node, char *key, void *data)
 	if (node == NULL || key == NULL || data == NULL)
 		return false;
 
-	/* This is the end of the key, so store the data and return. */
+	/* This is the end of the key, so store the client data and return. */
 
 	if (*key == '\0') {
-		/* If there's data, this must be a duplicate. */
+		/* If there's data already, this must be a duplicate. */
 
 		if (node->data != NULL) {
 			msg_report(MSG_TREE_DUPLICATE);
@@ -157,7 +157,7 @@ void *search_tree_find_entry(struct search_tree *node, char *key)
 	if (node == NULL || key == NULL)
 		return false;
 
-	/* This is the end of the key, so store the data and return. */
+	/* This is the end of the key, so return the client data. */
 
 	if (*key == '\0')
 		return node->data;
