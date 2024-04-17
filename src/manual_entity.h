@@ -32,31 +32,56 @@
 
 /**
  * A list of entities known to the parser.
+ * 
+ * It *must* correspond to the order that the entity values are
+ * defined in manual_entity.c, so that the array indices match the
+ * values of their enum entries.
+ *
+ * The values in that table are ordered by ascending unicode point,
+ * with non-unicode entities at the start using -1 and NONe at the
+ * end as an end stop. The order of the entity texts are not important.
  */
 
 enum manual_entity_type {
-	MANUAL_ENTITY_NONE,
-	MANUAL_ENTITY_AMP,
+	MANUAL_ENTITY_SMILEYFACE,
+	MANUAL_ENTITY_SADFACE,
+	MANUAL_ENTITY_MSEP,
+
 	MANUAL_ENTITY_QUOT,
+	MANUAL_ENTITY_AMP,
 	MANUAL_ENTITY_APOS,
 	MANUAL_ENTITY_LT,
 	MANUAL_ENTITY_GT,
-	MANUAL_ENTITY_LE,
-	MANUAL_ENTITY_GE,
+
 	MANUAL_ENTITY_NBSP,
-	MANUAL_ENTITY_LSQUO,
-	MANUAL_ENTITY_LDQUO,
-	MANUAL_ENTITY_RSQUO,
-	MANUAL_ENTITY_RDQUO,
+	MANUAL_ENTITY_IEXCL,
+	MANUAL_ENTITY_CENT,
+	MANUAL_ENTITY_POUND,
+	MANUAL_ENTITY_CURREN,
+	MANUAL_ENTITY_YEN,
+	MANUAL_ENTITY_BRVBAR,
+	MANUAL_ENTITY_SECT,
+	MANUAL_ENTITY_UML,
+	MANUAL_ENTITY_COPY,
+	MANUAL_ENTITY_PLUSMN,
+	MANUAL_ENTITY_TIMES,
+
 	MANUAL_ENTITY_NDASH,
 	MANUAL_ENTITY_MDASH,
+
+	MANUAL_ENTITY_LSQUO,
+	MANUAL_ENTITY_RSQUO,
+	MANUAL_ENTITY_LDQUO,
+	MANUAL_ENTITY_RDQUO,
+
 	MANUAL_ENTITY_MINUS,
-	MANUAL_ENTITY_TIMES,
-	MANUAL_ENTITY_PLUSMN,
-	MANUAL_ENTITY_COPY,
-	MANUAL_ENTITY_MSEP,
-	MANUAL_ENTITY_SMILE,
-	MANUAL_ENTITY_SAD
+
+	MANUAL_ENTITY_LE,
+	MANUAL_ENTITY_GE,
+	MANUAL_ENTITY_LEQQ,
+	MANUAL_ENTITY_GEQQ,
+
+	MANUAL_ENTITY_NONE
 };
 
 /**

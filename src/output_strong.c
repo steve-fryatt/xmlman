@@ -1675,9 +1675,9 @@ static const char *output_strong_convert_entity(enum manual_entity_type entity)
 		return ENCODING_UTF8_MDASH;
 	case MANUAL_ENTITY_TIMES:
 		return ENCODING_UTF8_TIMES;
-	case MANUAL_ENTITY_SMILE:
+	case MANUAL_ENTITY_SMILEYFACE:
 		return ":-)";
-	case MANUAL_ENTITY_SAD:
+	case MANUAL_ENTITY_SADFACE:
 		return ":-(";
 	default:
 		msg_report(MSG_ENTITY_NO_MAP, manual_entity_find_name(entity));

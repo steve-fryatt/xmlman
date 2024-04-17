@@ -140,7 +140,6 @@ static bool parse_element_initialise_lists(void);
 enum parse_element_type parse_element_find_type(char *name)
 {
 	struct parse_element_definition *element;
-	int i;
 
 	if (name == NULL)
 		return PARSE_ELEMENT_NONE;
@@ -149,6 +148,8 @@ enum parse_element_type parse_element_find_type(char *name)
 
 	if (parse_element_search_tree == NULL && !parse_element_initialise_lists())
 		return PARSE_ELEMENT_NONE;
+
+	/* Find the element definition. */
 
 	element = search_tree_find_entry(parse_element_search_tree, name);
 	if (element == NULL) {
