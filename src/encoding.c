@@ -617,6 +617,20 @@ int encoding_write_unicode_char(char *buffer, size_t length, int unicode)
 
 	/* There's no encoding, so convert to UTF8. */
 
+	return encoding_write_utf8_character(buffer, length, unicode);
+}
+
+/**
+ * Write a unicode character to a buffer in UTF-8.
+ *
+ * \param *buffer		Pointer to the buffer to write to.
+ * \param length		The length of the supplied buffer.
+ * \param unicode		The unicode character to write.
+ * \return			The number of bytes written to the buffer.
+ */
+
+int encoding_write_utf8_character(char *buffer, size_t length, int unicode)
+{
 	if (unicode >= 0x00 && unicode <= 0x7f) {
 		if (length < 2)
 			return 0;

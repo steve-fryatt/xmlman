@@ -146,6 +146,7 @@ static void output_debug_write_node(struct manual_data *parent, struct manual_da
 static void output_debug_write_text(enum manual_data_object_type type, struct manual_data *text)
 {
 	struct manual_data *chunk;
+	char *entity;
 
 	if (text == NULL) {
 		printf("*** Text Block NULL ***\n");
@@ -175,7 +176,8 @@ static void output_debug_write_text(enum manual_data_object_type type, struct ma
 			printf("--- Chunk text: `%s`\n", output_debug_get_text(chunk->chunk.text));
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			printf("--- Chunk entity: %s\n", manual_entity_find_name(chunk->chunk.entity));
+			entity = manual_entity_find_name(chunk->chunk.entity);
+			printf("--- Chunk entity: %s\n", (entity == NULL) ? "*NONE*" : entity);
 			break;
 		default:
 			printf("*** Unexpected chunk type! ***\n");

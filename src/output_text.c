@@ -121,7 +121,7 @@ static bool output_text_write_span_enclosed(int column, enum manual_data_object_
 static bool output_text_write_inline_link(int column, struct manual_data *link);
 static bool output_text_write_inline_reference(int column, struct manual_data *reference);
 static bool output_text_write_title(int column, struct manual_data *node, bool include_name, bool include_title);
-static const char *output_text_convert_entity(enum manual_entity_type entity);
+static bool output_text_write_entity(int column, enum manual_entity_type entity);
 
 /**
  * Output a manual in text form.
@@ -1742,7 +1742,7 @@ static bool output_text_write_text(int column, enum manual_data_object_type type
 			success = output_text_line_add_text(column, chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			success = output_text_line_add_text(column, (char *) output_text_convert_entity(chunk->chunk.entity));
+			success = output_text_write_entity(column, chunk->chunk.entity);
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK,
@@ -1972,52 +1972,73 @@ static bool output_text_write_title(int column, struct manual_data *node, bool i
 
 
 /**
- * Convert an entity into a textual representation.
+ * Convert an entity into a textual representation and write
+ * it to the current file.
+ * 
+ * Unless we have a special case, we just pass it to the manual_entity
+ * module to turn the entity into unicode for us. This will then get
+ * encoded when writen out to the file.
  *
+ * \param column		The column in the line to write to.
  * \param entity		The entity to convert.
- * \return			Pointer to the textual representation.
+ * \return			True on success; False on failure.
  */
 
-static const char *output_text_convert_entity(enum manual_entity_type entity)
+static bool output_text_write_entity(int column, enum manual_entity_type entity)
 {
+	int codepoint;
+	char buffer[ENCODING_CHAR_BUF_LEN], *text = "?";
+
 	switch (entity) {
-	case MANUAL_ENTITY_NBSP:
-		return ENCODING_UTF8_NBSP;
-	case MANUAL_ENTITY_AMP:
-		return "&";
 	case MANUAL_ENTITY_LSQUO:
 	case MANUAL_ENTITY_RSQUO:
-		return "'";
-	case MANUAL_ENTITY_QUOT:
+		text = "'";
+		break;
 	case MANUAL_ENTITY_LDQUO:
 	case MANUAL_ENTITY_RDQUO:
-		return "\"";
-	case MANUAL_ENTITY_LT:
-		return "<";
-	case MANUAL_ENTITY_GT:
-		return ">";
+		text = "\"";
+		break;
 	case MANUAL_ENTITY_LE:
-		return "<=";
+		text = "<=";
+		break;
 	case MANUAL_ENTITY_GE:
-		return ">=";
+		text = ">=";
+		break;
 	case MANUAL_ENTITY_MINUS:
-		return "-";
+		text = "-";
+		break;
 	case MANUAL_ENTITY_PLUSMN:
-		return "+/-";
+		text = "+/-";
+		break;
 	case MANUAL_ENTITY_COPY:
-		return "(C)";
+		text = "(C)";
+		break;
 	case MANUAL_ENTITY_NDASH:
-		return ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY;
+		text = ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY;
+		break;
 	case MANUAL_ENTITY_MDASH:
-		return ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY;
+		text = ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY;
+		break;
 	case MANUAL_ENTITY_TIMES:
-		return "x";
+		text = "x";
+		break;
 	case MANUAL_ENTITY_SMILEYFACE:
-		return ":-)";
+		text = ":-)";
+		break;
 	case MANUAL_ENTITY_SADFACE:
-		return ":-(";
+		text = ":-(";
+		break;
 	default:
-		msg_report(MSG_ENTITY_NO_MAP, manual_entity_find_name(entity));
-		return "?";
+		codepoint = manual_entity_find_codepoint(entity);
+		if (codepoint != MANUAL_ENTITY_NO_CODEPOINT) {
+			encoding_write_utf8_character(buffer, ENCODING_CHAR_BUF_LEN, codepoint);
+			text = buffer;
+		} else {
+			text = (char *) manual_entity_find_name(entity);
+			msg_report(MSG_ENTITY_NO_MAP, (text == NULL) ? "*UNKNOWN*" : text);
+		}
+		break;
 	}
+
+	return output_text_line_add_text(column, text);
 }

@@ -163,7 +163,7 @@ static bool output_html_write_inline_link(struct manual_data *link);
 static bool output_html_write_inline_reference(struct manual_data *reference);
 static bool output_html_write_local_anchor(struct manual_data *source, struct manual_data *target);
 static bool output_html_write_title(struct manual_data *node, bool include_name, bool include_title);
-static const char *output_html_convert_entity(enum manual_entity_type entity);
+static bool output_html_write_entity(enum manual_entity_type entity);
 
 /**
  * Output a manual in HTML form.
@@ -1806,7 +1806,7 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 			success = output_html_file_write_text(chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			success = output_html_file_write_text((char *) output_html_convert_entity(chunk->chunk.entity));
+			success = output_html_write_entity(chunk->chunk.entity);
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK,
@@ -2104,57 +2104,39 @@ static bool output_html_write_title(struct manual_data *node, bool include_name,
 
 
 /**
- * Convert an entity into an HTML representation.
+ * Convert an entity into an HTML representation and write
+ * it to the current file.
+ * 
+ * Unless we have a special case, we just pass it to the manual_entity
+ * module to turn the entity into unicode for us. This will then get
+ * encoded when writen out to the file.
  *
  * \param entity		The entity to convert.
- * \return			Pointer to the HTML representation.
+ * \return			True on success; False on failure.
  */
 
-static const char *output_html_convert_entity(enum manual_entity_type entity)
+static bool output_html_write_entity(enum manual_entity_type entity)
 {
+	int codepoint;
+	char *text = "?";
+
 	switch (entity) {
-	case MANUAL_ENTITY_NBSP:
-		return "&nbsp;";
-	case MANUAL_ENTITY_AMP:
-		return "&amp;";
-	case MANUAL_ENTITY_LSQUO:
-		return "&lsquo;";
-	case MANUAL_ENTITY_RSQUO:
-		return "&rsquo;";
-	case MANUAL_ENTITY_QUOT:
-		return "&quot;";
-	case MANUAL_ENTITY_LDQUO:
-		return "&ldquo;";
-	case MANUAL_ENTITY_RDQUO:
-		return "&rdquo;";
-	case MANUAL_ENTITY_LT:
-		return "&lt;";
-	case MANUAL_ENTITY_GT:
-		return "&gt";
-	case MANUAL_ENTITY_LE:
-		return "&le;";
-	case MANUAL_ENTITY_GE:
-		return "&ge;";
-	case MANUAL_ENTITY_MINUS:
-		return "&minus;";
-	case MANUAL_ENTITY_PLUSMN:
-		return "&plusmn;";
-	case MANUAL_ENTITY_COPY:
-		return "&copy;";
-	case MANUAL_ENTITY_NDASH:
-		return "&ndash;";
-	case MANUAL_ENTITY_MDASH:
-		return "&mdash";
-	case MANUAL_ENTITY_TIMES:
-		return "&times;";
 	case MANUAL_ENTITY_SMILEYFACE:
-		return "&#128578;";
+		text = "#128578";
+		break;
 	case MANUAL_ENTITY_SADFACE:
-		return "&#128577;";
+		text = "#128577";
+		break;
 	default:
-		msg_report(MSG_ENTITY_NO_MAP, manual_entity_find_name(entity));
-		return "?";
+		text = (char *) manual_entity_find_name(entity);
+		if (text == NULL) {
+			msg_report(MSG_ENTITY_NO_MAP, manual_entity_find_name(entity));
+			return output_html_file_write_plain("?");
+		}
+		break;
 	}
+
+	return (output_html_file_write_plain("&") && output_html_file_write_text(text) && output_html_file_write_plain(";"));
 }
 
 /**

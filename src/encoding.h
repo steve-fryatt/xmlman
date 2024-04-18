@@ -235,6 +235,17 @@ int encoding_parse_utf8_string(char **text);
 int encoding_write_unicode_char(char *buffer, size_t length, int unicode);
 
 /**
+ * Write a unicode character to a buffer in UTF-8.
+ *
+ * \param *buffer		Pointer to the buffer to write to.
+ * \param length		The length of the supplied buffer.
+ * \param unicode		The unicode character to write.
+ * \return			The number of bytes written to the buffer.
+ */
+
+int encoding_write_utf8_character(char *buffer, size_t length, int unicode);
+
+/**
  * Return a pointer to the currently selected line end sequence.
  *
  * \return			A pointer to the sequence, or NULL.

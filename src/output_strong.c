@@ -108,7 +108,7 @@ static bool output_strong_write_inline_link(struct manual_data *link);
 static bool output_strong_write_inline_reference(struct manual_data *reference);
 static bool output_strong_write_local_anchor(struct manual_data *source, struct manual_data *target);
 static bool output_strong_write_title(struct manual_data *node, bool include_name, bool include_title);
-static const char *output_strong_convert_entity(enum manual_entity_type entity);
+static bool output_strong_write_entity(enum manual_entity_type entity);
 
 /**
  * Output a manual in StrongHelp form.
@@ -1373,7 +1373,7 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 			success = output_strong_file_write_text(chunk->chunk.text);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ENTITY:
-			success = output_strong_file_write_text((char *) output_strong_convert_entity(chunk->chunk.entity));
+			success = output_strong_write_entity(chunk->chunk.entity);
 			break;
 		default:
 			msg_report(MSG_UNEXPECTED_CHUNK,
@@ -1632,55 +1632,40 @@ static bool output_strong_write_title(struct manual_data *node, bool include_nam
 }
 
 /**
- * Convert an entity into a StrongHelp representation.
+ * Convert an entity into a StrongHelp representation and write
+ * it to the current file.
+ * 
+ * Unless we have a special case, we just pass it to the manual_entity
+ * module to turn the entity into unicode for us. This will then get
+ * encoded when writen out to the file.
  *
  * \param entity		The entity to convert.
- * \return			Pointer to the StrongHelp representation.
+ * \return			True on success; False on failure.
  */
 
-static const char *output_strong_convert_entity(enum manual_entity_type entity)
+static bool output_strong_write_entity(enum manual_entity_type entity)
 {
+	int codepoint;
+	char buffer[ENCODING_CHAR_BUF_LEN], *text = "?";
+
 	switch (entity) {
-	case MANUAL_ENTITY_NBSP:
-		return ENCODING_UTF8_NBSP;
-	case MANUAL_ENTITY_AMP:
-		return "&";
-	case MANUAL_ENTITY_LSQUO:
-		return ENCODING_UTF8_LSQUO;
-	case MANUAL_ENTITY_RSQUO:
-		return ENCODING_UTF8_RSQUO;
-	case MANUAL_ENTITY_QUOT:
-		return "\"";
-	case MANUAL_ENTITY_LDQUO:
-		return ENCODING_UTF8_LDQUO;
-	case MANUAL_ENTITY_RDQUO:
-		return ENCODING_UTF8_RDQUO;
-	case MANUAL_ENTITY_LT:
-		return "<";
-	case MANUAL_ENTITY_GT:
-		return ">";
-	case MANUAL_ENTITY_LE:
-		return ENCODING_UTF8_LTEQ;
-	case MANUAL_ENTITY_GE:
-		return ENCODING_UTF8_GTEQ;
-	case MANUAL_ENTITY_MINUS:
-		return ENCODING_UTF8_MINUS;
-	case MANUAL_ENTITY_PLUSMN:
-		return ENCODING_UTF8_PLUSMINUS;
-	case MANUAL_ENTITY_COPY:
-		return ENCODING_UTF8_COPY;
-	case MANUAL_ENTITY_NDASH:
-		return ENCODING_UTF8_NDASH;
-	case MANUAL_ENTITY_MDASH:
-		return ENCODING_UTF8_MDASH;
-	case MANUAL_ENTITY_TIMES:
-		return ENCODING_UTF8_TIMES;
 	case MANUAL_ENTITY_SMILEYFACE:
-		return ":-)";
+		text = ":-)";
+		break;
 	case MANUAL_ENTITY_SADFACE:
-		return ":-(";
+		text = ":-(";
+		break;
 	default:
-		msg_report(MSG_ENTITY_NO_MAP, manual_entity_find_name(entity));
-		return "?";
+		codepoint = manual_entity_find_codepoint(entity);
+		if (codepoint != MANUAL_ENTITY_NO_CODEPOINT) {
+			encoding_write_utf8_character(buffer, ENCODING_CHAR_BUF_LEN, codepoint);
+			text = buffer;
+		} else {
+			text = (char *) manual_entity_find_name(entity);
+			msg_report(MSG_ENTITY_NO_MAP, (text == NULL) ? "*UNKNOWN*" : text);
+		}
+		break;
 	}
+
+	return output_strong_file_write_text(text);
 }
