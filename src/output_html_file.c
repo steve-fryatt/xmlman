@@ -38,6 +38,7 @@
 
 #include "encoding.h"
 #include "filename.h"
+#include "manual_entity.h"
 #include "msg.h"
 
 /* Global Variables. */
@@ -187,14 +188,20 @@ bool output_html_file_write_newline(void)
 
 static bool output_html_file_write_char(int unicode)
 {
-	char	buffer[ENCODING_CHAR_BUF_LEN];
+	char buffer[ENCODING_CHAR_BUF_LEN], *entity;
 
 	if (output_html_file_handle == NULL) {
 		msg_report(MSG_WRITE_NO_FILE);
 		return false;
 	}
 
-	encoding_write_unicode_char(buffer, ENCODING_CHAR_BUF_LEN, unicode);
+	if (!encoding_write_unicode_char(buffer, ENCODING_CHAR_BUF_LEN, unicode)) {
+		entity = (char *) manual_entity_find_name_from_codepoint(unicode);
+		if (entity != NULL)
+			return output_html_file_write_plain("&%s;", entity);
+		else
+			return output_html_file_write_plain("&#%d;", unicode);
+	}
 
 	if (fputs(buffer, output_html_file_handle) == EOF) {
 		msg_report(MSG_WRITE_FAILED);

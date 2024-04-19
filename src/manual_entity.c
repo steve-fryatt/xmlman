@@ -308,6 +308,28 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_ZCARON_U,		"Zcaron",		381 },
 	{ MANUAL_ENTITY_ZCARON_L,		"zcaron",		382 },
 
+	/* Latin Extended B */
+
+	{ MANUAL_ENTITY_FNOF,			"fnof",			402 },
+	{ MANUAL_ENTITY_IMPED,			"imped",		437 },
+	{ MANUAL_ENTITY_GACUTE,			"gacute",		501 },
+	{ MANUAL_ENTITY_JMATH,			"jmath",		567 },
+
+	/* Spacing Modifier Letter */
+
+	{ MANUAL_ENTITY_CIRC,			"circ",			710 },
+	{ MANUAL_ENTITY_CARON,			"caron",		711 },
+	{ MANUAL_ENTITY_BREVE,			"breve",		728 },
+	{ MANUAL_ENTITY_DOT,			"dot",			729 },
+	{ MANUAL_ENTITY_RING,			"ring",			730 },
+	{ MANUAL_ENTITY_OGON,			"ogon",			731 },
+	{ MANUAL_ENTITY_TILDE,			"tilde",		732 },
+	{ MANUAL_ENTITY_DBLAC,			"dblac",		733 },
+
+	/* Combining Diacritical Marks */
+
+	{ MANUAL_ENTITY_DOWNBREVE,		"DownBreve",		785 },
+
 	/* General Punctuation */
 
 	{ MANUAL_ENTITY_ENSP,			"ensp",			8194 },
@@ -351,6 +373,17 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_SUM,			"sum",			8721 },
 	{ MANUAL_ENTITY_MINUS,			"minus",		8722 },
 	{ MANUAL_ENTITY_MNPLUS,			"mnplus",		8723 },
+	{ MANUAL_ENTITY_PLUSDO,			"plusdo",		8724 },
+	{ MANUAL_ENTITY_SETMN,			"setmn",		8726 },
+	{ MANUAL_ENTITY_LOWAST,			"lowast",		8727 },
+	{ MANUAL_ENTITY_COMPFN,			"compfn",		8728 },
+	{ MANUAL_ENTITY_SQRT,			"Sqrt",			8730 },
+	{ MANUAL_ENTITY_PROP,			"prop",			8733 },
+	{ MANUAL_ENTITY_INFIN,			"infin",		8734 },
+	{ MANUAL_ENTITY_ANGRT,			"angrt",		8735 },
+	{ MANUAL_ENTITY_ANGLE,			"angle",		8736 },
+	{ MANUAL_ENTITY_ANGMSD,			"angmsd",		8737 },
+	{ MANUAL_ENTITY_ANGSPH,			"angsph",		8738 },
 
 	{ MANUAL_ENTITY_LE,			"le",			8804 },
 	{ MANUAL_ENTITY_GE,			"ge",			8805 },

@@ -1,4 +1,4 @@
-/* Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -29,6 +29,8 @@
 
 #ifndef XMLMAN_ENCODING_H
 #define XMLMAN_ENCODING_H
+
+#include <stdbool.h>
 
 /**
  * The size of a character output buffer. This needs to hold a full
@@ -137,6 +139,7 @@
 
 enum encoding_target {
 	ENCODING_TARGET_UTF8,		/**< UTF8 encoding.				*/
+	ENCODING_TARGET_7BIT,		/**< 7-Bit encoding.				*/
 	ENCODING_TARGET_ACORN_LATIN1,	/**< RISC OS Latin 1 encoding.			*/
 	ENCODING_TARGET_ACORN_LATIN2,	/**< RISC OS Latin 2 encoding.			*/
 	ENCODING_TARGET_MAX,		/**< The maximum nubmber of encodings.		*/
@@ -224,15 +227,17 @@ int encoding_get_utf8_string_length(char *text);
 int encoding_parse_utf8_string(char **text);
 
 /**
- * Write a unicode character to a buffer in the current encoding.
+ * Write a unicode character to a buffer in the current encoding,
+ * followed by a zero terminator.
  *
  * \param *buffer		Pointer to the buffer to write to.
  * \param length		The length of the supplied buffer.
  * \param unicode		The unicode character to write.
- * \return			The number of bytes written to the buffer.
+ * \return			True if the requested character could
+ *				be encoded; otherwise false.
  */
 
-int encoding_write_unicode_char(char *buffer, size_t length, int unicode);
+bool encoding_write_unicode_char(char *buffer, size_t length, int unicode);
 
 /**
  * Write a unicode character to a buffer in UTF-8.

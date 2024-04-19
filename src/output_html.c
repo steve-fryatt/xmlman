@@ -2118,25 +2118,41 @@ static bool output_html_write_title(struct manual_data *node, bool include_name,
 static bool output_html_write_entity(enum manual_entity_type entity)
 {
 	int codepoint;
-	char *text = "?";
+	char buffer[ENCODING_CHAR_BUF_LEN], *text = "?";
 
 	switch (entity) {
+	case MANUAL_ENTITY_LT:
+		text = "&lt;";
+		break;
+	case MANUAL_ENTITY_GT:
+		text = "&gt;";
+		break;
+	case MANUAL_ENTITY_AMP:
+		text = "&amp;";
+		break;
+	case MANUAL_ENTITY_QUOT:
+		text = "&quot;";
+		break;
 	case MANUAL_ENTITY_SMILEYFACE:
-		text = "#128578";
+		text = "&#128578;";
 		break;
 	case MANUAL_ENTITY_SADFACE:
-		text = "#128577";
+		text = "&#128577;";
 		break;
 	default:
-		text = (char *) manual_entity_find_name(entity);
-		if (text == NULL) {
-			msg_report(MSG_ENTITY_NO_MAP, manual_entity_find_name(entity));
-			return output_html_file_write_plain("?");
+		codepoint = manual_entity_find_codepoint(entity);
+		if (codepoint != MANUAL_ENTITY_NO_CODEPOINT) {
+			encoding_write_utf8_character(buffer, ENCODING_CHAR_BUF_LEN, codepoint);
+			text = buffer;
+		} else {
+			text = (char *) manual_entity_find_name(entity);
+			msg_report(MSG_ENTITY_NO_MAP, (text == NULL) ? "*UNKNOWN*" : text);
+			return false;
 		}
 		break;
 	}
 
-	return (output_html_file_write_plain("&") && output_html_file_write_text(text) && output_html_file_write_plain(";"));
+	return output_html_file_write_text(text);
 }
 
 /**

@@ -1663,6 +1663,7 @@ static bool output_strong_write_entity(enum manual_entity_type entity)
 		} else {
 			text = (char *) manual_entity_find_name(entity);
 			msg_report(MSG_ENTITY_NO_MAP, (text == NULL) ? "*UNKNOWN*" : text);
+			return false;
 		}
 		break;
 	}

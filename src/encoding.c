@@ -1,4 +1,4 @@
-/* Copyright 2018, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -33,6 +33,7 @@
 #include <string.h>
 
 #include "encoding.h"
+#include "string.h"
 
 #include "msg.h"
 
@@ -315,6 +316,7 @@ struct encoding_table {
 
 static struct encoding_table encoding_list[] = {
 	{ENCODING_TARGET_UTF8,		NULL,			"UTF8",		"utf-8"},
+	{ENCODING_TARGET_7BIT,		NULL,			"7Bit",		"utf-8"},
 	{ENCODING_TARGET_ACORN_LATIN1,	encoding_acorn_latin1,	"AcornL1",	"iso-8859-1"},
 	{ENCODING_TARGET_ACORN_LATIN2,	encoding_acorn_latin2,	"AcornL2",	"iso-8859-2"}
 };
@@ -366,7 +368,7 @@ static int encoding_current_line_end = -1;
 
 /* Static Function Prototypes. */
 
-static int encoding_find_mapped_character(int unicode);
+static bool encoding_find_mapped_character(int unicode, char *c);
 
 /**
  * Find an encoding type based on a textual name.
@@ -381,7 +383,7 @@ enum encoding_target encoding_find_target(char *name)
 	int i;
 
 	for (i = 0; i < ENCODING_TARGET_MAX; i++) {
-		if (strcmp(name, encoding_list[i].name) == 0)
+		if (string_nocase_strcmp(name, encoding_list[i].name) == 0)
 			return encoding_list[i].encoding;
 	}
 
@@ -591,33 +593,44 @@ int encoding_parse_utf8_string(char **text)
 }
 
 /**
- * Write a unicode character to a buffer in the current encoding.
+ * Write a unicode character to a buffer in the current encoding,
+ * followed by a zero terminator.
  *
  * \param *buffer		Pointer to the buffer to write to.
  * \param length		The length of the supplied buffer.
  * \param unicode		The unicode character to write.
- * \return			The number of bytes written to the buffer.
+ * \return			True if the requested character could
+ *				be encoded; otherwise false.
  */
 
-int encoding_write_unicode_char(char *buffer, size_t length, int unicode)
+bool encoding_write_unicode_char(char *buffer, size_t length, int unicode)
 {
+	bool success = false;
+
 	if (buffer == NULL)
-		return 0;
+		return false;
 
 	/* There's an encoding selected, so convert the character. */
 
 	if (encoding_current_map != NULL) {
 		if (length < 2)
-			return 0;
+			return false;
 
-		buffer[0] = encoding_find_mapped_character(unicode);
 		buffer[1] = '\0';
-		return 1;
+		return encoding_find_mapped_character(unicode, buffer);
+	}
+
+	/* It's 7-bit encoding, so reject anything that falls out of range. */
+
+	if (encoding_current_target == ENCODING_TARGET_7BIT && unicode > 127) {
+		buffer[0] = '?';
+		buffer[1] = '\0';
+		return false;
 	}
 
 	/* There's no encoding, so convert to UTF8. */
 
-	return encoding_write_utf8_character(buffer, length, unicode);
+	return (encoding_write_utf8_character(buffer, length, unicode) > 0) ? true : false;
 }
 
 /**
@@ -675,39 +688,52 @@ int encoding_write_utf8_character(char *buffer, size_t length, int unicode)
  * encoding. Characters which can't be mapped are returned as '?'.
  *
  * \param unicode		The unicode character to convert.
- * \return			The encoded character, or '?'.
+ * \param *c			Pointer to a character in which to
+ *				return the encoding (or '?').
+ * \return			True if an encoding was found; else False.
  */
 
-static int encoding_find_mapped_character(int unicode)
+static bool encoding_find_mapped_character(int unicode, char *c)
 {
 	int first = 0, last = encoding_current_map_size, middle;
 
+	if (c == NULL)
+		return false;
+
 	/* The byte is the same in unicode or ASCII. */
 
-	if (unicode >= 0 && unicode < 128)
-		return unicode;
+	if (unicode >= 0 && unicode < 128) {
+		*c = unicode;
+		return true;
+	}
 
 	/* There's no encoding selected, so output straight unicode. */
 
-	if (encoding_current_map == NULL)
-		return unicode;
+	if (encoding_current_map == NULL) {
+		*c = unicode;
+		return true;
+	}
 
 	/* Find the character in the current encoding. */
 
 	while (first <= last) {
 		middle = (first + last) / 2;
 
-		if (encoding_current_map[middle].utf8 == unicode)
-			return encoding_current_map[middle].target;
-		else if (encoding_current_map[middle].utf8 < unicode)
+		if (encoding_current_map[middle].utf8 == unicode) {
+			*c = encoding_current_map[middle].target;
+			return true;
+		} else if (encoding_current_map[middle].utf8 < unicode) {
 			first = middle + 1;
-		else
+		} else {
 			last = middle - 1;
+		}
 	}
 
 	msg_report(MSG_ENC_NO_OUTPUT, unicode, unicode);
 
-	return '?';
+	*c = '?';
+
+	return false;
 }
 
 /**
