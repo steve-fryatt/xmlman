@@ -945,13 +945,16 @@ static bool output_html_write_chapter_list(struct manual_data *object, int level
 				if (!output_html_file_write_plain("<li>"))
 					return false;
 
-				if (!output_html_write_local_anchor(object, entry))
+				if (entry->chapter.id != NULL && !output_html_write_local_anchor(object, entry))
 					return false;
 
 				if (!output_html_write_title(entry, false, true))
 					return false;
 
-				if (!output_html_file_write_plain("</a></li>") || !output_html_file_write_newline())
+				if (entry->chapter.id != NULL && !output_html_file_write_plain("</a>"))
+					return false;
+
+				if (!output_html_file_write_plain("</li>") || !output_html_file_write_newline())
 					return false;
 			}
 			break;
@@ -2019,7 +2022,7 @@ static bool output_html_write_inline_reference(struct manual_data *reference)
  * target node.
  *
  * \param *source		The source node.
- * \param *targer		The target node.
+ * \param *target		The target node.
  * \return			True if successful; False on error.
  */
 

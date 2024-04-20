@@ -701,13 +701,13 @@ static bool output_strong_write_chapter_list(struct manual_data *object, int lev
 					first = false;
 				}
 
-				if (!output_strong_file_write_plain("<"))
+				if (entry->chapter.id != NULL && !output_strong_file_write_plain("<"))
 					return false;
 
 				if (!output_strong_write_title(entry, false, true))
 					return false;
 
-				if (!output_strong_write_local_anchor(object, entry))
+				if (entry->chapter.id != NULL && !output_strong_write_local_anchor(object, entry))
 					return false;
 
 				if (!output_strong_file_write_newline())
