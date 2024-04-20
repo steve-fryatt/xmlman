@@ -125,6 +125,7 @@ static char *output_html_default_stylesheet[] = {
 	"TD { text-align: left; }",
 	"TR { vertical-align: middle; border-bottom: 1px solid #DFDFFF; }",
 	"CODE, SPAN.code { font-family: monospace; font-weight: bold; }",
+	"DIV.caption { width: 100%; margin: 0.5em 0 0; padding: 0 2em; font-style: italic; text-align: center; }"
 	"STRONG { font-weight: bold; }",
 	"EM { font-style: italic; }",
 	"SPAN.command { font-weight: bold; }",
@@ -163,6 +164,7 @@ static bool output_html_write_inline_link(struct manual_data *link);
 static bool output_html_write_inline_reference(struct manual_data *reference);
 static bool output_html_write_local_anchor(struct manual_data *source, struct manual_data *target);
 static bool output_html_write_title(struct manual_data *node, bool include_name, bool include_title);
+static bool output_html_write_id(struct manual_data *node);
 static bool output_html_write_entity(enum manual_entity_type entity);
 
 /**
@@ -842,7 +844,7 @@ static bool output_html_write_file_foot(struct manual_data *manual)
 
 static bool output_html_write_heading(struct manual_data *node, int level)
 {
-	char	buffer[OUTPUT_HTML_TITLE_TAG_BLOCK_LEN];
+	char buffer[OUTPUT_HTML_TITLE_TAG_BLOCK_LEN];
 
 	if (node == NULL || node->title == NULL)
 		return true;
@@ -874,16 +876,8 @@ static bool output_html_write_heading(struct manual_data *node, int level)
 
 	/* Include the ID in the opening tag, if required. */
 
-	if (level > 0 && node->chapter.id != NULL) {
-		if (!output_html_file_write_plain(" id=\""))
-			return false;
-
-		if (!output_html_file_write_text(node->chapter.id))
-			return false;
-
-		if (!output_html_file_write_plain("\""))
-			return false;
-	}
+	if (level > 0 && !output_html_write_id(node))
+		return false;
 
 	if (!output_html_file_write_plain(">"))
 		return false;
@@ -1112,16 +1106,8 @@ static bool output_html_write_footnote(struct manual_data *object)
 	if (!output_html_file_write_plain("<dt"))
 		return false;
 
-	if (object->chapter.id != NULL) {
-		if (!output_html_file_write_plain(" id=\""))
-			return false;
-
-		if (!output_html_file_write_text(object->chapter.id))
-			return false;
-
-		if (!output_html_file_write_plain("\""))
-			return false;
-	}
+	if (!output_html_write_id(object))
+		return false;
 
 	if (!output_html_file_write_plain(">"))
 		return false;
@@ -1413,7 +1399,13 @@ static bool output_html_write_table(struct manual_data *object)
 	if (!output_html_file_write_newline())
 		return false;
 	
-	if (!output_html_file_write_plain("<div class=\"table\"><table>") || !output_html_file_write_newline())
+	if (!output_html_file_write_plain("<div class=\"table\""))
+		return false;
+	
+	if (!output_html_write_id(object))
+		return false;
+
+	if (!output_html_file_write_plain("><table>") || !output_html_file_write_newline())
 		return false;
 
 	/* Write the table headings. */
@@ -1564,7 +1556,13 @@ static bool output_html_write_code_block(struct manual_data *object)
 	if (!output_html_file_write_newline())
 		return false;
 
-	if (!output_html_file_write_plain("<div class=\"codeblock\"><pre>"))
+	if (!output_html_file_write_plain("<div class=\"codeblock\""))
+		return false;
+	
+	if (!output_html_write_id(object))
+		return false;
+
+	if (!output_html_file_write_plain("><pre>"))
 		return false;
 
 	if (!output_html_write_text(object->type, object))
@@ -2000,7 +1998,8 @@ static bool output_html_write_inline_reference(struct manual_data *reference)
 			include_title = (
 					target->type == MANUAL_DATA_OBJECT_TYPE_CHAPTER ||
 					target->type == MANUAL_DATA_OBJECT_TYPE_INDEX ||
-					target->type == MANUAL_DATA_OBJECT_TYPE_SECTION) ? true : false;
+					target->type == MANUAL_DATA_OBJECT_TYPE_SECTION
+					) ? true : false;
 
 			if (!output_html_write_title(target, true, include_title))
 				return false;
@@ -2082,7 +2081,7 @@ static bool output_html_write_title(struct manual_data *node, bool include_name,
 {
 	char *number;
 
-	if (node == NULL || node->title == NULL)
+	if (node == NULL || (include_title == true && node->title == NULL))
 		return false;
 
 	number = manual_data_get_node_number(node, include_name);
@@ -2095,13 +2094,55 @@ static bool output_html_write_title(struct manual_data *node, bool include_name,
 
 		free(number);
 
-		if (!output_html_file_write_text(" "))
+		if (include_title && !output_html_file_write_text(" "))
 			return false;
 	}
 
-	return output_html_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, node->title);
+	return (include_title == false) || output_html_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, node->title);
 }
 
+/**
+ * Write an ID attribute for a node.
+ *
+ * \param *node			The node whose ID is to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_id(struct manual_data *node)
+{
+	if (node == NULL)
+		return false;
+
+	switch (node->type) {
+	case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+	case MANUAL_DATA_OBJECT_TYPE_TABLE:
+	case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+	case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
+		break;
+	default:
+
+		return false;
+	}
+
+	/* Return without failing if there isn't an ID to write. */
+
+	if (node->chapter.id == NULL)
+		return true;
+
+	if (!output_html_file_write_plain(" id=\""))
+		return false;
+
+	if (!output_html_file_write_text(node->chapter.id))
+		return false;
+
+	if (!output_html_file_write_plain("\""))
+		return false;
+
+	return true;
+}
 
 /**
  * Convert an entity into an HTML representation and write

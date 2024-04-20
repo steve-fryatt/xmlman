@@ -108,6 +108,7 @@ static bool output_strong_write_inline_link(struct manual_data *link);
 static bool output_strong_write_inline_reference(struct manual_data *reference);
 static bool output_strong_write_local_anchor(struct manual_data *source, struct manual_data *target);
 static bool output_strong_write_title(struct manual_data *node, bool include_name, bool include_title);
+static bool output_strong_write_id(struct manual_data *node);
 static bool output_strong_write_entity(enum manual_entity_type entity);
 
 /**
@@ -639,16 +640,8 @@ static bool output_strong_write_heading(struct manual_data *node, int level, boo
 
 	/* Include a tag, if required. */
 
-	if (include_id && node->chapter.id != NULL) {
-		if (!output_strong_file_write_plain("#TAG "))
-			return false;
-
-		if (!output_strong_file_write_text(node->chapter.id))
-			return false;
-
-		if (!output_strong_file_write_newline())
-			return false;
-	}
+	if (include_id && !output_strong_write_id(node))
+		return false;
 
 	/* Write the heading. */
 
@@ -851,16 +844,8 @@ static bool output_strong_write_footnote(struct manual_data *object)
 
 	/* Include a tag, if required. */
 
-	if (object->chapter.id != NULL) {
-		if (!output_strong_file_write_plain("#TAG "))
-			return false;
-
-		if (!output_strong_file_write_text(object->chapter.id))
-			return false;
-
-		if (!output_strong_file_write_newline())
-			return false;
-	}
+	if (!output_strong_write_id(object))
+		return false;
 
 	/* Output the note heading. */
 
@@ -1611,7 +1596,7 @@ static bool output_strong_write_title(struct manual_data *node, bool include_nam
 {
 	char *number;
 
-	if (node == NULL || node->title == NULL)
+	if (node == NULL || (include_title == true && node->title == NULL))
 		return false;
 
 	number = manual_data_get_node_number(node, include_name);
@@ -1624,11 +1609,53 @@ static bool output_strong_write_title(struct manual_data *node, bool include_nam
 
 		free(number);
 
-		if (!output_strong_file_write_plain(" "))
+		if (include_title && !output_strong_file_write_plain(" "))
 			return false;
 	}
 
-	return output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, node->title);
+	return (include_title == false) || output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, node->title);
+}
+
+/**
+ * Write an ID attribute for a node.
+ *
+ * \param *node			The node whose ID is to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_strong_write_id(struct manual_data *node)
+{
+	if (node == NULL)
+		return true;
+
+	switch (node->type) {
+	case MANUAL_DATA_OBJECT_TYPE_MANUAL:
+	case MANUAL_DATA_OBJECT_TYPE_CHAPTER:
+	case MANUAL_DATA_OBJECT_TYPE_INDEX:
+	case MANUAL_DATA_OBJECT_TYPE_SECTION:
+	case MANUAL_DATA_OBJECT_TYPE_TABLE:
+	case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
+	case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
+		break;
+	default:
+		return false;
+	}
+
+	/* Return without failing if there isn't an ID to write. */
+
+	if (node->chapter.id == NULL)
+		return true;
+
+	if (!output_strong_file_write_plain("#TAG "))
+		return false;
+
+	if (!output_strong_file_write_text(node->chapter.id))
+		return false;
+
+	if (!output_strong_file_write_newline())
+		return false;
+
+	return true;
 }
 
 /**

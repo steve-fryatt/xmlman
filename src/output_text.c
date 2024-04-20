@@ -1950,7 +1950,7 @@ static bool output_text_write_title(int column, struct manual_data *node, bool i
 {
 	char *number;
 
-	if (node == NULL || node->title == NULL)
+	if (node == NULL || (include_title == true && node->title == NULL))
 		return false;
 
 	number = manual_data_get_node_number(node, include_name);
@@ -1963,13 +1963,12 @@ static bool output_text_write_title(int column, struct manual_data *node, bool i
 
 		free(number);
 
-		if (!output_text_line_add_text(0, " "))
+		if (include_title && !output_text_line_add_text(0, " "))
 			return false;
 	}
 
-	return output_text_write_text(0, MANUAL_DATA_OBJECT_TYPE_TITLE, node->title);
+	return (include_title == false) || output_text_write_text(0, MANUAL_DATA_OBJECT_TYPE_TITLE, node->title);
 }
-
 
 /**
  * Convert an entity into a textual representation and write
