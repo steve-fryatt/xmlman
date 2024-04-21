@@ -476,7 +476,7 @@ static struct manual_data *parse_placeholder_chapter(struct parse_xml_block *par
 
 	/* Store the chapter's filename. */
 
-	new_chapter->chapter.filename = filename_make(filename, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
+	new_chapter->chapter.filename = filename_make(filename, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LINUX);
 
 	return new_chapter;
 }
