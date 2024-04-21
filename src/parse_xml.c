@@ -135,12 +135,12 @@ struct parse_xml_block {
 static struct parse_xml_block *parse_xml_initialise(void);
 static struct parse_xml_attribute *parse_xml_find_attribute(struct parse_xml_block *instance, const char *name);
 static size_t parse_xml_copy_text_to_buffer(struct parse_xml_block *instance, long start, size_t length, char *buffer, size_t size);
-static void parse_xml_read_text(struct parse_xml_block *instance, char c);
-static void parse_xml_read_markup(struct parse_xml_block *instance, char c);
+static void parse_xml_read_text(struct parse_xml_block *instance, int c);
+static void parse_xml_read_markup(struct parse_xml_block *instance, int c);
 static void parse_xml_read_comment(struct parse_xml_block *instance);
-static void parse_xml_read_element(struct parse_xml_block *instance, char c);
-static void parse_xml_read_element_attributes(struct parse_xml_block *instance, char c);
-static void parse_xml_read_entity(struct parse_xml_block *instance, char c);
+static void parse_xml_read_element(struct parse_xml_block *instance, int c);
+static void parse_xml_read_element_attributes(struct parse_xml_block *instance, int c);
+static void parse_xml_read_entity(struct parse_xml_block *instance, int c);
 static bool parse_xml_match_ahead(struct parse_xml_block *instance, const char *text);
 static int parse_xml_getc(struct parse_xml_block *instance);
 
@@ -759,7 +759,7 @@ static size_t parse_xml_copy_text_to_buffer(struct parse_xml_block *instance, lo
  * \param c		The first character of the markup sequence.
  */
 
-static void parse_xml_read_text(struct parse_xml_block *instance, char c)
+static void parse_xml_read_text(struct parse_xml_block *instance, int c)
 {
 	bool whitespace = true;
 
@@ -806,7 +806,7 @@ static void parse_xml_read_text(struct parse_xml_block *instance, char c)
  * \param c		The first character of the markup sequence.
  */
 
-static void parse_xml_read_markup(struct parse_xml_block *instance, char c)
+static void parse_xml_read_markup(struct parse_xml_block *instance, int c)
 {
 	/* Tags must start with a <; we shouldn't be here otherwise. */
 
@@ -848,7 +848,7 @@ static void parse_xml_read_markup(struct parse_xml_block *instance, char c)
  * \param c		The first character of the tag sequence.
  */
 
-static void parse_xml_read_element(struct parse_xml_block *instance, char c)
+static void parse_xml_read_element(struct parse_xml_block *instance, int c)
 {
 	int len = 0;
 
@@ -969,7 +969,7 @@ static void parse_xml_read_element(struct parse_xml_block *instance, char c)
  * \param c		The first character of the tag sequence.
  */
 
-static void parse_xml_read_element_attributes(struct parse_xml_block *instance, char c)
+static void parse_xml_read_element_attributes(struct parse_xml_block *instance, int c)
 {
 	int len = 0;
 	long start = -1, length = 0;
@@ -1129,7 +1129,7 @@ static void parse_xml_read_comment(struct parse_xml_block *instance)
  * \param c		The first character of the entity sequence.
  */
 
-static void parse_xml_read_entity(struct parse_xml_block *instance, char c)
+static void parse_xml_read_entity(struct parse_xml_block *instance, int c)
 {
 	int len = 0;
 
@@ -1236,7 +1236,7 @@ static bool parse_xml_match_ahead(struct parse_xml_block *instance, const char *
 
 static int parse_xml_getc(struct parse_xml_block *instance)
 {
-	char c;
+	int c;
 	long fp;
 
 	if (instance == NULL || instance->file == NULL)
