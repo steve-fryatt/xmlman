@@ -383,7 +383,7 @@ enum encoding_target encoding_find_target(char *name)
 	int i;
 
 	for (i = 0; i < ENCODING_TARGET_MAX; i++) {
-		if (string_nocase_strcmp(name, encoding_list[i].name) == 0)
+		if (string_nocase_strcmp(name, (char *) encoding_list[i].name) == 0)
 			return encoding_list[i].encoding;
 	}
 
@@ -605,8 +605,6 @@ int encoding_parse_utf8_string(char **text)
 
 bool encoding_write_unicode_char(char *buffer, size_t length, int unicode)
 {
-	bool success = false;
-
 	if (buffer == NULL)
 		return false;
 

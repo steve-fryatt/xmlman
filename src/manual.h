@@ -30,6 +30,7 @@
 #ifndef XMLMAN_MANUAL_H
 #define XMLMAN_MANUAL_H
 
+#include "xmlman.h"
 #include "manual_data.h"
 #include "manual_ids.h"
 

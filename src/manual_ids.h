@@ -32,6 +32,7 @@
 
 #include <stdbool.h>
 
+#include "xmlman.h"
 #include "manual_data.h"
 
 /**

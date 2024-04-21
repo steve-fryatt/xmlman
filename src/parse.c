@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "xmlman.h"
 #include "encoding.h"
 #include "filename.h"
 #include "manual.h"
@@ -144,7 +145,7 @@ struct manual *parse_document(char *filename)
 		return NULL;
 
 	if (!parse_link(manual))
-		return;
+		return NULL;
 
 	manual_ids_dump();
 
@@ -945,7 +946,6 @@ static struct manual_data *parse_callout(struct parse_xml_block *parser)
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 	struct manual_data *new_box = NULL, *tail = NULL, *item = NULL;
-	char *type_name;
 
 	/* Identify the tag which got us here. */
 
@@ -1088,7 +1088,6 @@ static struct manual_data *parse_list(struct parse_xml_block *parser)
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 	struct manual_data *new_list = NULL, *tail = NULL, *item = NULL;
-	struct manual_data_resources *resources;
 
 	/* Identify the tag which got us here. */
 
@@ -1181,7 +1180,6 @@ static struct manual_data *parse_table(struct parse_xml_block *parser)
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 	struct manual_data *new_table = NULL, *tail = NULL, *item = NULL, *row = NULL, *column = NULL;
-	struct manual_data_resources *resources;
 
 	/* Identify the tag which got us here. */
 
@@ -1333,7 +1331,6 @@ static struct manual_data *parse_table_column_set(struct parse_xml_block *parser
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 	struct manual_data *new_table_column_set = NULL, *tail = NULL, *item = NULL;
-	struct manual_data_resources *resources;
 
 	/* Identify the tag which got us here. */
 
@@ -1421,7 +1418,6 @@ static struct manual_data *parse_table_row(struct parse_xml_block *parser)
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 	struct manual_data *new_table_row = NULL, *tail = NULL, *item = NULL;
-	struct manual_data_resources *resources;
 
 	/* Identify the tag which got us here. */
 
@@ -1510,7 +1506,6 @@ static struct manual_data *parse_code_block(struct parse_xml_block *parser)
 	enum parse_xml_result result;
 	enum parse_element_type type, element;
 	struct manual_data *new_code_block = NULL, *tail = NULL, *item = NULL;
-	struct manual_data_resources *resources;
 
 	/* Identify the tag which got us here. */
 
@@ -1759,6 +1754,8 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 	case PARSE_ELEMENT_COLDEF:
 		new_block->chunk.width = parse_xml_read_integer_attribute(parser, "width", 0, 0, 1000);
 		break;
+	default:
+		break;
 	}
 
 	/* Process the content within the new object. */
@@ -1939,6 +1936,8 @@ static struct manual_data *parse_empty_block_object(struct parse_xml_block *pars
 		break;
 	case PARSE_ELEMENT_REF:
 		new_block->chunk.id = parse_xml_get_attribute_text(parser, "id");
+		break;
+	default:
 		break;
 	}
 

@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "xmlman.h"
 #include "parse_link.h"
 
 #include "manual_data.h"

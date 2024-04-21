@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "xmlman.h"
 #include "modes.h"
 
 #include "manual_data.h"

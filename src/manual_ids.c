@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "xmlman.h"
 #include "manual_data.h"
 #include "manual_ids.h"
 #include "msg.h"
@@ -192,7 +193,6 @@ bool manual_ids_add_node(struct manual_data *node)
 
 struct manual_data *manual_ids_find_node(struct manual_data *node)
 {
-	struct manual_data *target = NULL;
 	struct manual_ids_entry *entry;
 
 	if (node == NULL)

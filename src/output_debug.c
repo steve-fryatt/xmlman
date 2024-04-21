@@ -33,6 +33,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "xmlman.h"
 #include "output_debug.h"
 
 #include "encoding.h"
@@ -42,8 +43,8 @@
 /* Static Function Prototypes. */
 
 static void output_debug_write_node(struct manual_data *parent, struct manual_data *node, int depth, bool *indent);
-static void output_debug_write_text(enum manual_data_object_type type, struct manual_data *text);
-static char *output_debug_get_text(char *text);
+//static void output_debug_write_text(enum manual_data_object_type type, struct manual_data *text);
+//static char *output_debug_get_text(char *text);
 
 /**
  * Output a manual in debug form.
@@ -57,8 +58,6 @@ static char *output_debug_get_text(char *text);
 
 bool output_debug(struct manual *document, struct filename *filename, enum encoding_target encoding, enum encoding_line_end line_end)
 {
-	struct manual_data *manual, *chapter, *section, *block;
-
 	if (document == NULL || document->manual == NULL)
 		return false;
 
@@ -142,11 +141,11 @@ static void output_debug_write_node(struct manual_data *parent, struct manual_da
 
 	free(new_indent);
 }
-
+#if 0
 static void output_debug_write_text(enum manual_data_object_type type, struct manual_data *text)
 {
 	struct manual_data *chunk;
-	char *entity;
+	const char *entity;
 
 	if (text == NULL) {
 		printf("*** Text Block NULL ***\n");
@@ -198,3 +197,4 @@ static char *output_debug_get_text(char *text)
 
 	return text;
 }
+#endif

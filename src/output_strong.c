@@ -33,6 +33,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "xmlman.h"
 #include "output_strong.h"
 
 #include "encoding.h"

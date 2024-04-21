@@ -37,6 +37,7 @@
 
 /* Local source headers. */
 
+#include "xmlman.h"
 #include "args.h"
 #include "encoding.h"
 #include "filename.h"

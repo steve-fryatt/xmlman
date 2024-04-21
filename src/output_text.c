@@ -35,6 +35,7 @@
 
 #include "output_text.h"
 
+#include "xmlman.h"
 #include "encoding.h"
 #include "filename.h"
 #include "list_numbers.h"

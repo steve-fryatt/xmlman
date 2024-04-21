@@ -46,7 +46,6 @@
 /* Static function prototypes. */
 
 static struct search_tree *search_tree_create_new_node(char c);
-static bool search_tree_add_next_node(struct search_tree *node, char *key_tail);
 static struct search_tree *search_tree_find_next_node(struct search_tree *node, char *key_tail);
 static int search_tree_find_bin(char c);
 
@@ -96,7 +95,7 @@ struct search_tree *search_tree_create(void)
  * \return		True if successful; otherwise false.
  */
 
-bool search_tree_add_entry(struct search_tree *node, char *key, void *data)
+bool search_tree_add_entry(struct search_tree *node, const char *key, void *data)
 {
 	struct search_tree *next = NULL;
 	int bin;
@@ -121,7 +120,7 @@ bool search_tree_add_entry(struct search_tree *node, char *key, void *data)
 
 	/* Look for an existing node. */
 
-	next = search_tree_find_next_node(node, key);
+	next = search_tree_find_next_node(node, (char *) key);
 
 	if (next == NULL) {
 		bin = search_tree_find_bin(*key);
@@ -152,7 +151,6 @@ bool search_tree_add_entry(struct search_tree *node, char *key, void *data)
 void *search_tree_find_entry(struct search_tree *node, char *key)
 {
 	struct search_tree *next = NULL;
-	int bin;
 
 	if (node == NULL || key == NULL)
 		return false;

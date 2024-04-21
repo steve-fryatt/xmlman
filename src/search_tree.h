@@ -53,7 +53,7 @@ struct search_tree *search_tree_create(void);
  * \return		True if successful; otherwise false.
  */
 
-bool search_tree_add_entry(struct search_tree *instance, char *key, void *data);
+bool search_tree_add_entry(struct search_tree *instance, const char *key, void *data);
 
 /**
  * Look up a key in a search tree, returning a pointer to the

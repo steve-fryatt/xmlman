@@ -628,6 +628,7 @@ bool output_text_line_set_column_width(int column)
 	if (!output_text_line_set_column_widths(line))
 		return false;
 
+	return true;
 }
 
 /**

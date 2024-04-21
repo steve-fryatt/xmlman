@@ -30,6 +30,7 @@
 #ifndef XMLMAN_MODES_H
 #define XMLMAN_MODES_H
 
+#include "xmlman.h"
 #include "manual_data.h"
 
 /**
@@ -37,18 +38,6 @@
  */
 
 #define MODES_MAX_NAME_LEN 64
-
-/**
- * The possible mode types.
- */
-
-enum modes_type {
-	MODES_TYPE_NONE,
-	MODES_TYPE_DEBUG,
-	MODES_TYPE_TEXT,
-	MODES_TYPE_STRONGHELP,
-	MODES_TYPE_HTML,
-};
 
 /**
  * Given a mode name, find the mode type.
