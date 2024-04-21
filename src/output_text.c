@@ -272,8 +272,9 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 		return false;
 	}
 
+	filename_destroy(foldername);
+
 	if (!output_text_line_open(filename, output_text_page_width)) {
-		filename_destroy(foldername);
 		filename_destroy(filename);
 		return false;
 	}
@@ -282,7 +283,6 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 
 	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH)) {
 		output_text_line_close();
-		filename_destroy(foldername);
 		filename_destroy(filename);
 		return false;
 	}
@@ -291,7 +291,6 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 
 	if (!output_text_write_file_head(object)) {
 		output_text_line_close();
-		filename_destroy(foldername);
 		filename_destroy(filename);
 		return false;
 	}
@@ -300,7 +299,6 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 
 	if (!output_text_write_object(object, true, OUTPUT_TEXT_BASE_LEVEL)) {
 		output_text_line_close();
-		filename_destroy(foldername);
 		filename_destroy(filename);
 		return false;
 	}
@@ -309,12 +307,20 @@ static bool output_text_write_file(struct manual_data *object, struct filename *
 
 	if (!output_text_write_file_foot(object)) {
 		output_text_line_close();
-		filename_destroy(foldername);
 		filename_destroy(filename);
 		return false;
 	}
 
+	/* Close the file and set its type. */
+
 	output_text_line_close();
+
+	if (!filename_set_type(filename, FILENAME_FILETYPE_TEXT)) {
+		filename_destroy(filename);
+		return false;
+	}
+
+	filename_destroy(filename);
 
 	return true;
 }

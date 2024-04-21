@@ -92,6 +92,17 @@ enum filename_platform {
 };
 
 /**
+ * The filetypes which can be set on a file object.
+ */
+
+enum filename_filetype {
+	FILENAME_FILETYPE_NONE,
+	FILENAME_FILETYPE_TEXT,
+	FILENAME_FILETYPE_HTML,
+	FILENAME_FILETYPE_STRONGHELP
+};
+
+/**
  * Convert a textual filename into a filename instance.
  *
  * \param *name			Pointer to the filename to convert.
@@ -134,6 +145,17 @@ FILE *filename_fopen(struct filename *name, const char *mode);
  */
 
 bool filename_mkdir(struct filename *name, bool intermediate);
+
+/**
+ * Set the RISC OS filetype of a file
+ *
+ * \param *name 		A filename instance referring to the file
+ *				which is to have its type set.
+ * \param type			The required filetype.
+ * \return			True if the type is set; else False.
+ */
+
+bool filename_set_type(struct filename *name, enum filename_filetype type);
 
 /**
  * Dump the contents of a filename instance for debug purposes.

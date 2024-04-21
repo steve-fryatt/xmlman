@@ -316,8 +316,9 @@ static bool output_html_write_file(struct manual_data *object, struct filename *
 		return false;
 	}
 
+	filename_destroy(foldername);
+
 	if (!output_html_file_open(filename)) {
-		filename_destroy(foldername);
 		filename_destroy(filename);
 		return false;
 	}
@@ -326,7 +327,6 @@ static bool output_html_write_file(struct manual_data *object, struct filename *
 
 	if (!output_html_write_file_head(object)) {
 		output_html_file_close();
-		filename_destroy(foldername);
 		filename_destroy(filename);
 		return false;
 	}
@@ -335,7 +335,6 @@ static bool output_html_write_file(struct manual_data *object, struct filename *
 
 	if (!output_html_write_section_object(object, OUTPUT_HTML_BASE_LEVEL, true)) {
 		output_html_file_close();
-		filename_destroy(foldername);
 		filename_destroy(filename);
 		return false;
 	}
@@ -344,12 +343,20 @@ static bool output_html_write_file(struct manual_data *object, struct filename *
 
 	if (!output_html_write_file_foot(object)) {
 		output_html_file_close();
-		filename_destroy(foldername);
 		filename_destroy(filename);
 		return false;
 	}
 
+	/* Close the file and set its type. */
+
 	output_html_file_close();
+
+	if (!filename_set_type(filename, FILENAME_FILETYPE_HTML)) {
+		filename_destroy(filename);
+		return false;
+	}
+
+	filename_destroy(filename);
 
 	return true;
 }

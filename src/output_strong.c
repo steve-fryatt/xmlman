@@ -154,6 +154,9 @@ bool output_strong(struct manual *document, struct filename *filename, enum enco
 
 	output_strong_file_close();
 
+	if (!filename_set_type(filename, FILENAME_FILETYPE_STRONGHELP))
+		return false;
+
 	return result;
 }
 
@@ -234,8 +237,12 @@ static bool output_strong_write_file(struct manual_data *object)
 	if (filename == NULL)
 		return false;
 
-	if (!output_strong_file_sub_open(filename, OUTPUT_STRONG_PAGE_FILETYPE))
+	if (!output_strong_file_sub_open(filename, OUTPUT_STRONG_PAGE_FILETYPE)) {
+		filename_destroy(filename);
 		return false;
+	}
+
+	filename_destroy(filename);
 
 	/* Write the file header. */
 
@@ -253,7 +260,6 @@ static bool output_strong_write_file(struct manual_data *object)
 
 	if (!output_strong_write_object(object, OUTPUT_STRONG_BASE_LEVEL, true)) {
 		output_strong_file_sub_close();
-		filename_destroy(filename);
 		return false;
 	}
 

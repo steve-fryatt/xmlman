@@ -212,6 +212,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"No filename supplied",						false},
 	{MSG_ERROR,	"Failed to open file '%s'",					false},
 	{MSG_ERROR,	"Failed to create folder '%s'",					false},
+	{MSG_ERROR,	"Failed to set type of file '%s'",				false},
 	{MSG_ERROR,	"No file open for output",					false},
 	{MSG_ERROR,	"Failure to write to output file",				false},
 	{MSG_ERROR,	"Unknown memory error",						false}

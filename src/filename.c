@@ -38,6 +38,10 @@
 #include <sys/stat.h>
 #endif
 
+#ifdef RISCOS
+#include "oslib/osfile.h"
+#endif
+
 /* Local source headers. */
 
 #include "filename.h"
@@ -251,10 +255,13 @@ bool filename_mkdir(struct filename *name, bool intermediate)
 	size_t		length = 0;
 	char		*filename = NULL;
 	int		levels, nodes = 0;
+#ifdef RISCOS
+	os_error	*error = NULL;
+#endif
 
 	nodes = filename_count_nodes(name);
 	if (nodes == 0)
-		return false;
+		return true;
 
 	length = filename_get_storage_size(name);
 	if (length == 0)
@@ -269,7 +276,6 @@ bool filename_mkdir(struct filename *name, bool intermediate)
 			free(filename);
 			return false;
 		}
-
 #ifdef LINUX
 		if ((mkdir(filename, 0755) != 0) && (errno != EEXIST)) {
 			msg_report(MSG_WRITE_CDIR_FAIL, filename);
@@ -278,15 +284,79 @@ bool filename_mkdir(struct filename *name, bool intermediate)
 		}
 #endif
 #ifdef RISCOS
-		free(filename);
-
-		return false;
+		error = xosfile_create_dir(filename, 0);
+		if (error != NULL) {
+			msg_report(MSG_WRITE_CDIR_FAIL, filename);
+			free(filename);
+			return false;
+		}
 #endif
 	}
 
 	free(filename);
 
 	return true;
+}
+
+/**
+ * Set the RISC OS filetype of a file
+ *
+ * \param *name 		A filename instance referring to the file
+ *				which is to have its type set.
+ * \param type			The required filetype.
+ * \return			True if the type is set; else False.
+ */
+
+bool filename_set_type(struct filename *name, enum filename_filetype type)
+{
+#ifdef LINUX
+	return true;
+#endif
+#ifdef RISCOS
+	size_t length = 0;
+	int levels = 0;
+	char *filename = NULL;
+	os_error *error = NULL;
+	bits filetype = 0;
+
+	levels = filename_count_nodes(name);
+
+	length = filename_get_storage_size(name);
+	if (length == 0)
+		return false;
+
+	filename = malloc(length);
+	if (filename == NULL)
+		return false;
+
+	if (!filename_copy_to_buffer(name, filename, length, FILENAME_PLATFORM_LOCAL, levels)) {
+		free(filename);
+		return false;
+	}
+
+	switch (type) {
+	case FILENAME_FILETYPE_TEXT:
+		filetype = osfile_TYPE_TEXT;
+		break;
+	case FILENAME_FILETYPE_HTML:
+		filetype = 0xfaf;
+		break;
+	case FILENAME_FILETYPE_STRONGHELP:
+		filetype = 0x3d6;
+		break;
+	default:
+		filetype = osfile_TYPE_DATA;
+		break;
+	}
+
+	error = xosfile_set_type(filename, filetype);
+	if (error != NULL)
+		msg_report(MSG_WRITE_SETTYPE_FAIL, filename);
+
+	free(filename);
+
+	return (error == NULL) ? true : false;
+#endif
 }
 
 /**
