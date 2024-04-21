@@ -232,7 +232,7 @@ static bool output_html_write_manual(struct manual_data *manual, struct filename
 
 	/* Identify whether output is destined for a single file. */
 
-	single_file = !manual_data_find_filename_data(manual, MODES_TYPE_TEXT);
+	single_file = !manual_data_find_filename_data(manual, MODES_TYPE_HTML);
 
 	/* Initialise the manual queue. */
 
