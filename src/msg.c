@@ -205,6 +205,8 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"No active StrongHelp file block",				false},
 	{MSG_ERROR,	"A '%s' object already exists in the '%s' directory",		false},
 
+	{MSG_ERROR,	"Failed to allocate memory for root output filename",		false},
+	{MSG_ERROR,	"Writing output file failed with an error",			false},
 
 	{MSG_INFO,	"Opened file '%s' for output",					false},
 	{MSG_ERROR,	"No filename supplied",						false},

@@ -73,9 +73,10 @@ int main(int argc, char *argv[])
 	bool			param_error = false;
 	bool			output_help = false;
 	bool			verbose_output = false;
+	bool			debug_output = false;
 	struct args_option	*options;
 	char			*input_file = NULL;
-	char			*out_debug = NULL, *out_text = NULL, *out_html = NULL, *out_strong = NULL;
+	char			*out_text = NULL, *out_html = NULL, *out_strong = NULL;
 	struct manual		*document = NULL;
 	enum encoding_target	output_encoding = ENCODING_TARGET_NONE;
 	enum encoding_line_end	output_line_end = ENCODING_LINE_END_NONE;
@@ -83,7 +84,7 @@ int main(int argc, char *argv[])
 	/* Decode the command line options. */
 
 	options = args_process_line(argc, argv,
-			"source/A,verbose/S,help/S,encoding/K,lineend/K,debug/K,text/K,html/K,strong/K");
+			"source/A,verbose/S,help/S,encoding/K,lineend/K,debug/S,text/K,html/K,strong/K");
 	if (options == NULL)
 		param_error = true;
 
@@ -118,13 +119,6 @@ int main(int argc, char *argv[])
 					param_error = true;
 				}
 			}
-		} else if (strcmp(options->name, "debug") == 0) {
-			if (options->data != NULL) {
-				if (options->data->value.string != NULL)
-					out_debug = options->data->value.string;
-				else
-					param_error = true;
-			}
 		} else if (strcmp(options->name, "text") == 0) {
 			if (options->data != NULL) {
 				if (options->data->value.string != NULL)
@@ -146,6 +140,9 @@ int main(int argc, char *argv[])
 				else
 					param_error = true;
 			}
+		} else if (strcmp(options->name, "debug") == 0) {
+			if (options->data != NULL && options->data->value.boolean == true)
+				debug_output = true;
 		} else if (strcmp(options->name, "verbose") == 0) {
 			if (options->data != NULL && options->data->value.boolean == true)
 				verbose_output = true;
@@ -180,7 +177,7 @@ int main(int argc, char *argv[])
 		printf(" -text <outfile>        Generate text format output to <outfile>.\n");
 		printf(" -html <outfile>        Generate HTML format output to <outfile>.\n");
 		printf(" -strong <outfile>      Generate StrongHelp format output to <outfile>.\n");
-		printf(" -debug <outfile>       Generate Debug format output to <outfile>.\n");
+		printf(" -debug                 Generate Debug format output to stdout.\n");
 
 		return (output_help) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
@@ -195,7 +192,7 @@ int main(int argc, char *argv[])
 
 	/* Generate the selected outputs. */
 
-	if (!xmlman_process_mode(out_debug, document, output_encoding, output_line_end, output_debug))
+	if (!xmlman_process_mode((debug_output == true) ? "" : NULL, document, output_encoding, output_line_end, output_debug))
 		return EXIT_FAILURE;
 
 	if (!xmlman_process_mode(out_html, document, output_encoding, output_line_end, output_html))
@@ -235,12 +232,17 @@ static bool xmlman_process_mode(char *file, struct manual *document, enum encodi
 		return true;
 
 	filename = filename_make(file, FILENAME_TYPE_LEAF, FILENAME_PLATFORM_LOCAL);
-	if (filename == NULL)
+	if (filename == NULL) {
+		msg_report(MSG_OUTPUT_FILENAME_NO_MEM);
 		return false;
+	}
 
 	result = mode(document, filename, encoding, line_end);
 
 	filename_destroy(filename);
+
+	if (result == false)
+		msg_report(MSG_OUTPUT_FILE_FAILED);
 
 	return result;
 }
