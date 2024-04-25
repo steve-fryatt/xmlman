@@ -1963,18 +1963,18 @@ static bool output_text_write_title(int column, struct manual_data *node, bool i
 	number = manual_data_get_node_number(node, include_name);
 
 	if (number != NULL) {
-		if (!output_text_line_add_text(0, number)) {
+		if (!output_text_line_add_text(column, number)) {
 			free(number);
 			return false;
 		}
 
 		free(number);
 
-		if (include_title && !output_text_line_add_text(0, " "))
+		if (include_title && !output_text_line_add_text(column, " "))
 			return false;
 	}
 
-	return (include_title == false) || output_text_write_text(0, MANUAL_DATA_OBJECT_TYPE_TITLE, node->title);
+	return (include_title == false) || output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_TITLE, node->title);
 }
 
 /**
