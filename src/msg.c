@@ -190,7 +190,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Missing line instance reference",				false},
 	{MSG_ERROR,	"Missing column instance reference",				false},
 	{MSG_ERROR,	"Line columns too wide for page",				false},
-	{MSG_WARNING,	"Hanging absolute line indent of %d, compared to %d",		false},
+	{MSG_VERBOSE,	"Hanging absolute line indent of %d, compared to %d",		false},
 	{MSG_ERROR,	"Hanging indent applied too late in column",			false},
 	{MSG_ERROR,	"Hanging indent can only be applied to left-aligned columns",	false},
 	{MSG_ERROR,	"Line not reset before adding text",				false},
