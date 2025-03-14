@@ -223,7 +223,7 @@ struct manual_data *manual_ids_find_node(struct manual_data *node)
 }
 
 /**
- * Given and ID, find a matching record in the index.
+ * Given an ID, find a matching record in the index.
  *
  * \param *id		The ID to search for.
  * \return		Pointer to the matching entry, or NULL.
