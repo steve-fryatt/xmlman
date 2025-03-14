@@ -124,7 +124,7 @@ bool search_tree_add_entry(struct search_tree *node, const char *key, void *data
 
 	if (next == NULL) {
 		bin = search_tree_find_bin(*key);
-		if (bin == -1)
+		if (bin == -1 || bin > SEARCH_TREE_BIN_COUNT)
 			return false;
 
 		next = search_tree_create_new_node(*key);
@@ -193,7 +193,7 @@ static struct search_tree *search_tree_find_next_node(struct search_tree *node, 
 		return NULL;
 
 	bin = search_tree_find_bin(*key_tail);
-	if (bin == -1)
+	if (bin == -1 || bin >= SEARCH_TREE_BIN_COUNT)
 		return NULL;
 
 	next = node->bins[bin];
