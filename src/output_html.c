@@ -2001,7 +2001,7 @@ static bool output_html_write_inline_reference(struct manual_data *reference)
 
 		if (!output_html_file_write_plain("</sup>"))
 			return false;
-	} else {
+	} else if (target != NULL) {
 		if (reference->first_child != NULL) {
 			if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_REFERENCE, reference))
 				return false;

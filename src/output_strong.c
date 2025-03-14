@@ -1506,7 +1506,7 @@ static bool output_strong_write_inline_reference(struct manual_data *reference)
 		}
 
 		free(number);
-	} else {
+	} else if (target != NULL) {
 		if (reference->first_child != NULL) {
 			if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_REFERENCE, reference))
 				return false;
