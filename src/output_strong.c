@@ -1733,6 +1733,9 @@ static bool output_strong_write_entity(enum manual_entity_type entity)
 	case MANUAL_ENTITY_SADFACE:
 		text = ":-(";
 		break;
+	case MANUAL_ENTITY_MSEP:
+		text = ":-(";
+		break;
 	default:
 		codepoint = manual_entity_find_codepoint(entity);
 		if (codepoint != MANUAL_ENTITY_NO_CODEPOINT) {
