@@ -491,6 +491,7 @@ static bool output_html_write_section_object(struct manual_data *object, int lev
 					return false;
 				break;
 
+			case MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST:
 			case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
 			case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
@@ -1051,6 +1052,7 @@ static bool output_html_write_block_collection_object(struct manual_data *object
 			}
 			break;
 
+		case MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST:
 		case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
 		case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
 			if (!output_html_write_list(block))
@@ -1279,6 +1281,7 @@ static bool output_html_write_callout(struct manual_data *object)
 				return false;
 			break;
 
+		case MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST:
 		case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
 		case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
 			if (!output_html_write_list(block))
@@ -1325,6 +1328,7 @@ static bool output_html_write_list(struct manual_data *object)
 	/* Confirm that this is a list. */
 
 	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST:
 	case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
 	case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
 		break;
@@ -1339,8 +1343,22 @@ static bool output_html_write_list(struct manual_data *object)
 	if (!output_html_file_write_newline())
 		return false;
 
-	if (!output_html_file_write_plain((object->type == MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST) ? "<ol>" : "<ul>"))
-		return false;
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST:
+		if (!output_html_file_write_plain("<dl>"))
+			return false;
+		break;
+	case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
+		if (!output_html_file_write_plain("<ol>"))
+			return false;
+		break;
+	case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+		if (!output_html_file_write_plain("<ul>"))
+			return false;
+		break;
+	default:
+		break;
+	}
 
 	if (!output_html_file_write_newline())
 		return false;
@@ -1351,13 +1369,27 @@ static bool output_html_write_list(struct manual_data *object)
 	while (item != NULL) {
 		switch (item->type) {
 		case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
-			if (!output_html_file_write_plain("<li>"))
+			if (object->type == MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST && item->title != NULL) {
+				if (!output_html_file_write_plain("<dt>"))
+					return false;
+
+				if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_TITLE, item->title))
+					return false;
+
+				if (!output_html_file_write_plain("</dt>"))
+					return false;
+
+				if (!output_html_file_write_newline())
+					return false;
+			}
+
+			if (!output_html_file_write_plain((object->type == MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST) ? "<dd>" : "<li>"))
 				return false;
 
 			if (!output_html_write_block_collection_object(item))
 				return false;
 
-			if (!output_html_file_write_plain("</li>"))
+			if (!output_html_file_write_plain((object->type == MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST) ? "</dd>" : "</li>"))
 				return false;
 
 			if (!output_html_file_write_newline())
@@ -1374,9 +1406,24 @@ static bool output_html_write_list(struct manual_data *object)
 		item = item->next;
 	}
 
-	if (!output_html_file_write_plain((object->type == MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST) ? "</ol>" : "</ul>"))
-		return false;
 
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST:
+		if (!output_html_file_write_plain("</dl>"))
+			return false;
+		break;
+	case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
+		if (!output_html_file_write_plain("</ol>"))
+			return false;
+		break;
+	case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
+		if (!output_html_file_write_plain("</ul>"))
+			return false;
+		break;
+	default:
+		break;
+	}
+	
 	if (!output_html_file_write_newline())
 		return false;
 

@@ -730,6 +730,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 				item = parse_block_object(parser);
 				parse_link_item(&tail, new_section, item);
 				break;
+			case PARSE_ELEMENT_DL:
 			case PARSE_ELEMENT_OL:
 			case PARSE_ELEMENT_UL:
 				item = parse_list(parser);
@@ -863,10 +864,20 @@ static struct manual_data *parse_block_collection_object(struct parse_xml_block 
 			element = parse_xml_get_element(parser);
 
 			switch (element) {
+			case PARSE_ELEMENT_TITLE:
+				if (new_block->title == NULL) {
+					new_block->title = parse_block_object(parser);
+					parse_link_item(NULL, new_block, new_block->title);
+				} else {
+					msg_report(MSG_DUPLICATE_TAG, parse_element_find_tag(element), parse_element_find_tag(type));
+					parse_xml_set_error(parser);
+				}
+				break;
 			case PARSE_ELEMENT_PARAGRAPH:
 				item = parse_block_object(parser);
 				parse_link_item(&tail, new_block, item);
 				break;
+			case PARSE_ELEMENT_DL:
 			case PARSE_ELEMENT_OL:
 			case PARSE_ELEMENT_UL:
 				if (tail == NULL) {
@@ -931,7 +942,6 @@ static struct manual_data *parse_block_collection_object(struct parse_xml_block 
 	msg_report(MSG_PARSE_POP, "Block Collection", parse_element_find_tag(type));
 
 	return new_block;
-
 }
 
 
@@ -1036,6 +1046,7 @@ static struct manual_data *parse_callout(struct parse_xml_block *parser)
 				item = parse_block_object(parser);
 				parse_link_item(&tail, new_box, item);
 				break;
+			case PARSE_ELEMENT_DL:
 			case PARSE_ELEMENT_OL:
 			case PARSE_ELEMENT_UL:
 				item = parse_list(parser);
@@ -1101,6 +1112,9 @@ static struct manual_data *parse_list(struct parse_xml_block *parser)
 	/* Create the new list object. */
 
 	switch (type) {
+	case PARSE_ELEMENT_DL:
+		new_list = manual_data_create(MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST);
+		break;
 	case PARSE_ELEMENT_OL:
 		new_list = manual_data_create(MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST);
 		break;

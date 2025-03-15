@@ -113,7 +113,8 @@ static bool output_text_write_chapter_list(struct manual_data *object, int level
 static bool output_text_write_block_collection_object(struct manual_data *object, int column, int level);
 static bool output_text_write_footnote(struct manual_data *object, int column);
 static bool output_text_write_callout(struct manual_data *object, int column);
-static bool output_text_write_list(struct manual_data *object, int column, int level);
+static bool output_text_write_standard_list(struct manual_data *object, int column, int level);
+static bool output_text_write_definition_list(struct manual_data *object, int column, int level);
 static bool output_text_write_table(struct manual_data *object, int target_column);
 static bool output_text_write_code_block(struct manual_data *object, int column);
 static bool output_text_write_paragraph(struct manual_data *object, int column, bool last_item);
@@ -475,10 +476,22 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 					break;
 				}
 
-				if (!output_text_write_list(block, 0, 0))
+				if (!output_text_write_standard_list(block, 0, 0))
 					return false;
 				break;
 
+			case MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_text_write_definition_list(block, 0, 0))
+					return false;
+				break;
+	
 			case MANUAL_DATA_OBJECT_TYPE_TABLE:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
 					msg_report(MSG_UNEXPECTED_CHUNK,
@@ -906,10 +919,15 @@ static bool output_text_write_block_collection_object(struct manual_data *object
 
 		case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
 		case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
-			if (!output_text_write_list(block, column, level + 1))
+			if (!output_text_write_standard_list(block, column, level + 1))
 				return false;
 			break;
 
+		case MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST:
+			if (!output_text_write_definition_list(block, column, level + 1))
+				return false;
+			break;
+	
 		case MANUAL_DATA_OBJECT_TYPE_TABLE:
 			if (!output_text_write_table(block, column))
 				return false;
@@ -1106,10 +1124,15 @@ static bool output_text_write_callout(struct manual_data *object, int column)
 
 		case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
 		case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
-			if (!output_text_write_list(block, 0, 0))
+			if (!output_text_write_standard_list(block, 0, 0))
 				return false;
 			break;
 
+		case MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST:
+			if (!output_text_write_definition_list(block, 0, 0))
+				return false;
+			break;
+	
 		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
 			if (!output_text_write_code_block(block, 0))
 				return false;
@@ -1137,7 +1160,7 @@ static bool output_text_write_callout(struct manual_data *object, int column)
 }
 
 /**
- * Write the contents of a list to the output.
+ * Write the contents of an ordered or unordered list to the output.
  *
  * \param *object		The object to process.
  * \param column		The column to align the object with.
@@ -1145,7 +1168,7 @@ static bool output_text_write_callout(struct manual_data *object, int column)
  * \return			True if successful; False on error.
  */
 
-static bool output_text_write_list(struct manual_data *object, int column, int level)
+static bool output_text_write_standard_list(struct manual_data *object, int column, int level)
 {
 	struct manual_data *item;
 	struct list_numbers *numbers = NULL;
@@ -1270,6 +1293,107 @@ static bool output_text_write_list(struct manual_data *object, int column, int l
 	return true;
 }
 
+/**
+ * Write the contents of a definition list to the output.
+ *
+ * \param *object		The object to process.
+ * \param column		The column to align the object with.
+ * \param level			The list nesting level.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_text_write_definition_list(struct manual_data *object, int column, int level)
+{
+	struct manual_data *item;
+
+	if (object == NULL)
+		return false;
+
+	/* Confirm that this is a list. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* If the current output line has content, we can't add to it. */
+
+	if (output_text_line_has_content()) {
+		msg_report(MSG_TEXT_LINE_NOT_EMPTY, manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Output the list. */
+
+	/* If the list isn't nested in a list item, output a blank line
+	 * above it.
+	 */
+
+//	if (object->parent != NULL &&
+//			object->parent->type != MANUAL_DATA_OBJECT_TYPE_LIST_ITEM &&
+//			!output_text_line_write_newline())
+//		return false;
+
+	item = object->first_child;
+
+	while (item != NULL) {
+		switch (item->type) {
+		case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
+			if (item->title != NULL) {
+				if (!output_text_line_write_newline())
+					return false;
+
+				if (!output_text_line_reset())
+					return false;
+	
+				if (!output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_TITLE, item->title))
+					return false;
+
+				if (!output_text_line_write(false, false))
+					return false;
+			}
+
+			if (!output_text_line_reset())
+				return false;
+
+			/* Indent the definition. */
+
+			if (!output_text_line_push_to_column(column, OUTPUT_TEXT_BLOCK_INDENT, OUTPUT_TEXT_NO_INDENT))
+				return false;
+	
+			if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
+				return false;
+	
+			if (!output_text_line_reset())
+				return false;
+
+			/* Output the definition text. */
+
+			if (!output_text_write_block_collection_object(item, 0, level))
+				return false;
+
+			if (!output_text_line_pop())
+				return false;
+	
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(item->type),
+					manual_data_find_object_name(object->type));
+			break;
+		}
+
+		item = item->next;
+	}
+
+	return true;
+}
+ 
 /**
  * Write the contents of a table to the output.
  *

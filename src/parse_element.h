@@ -1,4 +1,4 @@
-/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2025, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -53,6 +53,7 @@ enum parse_element_type {
 	PARSE_ELEMENT_CREDIT,
 	PARSE_ELEMENT_DATE,
 	PARSE_ELEMENT_DEFINE,
+	PARSE_ELEMENT_DL,
 	PARSE_ELEMENT_DOWNLOADS,
 	PARSE_ELEMENT_EM,
 	PARSE_ELEMENT_ENTRY,

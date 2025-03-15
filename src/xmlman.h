@@ -1,4 +1,4 @@
-/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2025, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -66,6 +66,7 @@ enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_VERSION,
 
 	MANUAL_DATA_OBJECT_TYPE_CONTENTS,
+	MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST,
 	MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST,
 	MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST,
 	MANUAL_DATA_OBJECT_TYPE_LIST_ITEM,

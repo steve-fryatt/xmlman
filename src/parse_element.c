@@ -1,4 +1,4 @@
-/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2025, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -82,6 +82,7 @@ static struct parse_element_definition parse_element_tags[] = {
 	{PARSE_ELEMENT_CREDIT,		"credit"},
 	{PARSE_ELEMENT_DATE,		"date"},
 	{PARSE_ELEMENT_DEFINE,		"define"},
+	{PARSE_ELEMENT_DL,		"dl"},
 	{PARSE_ELEMENT_DOWNLOADS,	"downloads"},
 	{PARSE_ELEMENT_EM,		"em"},
 	{PARSE_ELEMENT_ENTRY,		"entry"},
