@@ -38,6 +38,7 @@ OBJS := args.o			\
 	list_numbers.o		\
 	manual.o		\
 	manual_data.o		\
+	manual_defines.o	\
 	manual_entity.o		\
 	manual_ids.o		\
 	manual_queue.o		\

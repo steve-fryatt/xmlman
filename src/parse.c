@@ -37,7 +37,9 @@
 #include "filename.h"
 #include "manual.h"
 #include "manual_data.h"
+#include "manual_defines.h"
 #include "manual_entity.h"
+#include "manual_ids.h"
 #include "modes.h"
 #include "msg.h"
 #include "parse_element.h"
@@ -148,6 +150,7 @@ struct manual *parse_document(char *filename)
 		return NULL;
 
 	manual_ids_dump();
+	manual_defines_dump();
 
 	return document;
 } 
@@ -1842,6 +1845,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 				}
 				parse_link_item(&tail, new_block, item);
 				break;
+			case PARSE_ELEMENT_DEFINE:
 			case PARSE_ELEMENT_LINK:
 			case PARSE_ELEMENT_REF:
 				item = parse_empty_block_object(parser);
@@ -1883,8 +1887,8 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 
 
 /**
- * Process an empty block object (REF, LINK), returning a pointer to the root
- * of the new data structure.
+ * Process an empty block object (REF, LINK, DEFINE), returning a pointer to
+ * the root of the new data structure.
  *
  * \param *parser	Pointer to the parser to use.
  * \return		Pointer to the new data structure.
@@ -1904,6 +1908,9 @@ static struct manual_data *parse_empty_block_object(struct parse_xml_block *pars
 	/* Create the block object. */
 
 	switch (type) {
+	case PARSE_ELEMENT_DEFINE:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_DEFINED_TEXT);
+		break;
 	case PARSE_ELEMENT_LINK:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_LINK);
 		break;
@@ -1924,6 +1931,9 @@ static struct manual_data *parse_empty_block_object(struct parse_xml_block *pars
 	/* Read attributes where applicable. */
 
 	switch (type) {
+	case PARSE_ELEMENT_DEFINE:
+		new_block->chunk.name = parse_xml_get_attribute_text(parser, "name");
+		break;
 	case PARSE_ELEMENT_LINK:
 		new_block->chunk.link = parse_single_level_attribute(parser, "href");
 		parse_link_item(NULL, new_block, new_block->chunk.link);

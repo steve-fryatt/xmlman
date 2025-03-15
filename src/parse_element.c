@@ -81,6 +81,7 @@ static struct parse_element_definition parse_element_tags[] = {
 	{PARSE_ELEMENT_CONST,		"const"},
 	{PARSE_ELEMENT_CREDIT,		"credit"},
 	{PARSE_ELEMENT_DATE,		"date"},
+	{PARSE_ELEMENT_DEFINE,		"define"},
 	{PARSE_ELEMENT_DOWNLOADS,	"downloads"},
 	{PARSE_ELEMENT_EM,		"em"},
 	{PARSE_ELEMENT_ENTRY,		"entry"},

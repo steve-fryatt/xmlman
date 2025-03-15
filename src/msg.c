@@ -133,6 +133,12 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Attempt to store id reference from invalid object type %s",	false},
 	{MSG_ERROR,	"Attempt to store id target for invalid object type %s",	false},
 
+	{MSG_VERBOSE,	"Dumping define table",						false},
+	{MSG_VERBOSE,	"Hash entry %d starting at 0x%x",				false},
+	{MSG_VERBOSE,	"- Entry for '%s'",						false},
+	{MSG_ERROR,	"Failed to store duplicate define '%s'",			false},
+	{MSG_ERROR,	"Failed to find define '%s'",					false},
+
 	{MSG_INFO,	"Parsing source file '%s'...",					false},
 	{MSG_ERROR,	"Failed to parse manual",					false},
 	{MSG_ERROR,	"Missing source file",						false},

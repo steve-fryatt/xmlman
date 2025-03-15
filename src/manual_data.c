@@ -107,6 +107,7 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_CODE,				"Code"},
 	{MANUAL_DATA_OBJECT_TYPE_COMMAND,			"Command"},
 	{MANUAL_DATA_OBJECT_TYPE_CONSTANT,			"Constant"},
+	{MANUAL_DATA_OBJECT_TYPE_DEFINED_TEXT,			"Defined Text"},
 	{MANUAL_DATA_OBJECT_TYPE_EVENT,				"Event"},
 	{MANUAL_DATA_OBJECT_TYPE_FILENAME,			"Filename"},
 	{MANUAL_DATA_OBJECT_TYPE_FUNCTION,			"Function"},

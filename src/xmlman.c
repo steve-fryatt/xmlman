@@ -42,6 +42,8 @@
 #include "encoding.h"
 #include "filename.h"
 #include "manual.h"
+#include "manual_defines.h"
+#include "manual_ids.h"
 #include "msg.h"
 #include "output_debug.h"
 #include "output_html.h"
@@ -75,16 +77,22 @@ int main(int argc, char *argv[])
 	bool			verbose_output = false;
 	bool			debug_output = false;
 	struct args_option	*options;
+	struct args_data	*option_data;
 	char			*input_file = NULL;
 	char			*out_text = NULL, *out_html = NULL, *out_strong = NULL;
 	struct manual		*document = NULL;
 	enum encoding_target	output_encoding = ENCODING_TARGET_NONE;
 	enum encoding_line_end	output_line_end = ENCODING_LINE_END_NONE;
 
+	/* Initialise the database structures. */
+
+	manual_defines_initialise();
+	manual_ids_initialise();
+
 	/* Decode the command line options. */
 
 	options = args_process_line(argc, argv,
-			"source/A,verbose/S,help/S,encoding/K,lineend/K,debug/S,text/K,html/K,strong/K");
+			"source/A,verbose/S,help/S,define/KM,encoding/K,lineend/K,debug/S,text/K,html/K,strong/K");
 	if (options == NULL)
 		param_error = true;
 
@@ -92,6 +100,18 @@ int main(int argc, char *argv[])
 		if (strcmp(options->name, "help") == 0) {
 			if (options->data != NULL && options->data->value.boolean == true)
 				output_help = true;
+		} else if (strcmp(options->name, "define") == 0) {
+			if (options->data != NULL) {
+				option_data = options->data;
+
+				while (option_data != NULL) {
+					if (option_data->value.string != NULL)
+						manual_defines_add_entry(option_data->value.string);
+					else
+						param_error = true;
+					option_data = option_data->next;
+				}
+			}
 		} else if (strcmp(options->name, "source") == 0) {
 			if (options->data != NULL) {
 				if (options->data->value.string != NULL)
@@ -173,6 +193,7 @@ int main(int argc, char *argv[])
 		printf(" -verbose               Generate verbose process information.\n");
 		printf(" -encoding <name>       Override the output encoding.\n");
 		printf(" -lineend <name>        Override the output line ending type.\n");
+		printf(" -define <name>=<value> Define a constant for use in the output.\n");
 
 		printf(" -text <outfile>        Generate text format output to <outfile>.\n");
 		printf(" -html <outfile>        Generate HTML format output to <outfile>.\n");

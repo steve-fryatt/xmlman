@@ -39,6 +39,8 @@
 #include "encoding.h"
 #include "filename.h"
 #include "manual_data.h"
+#include "manual_defines.h"
+#include "manual_ids.h"
 #include "manual_queue.h"
 #include "modes.h"
 #include "msg.h"
@@ -161,6 +163,7 @@ static bool output_html_write_reference(struct manual_data *source, struct manua
 static bool output_html_write_text(enum manual_data_object_type type, struct manual_data *text);
 static bool output_html_write_span_tag(enum manual_data_object_type type, char *tag, struct manual_data *text);
 static bool output_html_write_span_style(enum manual_data_object_type type, char *style, struct manual_data *text);
+static bool output_html_write_inline_defined_text(struct manual_data *defined_text);
 static bool output_html_write_inline_link(struct manual_data *link);
 static bool output_html_write_inline_reference(struct manual_data *reference);
 static bool output_html_write_local_anchor(struct manual_data *source, struct manual_data *target);
@@ -1745,6 +1748,9 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 		case MANUAL_DATA_OBJECT_TYPE_CONSTANT:
 			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_CONSTANT, "code", chunk);
 			break;
+		case MANUAL_DATA_OBJECT_TYPE_DEFINED_TEXT:
+			success = output_html_write_inline_defined_text(chunk);
+			break;
 		case MANUAL_DATA_OBJECT_TYPE_EVENT:
 			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_EVENT, "name", chunk);
 			break;
@@ -1878,6 +1884,43 @@ static bool output_html_write_span_style(enum manual_data_object_type type, char
 
 	if (output_html_file_write_plain("</span>") == false)
 		return false;
+
+	return true;
+}
+
+
+/**
+ * Write out an inline defined text block.
+ *
+ * \param *defined_text		The reference to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_inline_defined_text(struct manual_data *defined_text)
+{
+	char *value = NULL;
+
+	if (defined_text == NULL)
+		return false;
+
+	/* Confirm that this is a reference. */
+
+	if (defined_text->type != MANUAL_DATA_OBJECT_TYPE_DEFINED_TEXT) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_DEFINED_TEXT),
+				manual_data_find_object_name(defined_text->type));
+		return false;
+	}
+
+	/* Find the target object. */
+
+	value = manual_defines_find_value(defined_text->chunk.name);
+
+	/* If text was found, write it out. */
+
+	if (value != NULL) {
+		if (!output_html_file_write_text(value))
+			return false;
+	}
 
 	return true;
 }
@@ -2024,6 +2067,7 @@ static bool output_html_write_inline_reference(struct manual_data *reference)
 
 	return true;
 }
+
 
 /**
  * Write an opening <a ...> tag for a link from a source node to a

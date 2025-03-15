@@ -40,6 +40,7 @@
 #include "filename.h"
 #include "list_numbers.h"
 #include "manual_data.h"
+#include "manual_defines.h"
 #include "manual_ids.h"
 #include "manual_queue.h"
 #include "modes.h"
@@ -119,6 +120,7 @@ static bool output_text_write_paragraph(struct manual_data *object, int column, 
 static bool output_text_write_reference(struct manual_data *target);
 static bool output_text_write_text(int column, enum manual_data_object_type type, struct manual_data *text);
 static bool output_text_write_span_enclosed(int column, enum manual_data_object_type type, char *string, struct manual_data *text);
+static bool output_text_write_inline_defined_text(int column, struct manual_data *defined_text);
 static bool output_text_write_inline_link(int column, struct manual_data *link);
 static bool output_text_write_inline_reference(int column, struct manual_data *reference);
 static bool output_text_write_title(int column, struct manual_data *node, bool include_name, bool include_title);
@@ -1679,6 +1681,9 @@ static bool output_text_write_text(int column, enum manual_data_object_type type
 		case MANUAL_DATA_OBJECT_TYPE_CONSTANT:
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_CONSTANT, chunk);
 			break;
+		case MANUAL_DATA_OBJECT_TYPE_DEFINED_TEXT:
+			success = output_text_write_inline_defined_text(column, chunk);
+			break;
 		case MANUAL_DATA_OBJECT_TYPE_EVENT:
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_EVENT, chunk);
 			break;
@@ -1787,6 +1792,44 @@ static bool output_text_write_span_enclosed(int column, enum manual_data_object_
 
 	if (!output_text_line_add_text(column, string))
 		return false;
+
+	return true;
+}
+
+
+/**
+ * Write out an inline defined text block.
+ *
+ * \param column		The column in the line to write to.
+ * \param *defined_text		The reference to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_text_write_inline_defined_text(int column, struct manual_data *defined_text)
+{
+	char *value = NULL;
+
+	if (defined_text == NULL)
+		return false;
+
+	/* Confirm that this is a reference. */
+
+	if (defined_text->type != MANUAL_DATA_OBJECT_TYPE_DEFINED_TEXT) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_DEFINED_TEXT),
+				manual_data_find_object_name(defined_text->type));
+		return false;
+	}
+
+	/* Find the target object. */
+
+	value = manual_defines_find_value(defined_text->chunk.name);
+
+	/* If text was found, write it out. */
+
+	if (value != NULL) {
+		if (!output_text_line_add_text(column, value))
+			return false;
+	}
 
 	return true;
 }

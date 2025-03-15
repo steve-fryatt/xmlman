@@ -83,6 +83,7 @@ enum manual_data_object_type {
 	MANUAL_DATA_OBJECT_TYPE_CODE,
 	MANUAL_DATA_OBJECT_TYPE_COMMAND,
 	MANUAL_DATA_OBJECT_TYPE_CONSTANT,
+	MANUAL_DATA_OBJECT_TYPE_DEFINED_TEXT,
 	MANUAL_DATA_OBJECT_TYPE_EVENT,
 	MANUAL_DATA_OBJECT_TYPE_FILENAME,
 	MANUAL_DATA_OBJECT_TYPE_FUNCTION,
@@ -235,6 +236,13 @@ struct manual_data_chunk {
 	enum manual_data_object_flags flags;
 
 	union {
+		/**
+		 * Pointer to the target definition's name, or NULL if none has been set.
+		 *
+		 * Used by DEFINED_TEXT objects
+		 */
+		char				*name;
+
 		/**
 		 * Pointer to the target object's ID, or NULL if none has been set.
 		 *
