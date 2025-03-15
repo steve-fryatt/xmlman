@@ -1,0 +1,17 @@
+<manual>
+<chapter id="html-output">
+<title>HTML output</title>
+
+<section>
+<p>The HTML output mode will generate a copy of the manual in HTML&nbsp;5 format, across one or more files.</p>
+</section>
+
+<section>
+<title>Character encoding</title>
+
+<p>The selected output encoding will control the way that the HTML output is generated. An attempt will be made to map all characters into the target encoding; if this fails, then an entity will be used instead. Named entities are used in preference, but if one isn&rsquo;t available, then a numeric entity (in the form <code>&amp;#1234;</code>) will be used instead.</p>
+
+<p>If output is in UTF-8 mode, it follows that the only characters to be output as entities will be the standard &lt;, &gt;, &quot; and &amp; as required by the HTML standard. If the use of entities is desired, this can be forced by selecting 7-Bit output mode: this will still output a file identified as being UTF-8 in order to achieve maximum compatibility, but will only use single-byte character encodings. All characters outside of this range will therefore be written out as entities.</p>
+</section>
+</chapter>
+</manual>

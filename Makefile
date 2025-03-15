@@ -26,10 +26,14 @@
 
 ARCHIVE := xmlman
 
+MANSRC := Source.xml
+
 ifeq ($(TARGET),riscos)
   RUNIMAGE := xmlman,ff8
+  HTMLHELP := Manual,ff8
 else
   RUNIMAGE := xmlman
+  HTMLHELP := Manual.html
 endif
 
 OBJS := args.o			\
