@@ -1263,7 +1263,7 @@ static bool output_text_write_standard_list(struct manual_data *object, int colu
 				list_numbers_destroy(numbers);
 				return false;
 			}
-
+			
 			if (!output_text_line_add_text(0, list_numbers_get_next_entry(numbers))) {
 				list_numbers_destroy(numbers);
 				return false;
@@ -2124,8 +2124,11 @@ static bool output_text_write_title(int column, struct manual_data *node, bool i
 {
 	char *number;
 
-	if (node == NULL || (include_title == true && node->title == NULL))
+	if (node == NULL)
 		return false;
+
+	if (node->title == NULL)
+		include_title = false;
 
 	number = manual_data_get_node_number(node, include_name);
 

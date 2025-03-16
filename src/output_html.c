@@ -2183,8 +2183,11 @@ static bool output_html_write_title(struct manual_data *node, bool include_name,
 {
 	char *number;
 
-	if (node == NULL || (include_title == true && node->title == NULL))
+	if (node == NULL)
 		return false;
+
+	if (node->title == NULL)
+		include_title = false;
 
 	number = manual_data_get_node_number(node, include_name);
 
