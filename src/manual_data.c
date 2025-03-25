@@ -101,6 +101,7 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_TABLE_COLUMN_DEFINITION,	"Table Column Definition"},
 	{MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK,			"Code Block"},
 	{MANUAL_DATA_OBJECT_TYPE_CALLOUT,			"Callout"},
+	{MANUAL_DATA_OBJECT_TYPE_BLOCKQUOTE,			"Block Quote"},
 	{MANUAL_DATA_OBJECT_TYPE_FOOTNOTE,			"Footnote"},
 	{MANUAL_DATA_OBJECT_TYPE_PARAGRAPH,			"Paragraph"},
 

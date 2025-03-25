@@ -105,6 +105,7 @@ static char *output_html_default_stylesheet[] = {
 	"H4 { text-align: left; font-size: 1em; font-style: italic; margin-top: 0.5em; margin-bottom: 0; }",
 	"H5 { text-align: left; font-size: 1em; font-style: italic; margin-top: 0.5em; margin-bottom: 0; }",
 	"H6 { text-align: left; font-size: 1em; font-style: italic; margin-top: 0.5em; margin-bottom: 0; }",
+	"BLOCKQUOTE { margin: 0.5em 0em; padding-left: 1em; border-left: 0.5em solid grey; }",
 	"DIV.callout { margin: 0.5em 4em; padding: 0; }",
 	"DIV.callout DIV.heading { margin: 0; padding: 5px; font-weight: bold; }",
 	"DIV.callout DIV.content { margin: 0; padding: 5px; }",
@@ -155,6 +156,7 @@ static bool output_html_write_chapter_list(struct manual_data *object, int level
 static bool output_html_write_block_collection_object(struct manual_data *object);
 static bool output_html_write_footnote(struct manual_data *object);
 static bool output_html_write_callout(struct manual_data *object);
+static bool output_html_write_blockquote(struct manual_data *object);
 static bool output_html_write_list(struct manual_data *object);
 static bool output_html_write_table(struct manual_data *object);
 static bool output_html_write_code_block(struct manual_data *object);
@@ -526,6 +528,18 @@ static bool output_html_write_section_object(struct manual_data *object, int lev
 				}
 
 				if (!output_html_write_callout(block))
+					return false;
+				break;
+
+			case MANUAL_DATA_OBJECT_TYPE_BLOCKQUOTE:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_html_write_blockquote(block))
 					return false;
 				break;
 
@@ -1008,6 +1022,7 @@ static bool output_html_write_block_collection_object(struct manual_data *object
 	switch (object->type) {
 	case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
 	case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
+	case MANUAL_DATA_OBJECT_TYPE_BLOCKQUOTE:
 		break;
 	default:
 		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_LIST_ITEM),
@@ -1311,6 +1326,46 @@ static bool output_html_write_callout(struct manual_data *object)
 	return true;
 }
 
+/**
+ * Process the contents of a blockquote and write it out.
+ *
+ * \param *object		The object to process.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_blockquote(struct manual_data *object)
+{
+	if (object == NULL || object->first_child == NULL)
+		return true;
+
+	/* Confirm that this is a suitable object. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_BLOCKQUOTE:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_BLOCKQUOTE),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Write out the blockquote heading, */
+
+	if (!output_html_file_write_newline())
+		return false;
+
+	if (!output_html_file_write_plain("<blockquote>"))
+		return false;
+
+	if (!output_html_write_block_collection_object(object))
+		return false;
+
+	if (!output_html_file_write_plain("</blockquote>") || !output_html_file_write_newline())
+		return false;
+
+	return true;
+}
+ 
 /**
  * Process the contents of a list and write it out.
  *

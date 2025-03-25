@@ -68,6 +68,7 @@ static int parse_element_max_entries = -1;
  */
 
 static struct parse_element_definition parse_element_tags[] = {
+	{PARSE_ELEMENT_BLOCKQUOTE,	"blockquote"},
 	{PARSE_ELEMENT_BR,		"br"},
 	{PARSE_ELEMENT_CALLOUT,		"callout"},
 	{PARSE_ELEMENT_CHAPTER,		"chapter"},

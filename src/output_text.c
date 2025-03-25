@@ -113,6 +113,7 @@ static bool output_text_write_chapter_list(struct manual_data *object, int level
 static bool output_text_write_block_collection_object(struct manual_data *object, int column, int level);
 static bool output_text_write_footnote(struct manual_data *object, int column);
 static bool output_text_write_callout(struct manual_data *object, int column);
+static bool output_text_write_blockquote(struct manual_data *object, int column);
 static bool output_text_write_standard_list(struct manual_data *object, int column, int level);
 static bool output_text_write_definition_list(struct manual_data *object, int column, int level);
 static bool output_text_write_table(struct manual_data *object, int target_column);
@@ -528,6 +529,18 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 					return false;
 				break;
 
+			case MANUAL_DATA_OBJECT_TYPE_BLOCKQUOTE:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_text_write_blockquote(block, 0))
+					return false;
+				break;
+
 			case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
 					msg_report(MSG_UNEXPECTED_CHUNK,
@@ -889,6 +902,7 @@ static bool output_text_write_block_collection_object(struct manual_data *object
 	switch (object->type) {
 	case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
 	case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
+	case MANUAL_DATA_OBJECT_TYPE_BLOCKQUOTE:
 		break;
 	default:
 		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_LIST_ITEM),
@@ -1151,6 +1165,59 @@ static bool output_text_write_callout(struct manual_data *object, int column)
 	/* Rule off underneath and exit. */
 
 	if (!output_text_line_write_ruleoff('-'))
+		return false;
+
+	if (!output_text_line_pop())
+		return false;
+
+	return true;
+}
+
+/**
+ * Process the contents of a blockquote and write it out.
+ *
+ * \param *object		The object to process.
+ * \param column		The column to align the object with.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_text_write_blockquote(struct manual_data *object, int column)
+{
+	if (object == NULL || object->first_child == NULL)
+		return true;
+
+	/* Confirm that this is a suitable object. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_BLOCKQUOTE:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_BLOCKQUOTE),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* If the current output line has content, we can't add to it. */
+
+	if (output_text_line_has_content()) {
+		msg_report(MSG_TEXT_LINE_NOT_EMPTY, manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Create a paragraph for output. */
+
+	if (!output_text_line_push_to_column(column, 2 * OUTPUT_TEXT_BLOCK_INDENT, 0))
+		return false;
+
+	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
+		return false;
+
+	if (!output_text_line_reset())
+		return false;
+
+	/* Output the block. */
+
+	if (!output_text_write_block_collection_object(object, 0, 0))
 		return false;
 
 	if (!output_text_line_pop())
