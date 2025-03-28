@@ -2272,7 +2272,7 @@ static bool output_text_write_entity(int column, enum manual_entity_type entity)
 		text = ":-(";
 		break;
 	case MANUAL_ENTITY_MSEP:
-		text = ENCODING_UTF8_NDASH;
+		text = ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY;
 		break;
 	default:
 		codepoint = manual_entity_find_codepoint(entity);
