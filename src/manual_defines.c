@@ -135,8 +135,6 @@ bool manual_defines_add_entry(char *entry)
 	if (entry == NULL)
 		return false;
 
-	printf("Adding define '%s'\n", entry);
-
 	/* Copy the entry, and set the name pointer. */
 
 	name = strdup(entry);
@@ -157,8 +155,6 @@ bool manual_defines_add_entry(char *entry)
 	/* Split the string at the equals sign.*/
 
 	*value++ = '\0';
-
-	printf("Found name='%s', value='%s'\n", name, value);
 
 	/* Check that the ID isn't in the table already. */
 
