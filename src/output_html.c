@@ -1035,9 +1035,9 @@ static bool output_html_write_block_collection_object(struct manual_data *object
 	block = object->first_child;
 
 	/* If changing this switch, note the analogous list in
-		* output_html_write_section_object() which covers similar
-		* block level objects.
-		*/
+	 * output_html_write_section_object() which covers similar
+	 * block level objects.
+	 */
 
 	while (block != NULL) {
 		switch (block->type) {
