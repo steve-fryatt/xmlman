@@ -101,6 +101,7 @@ static bool output_strong_write_chapter_list(struct manual_data *object, int lev
 static bool output_strong_write_block_collection_object(struct manual_data *object, int level);
 static bool output_strong_write_footnote(struct manual_data *object);
 static bool output_strong_write_callout(struct manual_data *object);
+static bool output_strong_write_blockquote(struct manual_data *object);
 static bool output_strong_write_standard_list(struct manual_data *object, int level);
 static bool output_strong_write_definition_list(struct manual_data *object, int level);
 static bool output_strong_write_code_block(struct manual_data *object);
@@ -440,6 +441,18 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 				if (!output_strong_write_callout(block))
 					return false;
 				break;
+	
+			case MANUAL_DATA_OBJECT_TYPE_BLOCKQUOTE:
+				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
+					msg_report(MSG_UNEXPECTED_CHUNK,
+							manual_data_find_object_name(block->type),
+							manual_data_find_object_name(object->type));
+					break;
+				}
+
+				if (!output_strong_write_blockquote(block))
+					return false;
+				break;
 
 			case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
@@ -771,6 +784,7 @@ static bool output_strong_write_block_collection_object(struct manual_data *obje
 	switch (object->type) {
 	case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
 	case MANUAL_DATA_OBJECT_TYPE_FOOTNOTE:
+	case MANUAL_DATA_OBJECT_TYPE_BLOCKQUOTE:
 		break;
 	default:
 		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_LIST_ITEM),
@@ -1001,6 +1015,49 @@ static bool output_strong_write_callout(struct manual_data *object)
 	}
 
 	/* Reset the indent. */
+
+	if (!output_strong_file_write_newline())
+		return false;
+
+	if (!output_strong_file_write_plain("#Indent") || !output_strong_file_write_newline())
+		return false;
+
+	return true;
+}
+
+/**
+ * Process the contents of a blockquote and write it out.
+ *
+ * \param *object		The object to process.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_strong_write_blockquote(struct manual_data *object)
+{
+	if (object == NULL || object->first_child == NULL)
+		return true;
+
+	/* Confirm that this is a suitable object. */
+
+	switch (object->type) {
+	case MANUAL_DATA_OBJECT_TYPE_BLOCKQUOTE:
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(MANUAL_DATA_OBJECT_TYPE_BLOCKQUOTE),
+				manual_data_find_object_name(object->type));
+		return false;
+	}
+
+	/* Output the blockquote block. */
+
+	if (!output_strong_file_write_newline())
+		return false;
+
+	if (!output_strong_file_write_plain("#Indent +2") || !output_strong_file_write_newline())
+		return false;
+
+	if (!output_strong_write_block_collection_object(object, 0))
+		return false;
 
 	if (!output_strong_file_write_newline())
 		return false;
