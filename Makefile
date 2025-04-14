@@ -1,4 +1,4 @@
-# Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
+# Copyright 2018-2025, Stephen Fryatt (info@stevefryatt.org.uk)
 #
 # This file is part of XmlMan:
 #
@@ -26,7 +26,8 @@
 
 ARCHIVE := xmlman
 
-MANSRC := Source.xml
+MANSRC := Source.xml		\
+	html-output.xml
 
 ifeq ($(TARGET),riscos)
   RUNIMAGE := xmlman,ff8
