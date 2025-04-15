@@ -105,6 +105,8 @@ static char *output_html_default_stylesheet[] = {
 	"H4 { text-align: left; font-size: 1em; font-style: italic; margin-top: 0.5em; margin-bottom: 0; }",
 	"H5 { text-align: left; font-size: 1em; font-style: italic; margin-top: 0.5em; margin-bottom: 0; }",
 	"H6 { text-align: left; font-size: 1em; font-style: italic; margin-top: 0.5em; margin-bottom: 0; }",
+	// Paragraphs and List Items are spaced equally by default. LI is overridden below for compact lists.
+	"P, LI { margin: 1em 0em; }",
 	"BLOCKQUOTE { margin: 0.5em 0em; padding-left: 1em; border-left: 0.5em solid grey; }",
 	"DIV.callout { margin: 0.5em 4em; padding: 0; }",
 	"DIV.callout DIV.heading { margin: 0; padding: 5px; font-weight: bold; }",
@@ -121,6 +123,7 @@ static char *output_html_default_stylesheet[] = {
 	"DIV.hint DIV.heading, DIV.seealso DIV.heading, DIV.tip DIV.heading { color: #000000; background-color: #aaf3a1; }",
 	"DIV.codeblock { padding: 0 2em; text-align: left; font-family: monospace; font-weight: normal; }",
 	"UL.contents-list { padding: 0; list-style-type: none; }",
+	"OL.compact LI, UL.compact LI, UL.contents-list LI { margin: 0; }",
 	"DL.footnotes { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }",
 	"DL.footnotes DT { margin-left: 0; margin-right: 0; font-size: 1em; font-weight: bold; font-style: italic; }",
 	"DL.footnotes DD { margin-left: 1em; margin-right: 0; }",
@@ -1376,6 +1379,8 @@ static bool output_html_write_blockquote(struct manual_data *object)
 static bool output_html_write_list(struct manual_data *object)
 {
 	struct manual_data *item;
+	char *list_style = "";
+
 
 	if (object == NULL)
 		return false;
@@ -1398,17 +1403,20 @@ static bool output_html_write_list(struct manual_data *object)
 	if (!output_html_file_write_newline())
 		return false;
 
+	if (object->chunk.flags & MANUAL_DATA_OBJECT_FLAGS_LIST_COMPACT)
+		list_style = " class=\"compact\"";
+
 	switch (object->type) {
 	case MANUAL_DATA_OBJECT_TYPE_DEFINITION_LIST:
 		if (!output_html_file_write_plain("<dl>"))
 			return false;
 		break;
 	case MANUAL_DATA_OBJECT_TYPE_ORDERED_LIST:
-		if (!output_html_file_write_plain("<ol>"))
+		if (!output_html_file_write_plain("<ol%s>", list_style))
 			return false;
 		break;
 	case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
-		if (!output_html_file_write_plain("<ul>"))
+		if (!output_html_file_write_plain("<ul%s>", list_style))
 			return false;
 		break;
 	default:

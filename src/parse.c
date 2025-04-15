@@ -1029,7 +1029,7 @@ static struct manual_data *parse_callout(struct parse_xml_block *parser)
 		parse_xml_set_error(parser);
 		break;
 	}
-
+	
 	/* Parse the box contents. */
 
 	do {
@@ -1137,6 +1137,18 @@ static struct manual_data *parse_list(struct parse_xml_block *parser)
 	if (new_list == NULL) {
 		parse_xml_set_error(parser);
 		return NULL;
+	}
+
+	/* Read attributes where applicable. */
+
+	switch (type) {
+	case PARSE_ELEMENT_OL:
+	case PARSE_ELEMENT_UL:
+		if (parse_xml_test_boolean_attribute(parser, "compact", "true", "false"))
+			new_list->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_LIST_COMPACT;
+		break;
+	default:
+		break;
 	}
 
 	/* Parse the list contents. */

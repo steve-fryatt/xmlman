@@ -1124,14 +1124,7 @@ static bool output_strong_write_standard_list(struct manual_data *object, int le
 		return false;
 	}
 
-	/* If the list isn't nested in a list item, output a blank line
-	 * above it.
-	 */
-
-//	if (object->parent != NULL &&
-//			object->parent->type != MANUAL_DATA_OBJECT_TYPE_LIST_ITEM &&
-//			!output_text_line_write_newline())
-//		return false;
+	/* Output a blank line above the list. */
 
 	if (!output_strong_file_write_newline()) {
 		list_numbers_destroy(numbers);
@@ -1143,6 +1136,16 @@ static bool output_strong_write_standard_list(struct manual_data *object, int le
 	while (item != NULL) {
 		switch (item->type) {
 		case MANUAL_DATA_OBJECT_TYPE_LIST_ITEM:
+			/* If this isn't the first item in the list, write a blank line to space it
+			 * unless the list is flagged as compact.
+			 */
+	
+			if (item->previous != NULL && !(object->chunk.flags && MANUAL_DATA_OBJECT_FLAGS_LIST_COMPACT) &&
+					!output_strong_file_write_newline()) {
+				list_numbers_destroy(numbers);
+				return false;
+			}
+
 			if (!output_strong_file_write_text(list_numbers_get_next_entry(numbers))) {
 				list_numbers_destroy(numbers);
 				return false;
