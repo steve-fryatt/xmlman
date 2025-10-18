@@ -66,7 +66,7 @@ static int manual_entities_max_entries = -1;
  * The order of this table is by ascending unicode point, with non-unicode
  * entities at the start using -1 and NONE at the end as an end stop. The
  * order of the entity texts are not important.
- * 
+ *
  * It *must* correspond to the order that the enum values are
  * defined in manual_entity.h, so that the array indices match the
  * values of their enum entries.
@@ -1739,18 +1739,14 @@ const char *manual_entity_find_name_from_codepoint(int codepoint)
 			last = middle - 1;
 	}
 
-	/* Look up the tag name.
-	 *
-	 * WARNING: This relies on the array indices matching the values of
-	 * the entity enum entries.
-	 */
+	/* We didn't find a match in the search. */
 
 	return NULL;
 }
 
 /**
  * Initialise the parse tree and entity list.
- * 
+ *
  * \return		True if successful; False on failure.
  */
 
