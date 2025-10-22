@@ -637,11 +637,11 @@ static struct manual_entity_definition manual_entity_names[] = {
 
 	/* Arrows */
 
-//	{ MANUAL_ENTITY_LARR,			8592,	"larr",				(char*[]) { "LeftArrow", "ShortLeftArrow", "leftarrow", "slarr", NULL } },	// 0x2190
-//	{ MANUAL_ENTITY_UARR,			8593,	"uarr",				(char*[]) { "ShortUpArrow", "UpArrow", "uparrow", NULL } },	// 0x2191
-//	{ MANUAL_ENTITY_RARR,			8594,	"rarr",				(char*[]) { "RightArrow", "ShortRightArrow", "rightarrow", "srarr", NULL } },	// 0x2192
-//	{ MANUAL_ENTITY_DARR,			8595,	"darr",				(char*[]) { "DownArrow", "ShortDownArrow", "downarrow", NULL } },	// 0x2193
-//	{ MANUAL_ENTITY_HARR,			8596,	"harr",				(char*[]) { "LeftRightArrow", "leftrightarrow", NULL } },	// 0x2194
+	{ MANUAL_ENTITY_LARR,			8592,	"larr",				(char*[]) { "LeftArrow", "ShortLeftArrow", "leftarrow", "slarr", NULL } },	// 0x2190
+	{ MANUAL_ENTITY_UARR,			8593,	"uarr",				(char*[]) { "ShortUpArrow", "UpArrow", "uparrow", NULL } },	// 0x2191
+	{ MANUAL_ENTITY_RARR,			8594,	"rarr",				(char*[]) { "RightArrow", "ShortRightArrow", "rightarrow", "srarr", NULL } },	// 0x2192
+	{ MANUAL_ENTITY_DARR,			8595,	"darr",				(char*[]) { "DownArrow", "ShortDownArrow", "downarrow", NULL } },	// 0x2193
+	{ MANUAL_ENTITY_HARR,			8596,	"harr",				(char*[]) { "LeftRightArrow", "leftrightarrow", NULL } },	// 0x2194
 	{ MANUAL_ENTITY_UPDOWNARROW,		8597,	"UpDownArrow",			(char*[]) { "updownarrow", "varr", NULL } },	// 0x2195
 	{ MANUAL_ENTITY_UPPERLEFTARROW,		8598,	"UpperLeftArrow",		(char*[]) { "nwarr", "nwarrow", NULL } },	// 0x2196
 	{ MANUAL_ENTITY_UPPERRIGHTARROW,	8599,	"UpperRightArrow",		(char*[]) { "nearr", "nearrow", NULL } },	// 0x2197
@@ -650,10 +650,10 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_NLARR,			8602,	"nlarr",			(char*[]) { "nleftarrow", NULL } },	// 0x219a
 	{ MANUAL_ENTITY_NRARR,			8603,	"nrarr",			(char*[]) { "nrightarrow", NULL } },	// 0x219b
 	{ MANUAL_ENTITY_RARRW,			8605,	"rarrw",			(char*[]) { "rightsquigarrow", NULL } },	// 0x219d
-//	{ MANUAL_ENTITY_LARR,			8606,	"Larr",				(char*[]) { "twoheadleftarrow", NULL } },	// 0x219e
-//	{ MANUAL_ENTITY_UARR,			8607,	"Uarr",				NULL },	// 0x219f
-//	{ MANUAL_ENTITY_RARR,			8608,	"Rarr",				(char*[]) { "twoheadrightarrow", NULL } },	// 0x21a0
-//	{ MANUAL_ENTITY_DARR,			8609,	"Darr",				NULL },	// 0x21a1
+	{ MANUAL_ENTITY_2HEADED_LARR,		8606,	"Larr",				(char*[]) { "twoheadleftarrow", NULL } },	// 0x219e
+	{ MANUAL_ENTITY_2HEADED_UARR,		8607,	"Uarr",				NULL },	// 0x219f
+	{ MANUAL_ENTITY_2HEADED_RARR,		8608,	"Rarr",				(char*[]) { "twoheadrightarrow", NULL } },	// 0x21a0
+	{ MANUAL_ENTITY_2HEADED_DARR,		8609,	"Darr",				NULL },	// 0x21a1
 	{ MANUAL_ENTITY_LARRTL,			8610,	"larrtl",			(char*[]) { "leftarrowtail", NULL } },	// 0x21a2
 	{ MANUAL_ENTITY_RARRTL,			8611,	"rarrtl",			(char*[]) { "rightarrowtail", NULL } },	// 0x21a3
 	{ MANUAL_ENTITY_LEFTTEEARROW,		8612,	"LeftTeeArrow",			(char*[]) { "mapstoleft", NULL } },	// 0x21a4
@@ -695,11 +695,11 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_NLEFTARROW,		8653,	"nLeftarrow",			(char*[]) { "nlArr", NULL } },	// 0x21cd
 	{ MANUAL_ENTITY_NLEFTRIGHTARROW,	8654,	"nLeftrightarrow",		(char*[]) { "nhArr", NULL } },	// 0x21ce
 	{ MANUAL_ENTITY_NRIGHTARROW,		8655,	"nRightarrow",			(char*[]) { "nrArr", NULL } },	// 0x21cf
-//	{ MANUAL_ENTITY_LARR,			8656,	"lArr",				(char*[]) { "DoubleLeftArrow", "Leftarrow", NULL } },	// 0x21d0
-//	{ MANUAL_ENTITY_UARR,			8657,	"uArr",				(char*[]) { "DoubleUpArrow", "Uparrow", NULL } },	// 0x21d1
-//	{ MANUAL_ENTITY_RARR,			8658,	"rArr",				(char*[]) { "DoubleRightArrow", "Implies", "Rightarrow", NULL } },	// 0x21d2
-//	{ MANUAL_ENTITY_DARR,			8659,	"dArr",				(char*[]) { "DoubleDownArrow", "Downarrow", NULL } },	// 0x21d3
-//	{ MANUAL_ENTITY_HARR,			8660,	"hArr",				(char*[]) { "DoubleLeftRightArrow", "Leftrightarrow", "iff", NULL } },	// 0x21d4
+	{ MANUAL_ENTITY_DOUBLE_LARR,		8656,	"lArr",				(char*[]) { "DoubleLeftArrow", "Leftarrow", NULL } },	// 0x21d0
+	{ MANUAL_ENTITY_DOUBLE_UARR,		8657,	"uArr",				(char*[]) { "DoubleUpArrow", "Uparrow", NULL } },	// 0x21d1
+	{ MANUAL_ENTITY_DOUBLE_RARR,		8658,	"rArr",				(char*[]) { "DoubleRightArrow", "Implies", "Rightarrow", NULL } },	// 0x21d2
+	{ MANUAL_ENTITY_DOUBLE_DARR,		8659,	"dArr",				(char*[]) { "DoubleDownArrow", "Downarrow", NULL } },	// 0x21d3
+	{ MANUAL_ENTITY_DOUBLE_HARR,		8660,	"hArr",				(char*[]) { "DoubleLeftRightArrow", "Leftrightarrow", "iff", NULL } },	// 0x21d4
 	{ MANUAL_ENTITY_DOUBLEUPDOWNARROW,	8661,	"DoubleUpDownArrow",		(char*[]) { "Updownarrow", "vArr", NULL } },	// 0x21d5
 	{ MANUAL_ENTITY_NWARR,			8662,	"nwArr",			NULL },	// 0x21d6
 	{ MANUAL_ENTITY_NEARR,			8663,	"neArr",			NULL },	// 0x21d7
@@ -748,13 +748,13 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_NOTVERTICALBAR,		8740,	"NotVerticalBar",		(char*[]) { "nmid", "nshortmid", "nsmid", NULL } },	// 0x2224
 	{ MANUAL_ENTITY_DOUBLEVERTICALBAR,	8741,	"DoubleVerticalBar",		(char*[]) { "par", "parallel", "shortparallel", "spar", NULL } },	// 0x2225
 	{ MANUAL_ENTITY_NOTDOUBLEVERTICALBAR,	8742,	"NotDoubleVerticalBar",		(char*[]) { "npar", "nparallel", "nshortparallel", "nspar", NULL } },	// 0x2226
-//	{ MANUAL_ENTITY_AND,			8743,	"and",				(char*[]) { "wedge", NULL } },	// 0x2227
-//	{ MANUAL_ENTITY_OR,			8744,	"or",				(char*[]) { "vee", NULL } },	// 0x2228
-//	{ MANUAL_ENTITY_CAP,			8745,	"cap",				NULL },	// 0x2229
-//	{ MANUAL_ENTITY_CUP,			8746,	"cup",				NULL },	// 0x222a
-//	{ MANUAL_ENTITY_INT,			8747,	"int",				(char*[]) { "Integral", NULL } },	// 0x222b
-//	{ MANUAL_ENTITY_INT,			8748,	"Int",				NULL },	// 0x222c
-	{ MANUAL_ENTITY_IIINT,			8749,	"iiint",			(char*[]) { "tint", NULL } },	// 0x222d
+	{ MANUAL_ENTITY_LOGICAL_AND,		8743,	"and",				(char*[]) { "wedge", NULL } },	// 0x2227
+	{ MANUAL_ENTITY_LOGICAL_OR,		8744,	"or",				(char*[]) { "vee", NULL } },	// 0x2228
+	{ MANUAL_ENTITY_INTERSECTION,		8745,	"cap",				NULL },	// 0x2229
+	{ MANUAL_ENTITY_UNION,			8746,	"cup",				NULL },	// 0x222a
+	{ MANUAL_ENTITY_INTEGRAL,		8747,	"int",				(char*[]) { "Integral", NULL } },	// 0x222b
+	{ MANUAL_ENTITY_DOUBLE_INTEGRAL,	8748,	"Int",				NULL },	// 0x222c
+	{ MANUAL_ENTITY_TRIPLE_INTEGRAL,	8749,	"iiint",			(char*[]) { "tint", NULL } },	// 0x222d
 	{ MANUAL_ENTITY_CONTOURINTEGRAL,	8750,	"ContourIntegral",		(char*[]) { "conint", "oint", NULL } },	// 0x222e
 	{ MANUAL_ENTITY_CONINT,			8751,	"Conint",			(char*[]) { "DoubleContourIntegral", NULL } },	// 0x222f
 	{ MANUAL_ENTITY_CCONINT,		8752,	"Cconint",			NULL },	// 0x2230
@@ -764,7 +764,7 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_THERE4,			8756,	"there4",			(char*[]) { "Therefore", "therefore", NULL } },	// 0x2234
 	{ MANUAL_ENTITY_BECAUSE,		8757,	"Because",			(char*[]) { "becaus", "because", NULL } },	// 0x2235
 	{ MANUAL_ENTITY_RATIO,			8758,	"ratio",			NULL },	// 0x2236
-//	{ MANUAL_ENTITY_COLON,			8759,	"Colon",			(char*[]) { "Proportion", NULL } },	// 0x2237
+	{ MANUAL_ENTITY_PROPORTION,		8759,	"Colon",			(char*[]) { "Proportion", NULL } },	// 0x2237
 	{ MANUAL_ENTITY_DOTMINUS,		8760,	"dotminus",			(char*[]) { "minusd", NULL } },	// 0x2238
 	{ MANUAL_ENTITY_MDDOT,			8762,	"mDDot",			NULL },	// 0x223a
 	{ MANUAL_ENTITY_HOMTHT,			8763,	"homtht",			NULL },	// 0x223b
@@ -782,10 +782,10 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_NOTTILDEFULLEQUAL,	8775,	"NotTildeFullEqual",		(char*[]) { "ncong", NULL } },	// 0x2247
 	{ MANUAL_ENTITY_ASYMP,			8776,	"asymp",			(char*[]) { "TildeTilde", "ap", "approx", "thickapprox", "thkap", NULL } },	// 0x2248
 	{ MANUAL_ENTITY_NOTTILDETILDE,		8777,	"NotTildeTilde",		(char*[]) { "nap", "napprox", NULL } },	// 0x2249
-//	{ MANUAL_ENTITY_APE,			8778,	"ape",				(char*[]) { "approxeq", NULL } },	// 0x224a
+	{ MANUAL_ENTITY_ALMOST_EQUAL_TO,	8778,	"ape",				(char*[]) { "approxeq", NULL } },	// 0x224a
 	{ MANUAL_ENTITY_APID,			8779,	"apid",				NULL },	// 0x224b
 	{ MANUAL_ENTITY_BACKCONG,		8780,	"backcong",			(char*[]) { "bcong", NULL } },	// 0x224c
-//	{ MANUAL_ENTITY_CUPCAP,			8781,	"CupCap",			(char*[]) { "asympeq", NULL } },	// 0x224d
+	{ MANUAL_ENTITY_EQUIVALENT_TO,		8781,	"CupCap",			(char*[]) { "asympeq", NULL } },	// 0x224d
 	{ MANUAL_ENTITY_BUMPEQ,			8782,	"Bumpeq",			(char*[]) { "HumpDownHump", "bump", NULL } },	// 0x224e
 	{ MANUAL_ENTITY_HUMPEQUAL,		8783,	"HumpEqual",			(char*[]) { "bumpe", "bumpeq", NULL } },	// 0x224f
 	{ MANUAL_ENTITY_DOTEQUAL,		8784,	"DotEqual",			(char*[]) { "doteq", "esdot", NULL } },	// 0x2250
@@ -807,10 +807,10 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_GE,			8805,	"ge",				(char*[]) { "GreaterEqual", "geq", NULL } },	// 0x2265
 	{ MANUAL_ENTITY_LESSFULLEQUAL,		8806,	"LessFullEqual",		(char*[]) { "lE", "leqq", NULL } },	// 0x2266
 	{ MANUAL_ENTITY_GREATERFULLEQUAL,	8807,	"GreaterFullEqual",		(char*[]) { "gE", "geqq", NULL } },	// 0x2267
-//	{ MANUAL_ENTITY_LNE,			8808,	"lnE",				(char*[]) { "lneqq", NULL } },	// 0x2268
-//	{ MANUAL_ENTITY_GNE,			8809,	"gnE",				(char*[]) { "gneqq", NULL } },	// 0x2269
-//	{ MANUAL_ENTITY_LT,			8810,	"Lt",				(char*[]) { "NestedLessLess", "ll", NULL } },	// 0x226a
-//	{ MANUAL_ENTITY_GT,			8811,	"Gt",				(char*[]) { "NestedGreaterGreater", "gg", NULL } },	// 0x226b
+	{ MANUAL_ENTITY_LTNE,			8808,	"lnE",				(char*[]) { "lneqq", NULL } },	// 0x2268
+	{ MANUAL_ENTITY_GTNE,			8809,	"gnE",				(char*[]) { "gneqq", NULL } },	// 0x2269
+	{ MANUAL_ENTITY_MUCH_LT,		8810,	"Lt",				(char*[]) { "NestedLessLess", "ll", NULL } },	// 0x226a
+	{ MANUAL_ENTITY_MUCH_GT,		8811,	"Gt",				(char*[]) { "NestedGreaterGreater", "gg", NULL } },	// 0x226b
 	{ MANUAL_ENTITY_BETWEEN,		8812,	"between",			(char*[]) { "twixt", NULL } },	// 0x226c
 	{ MANUAL_ENTITY_NOTCUPCAP,		8813,	"NotCupCap",			NULL },	// 0x226d
 	{ MANUAL_ENTITY_NOTLESS,		8814,	"NotLess",			(char*[]) { "nless", "nlt", NULL } },	// 0x226e
@@ -833,16 +833,16 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_SUCCEEDSTILDE,		8831,	"SucceedsTilde",		(char*[]) { "scsim", "succsim", NULL } },	// 0x227f
 	{ MANUAL_ENTITY_NOTPRECEDES,		8832,	"NotPrecedes",			(char*[]) { "npr", "nprec", NULL } },	// 0x2280
 	{ MANUAL_ENTITY_NOTSUCCEEDS,		8833,	"NotSucceeds",			(char*[]) { "nsc", "nsucc", NULL } },	// 0x2281
-//	{ MANUAL_ENTITY_SUB,			8834,	"sub",				(char*[]) { "subset", NULL } },	// 0x2282
-//	{ MANUAL_ENTITY_SUP,			8835,	"sup",				(char*[]) { "Superset", "supset", NULL } },	// 0x2283
+	{ MANUAL_ENTITY_SUBSET_OF,		8834,	"sub",				(char*[]) { "subset", NULL } },	// 0x2282
+	{ MANUAL_ENTITY_SUPERSET_OF,		8835,	"sup",				(char*[]) { "Superset", "supset", NULL } },	// 0x2283
 	{ MANUAL_ENTITY_NSUB,			8836,	"nsub",				NULL },	// 0x2284
 	{ MANUAL_ENTITY_NSUP,			8837,	"nsup",				NULL },	// 0x2285
-//	{ MANUAL_ENTITY_SUBE,			8838,	"sube",				(char*[]) { "SubsetEqual", "subseteq", NULL } },	// 0x2286
-//	{ MANUAL_ENTITY_SUPE,			8839,	"supe",				(char*[]) { "SupersetEqual", "supseteq", NULL } },	// 0x2287
+	{ MANUAL_ENTITY_SUBSET_OF_EQ,		8838,	"sube",				(char*[]) { "SubsetEqual", "subseteq", NULL } },	// 0x2286
+	{ MANUAL_ENTITY_SUPERSET_OF_EQ,		8839,	"supe",				(char*[]) { "SupersetEqual", "supseteq", NULL } },	// 0x2287
 	{ MANUAL_ENTITY_NOTSUBSETEQUAL,		8840,	"NotSubsetEqual",		(char*[]) { "nsube", "nsubseteq", NULL } },	// 0x2288
 	{ MANUAL_ENTITY_NOTSUPERSETEQUAL,	8841,	"NotSupersetEqual",		(char*[]) { "nsupe", "nsupseteq", NULL } },	// 0x2289
-//	{ MANUAL_ENTITY_SUBNE,			8842,	"subne",			(char*[]) { "subsetneq", NULL } },	// 0x228a
-//	{ MANUAL_ENTITY_SUPNE,			8843,	"supne",			(char*[]) { "supsetneq", NULL } },	// 0x228b
+	{ MANUAL_ENTITY_SUBSET_OF_NE,		8842,	"subne",			(char*[]) { "subsetneq", NULL } },	// 0x228a
+	{ MANUAL_ENTITY_SUPERSET_OF_NE,		8843,	"supne",			(char*[]) { "supsetneq", NULL } },	// 0x228b
 	{ MANUAL_ENTITY_CUPDOT,			8845,	"cupdot",			NULL },	// 0x228d
 	{ MANUAL_ENTITY_UNIONPLUS,		8846,	"UnionPlus",			(char*[]) { "uplus", NULL } },	// 0x228e
 	{ MANUAL_ENTITY_SQUARESUBSET,		8847,	"SquareSubset",			(char*[]) { "sqsub", "sqsubset", NULL } },	// 0x228f
@@ -853,7 +853,7 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_SQUAREUNION,		8852,	"SquareUnion",			(char*[]) { "sqcup", NULL } },	// 0x2294
 	{ MANUAL_ENTITY_OPLUS,			8853,	"oplus",			(char*[]) { "CirclePlus", NULL } },	// 0x2295
 	{ MANUAL_ENTITY_CIRCLEMINUS,		8854,	"CircleMinus",			(char*[]) { "ominus", NULL } },	// 0x2296
-//	{ MANUAL_ENTITY_OTIMES,			8855,	"otimes",			(char*[]) { "CircleTimes", NULL } },	// 0x2297
+	{ MANUAL_ENTITY_CIRCLETIMES,			8855,	"otimes",			(char*[]) { "CircleTimes", NULL } },	// 0x2297
 	{ MANUAL_ENTITY_OSOL,			8856,	"osol",				NULL },	// 0x2298
 	{ MANUAL_ENTITY_CIRCLEDOT,		8857,	"CircleDot",			(char*[]) { "odot", NULL } },	// 0x2299
 	{ MANUAL_ENTITY_CIRCLEDCIRC,		8858,	"circledcirc",			(char*[]) { "ocir", NULL } },	// 0x229a
@@ -869,13 +869,13 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_PERP,			8869,	"perp",				(char*[]) { "UpTee", "bot", "bottom", NULL } },	// 0x22a5
 	{ MANUAL_ENTITY_MODELS,			8871,	"models",			NULL },	// 0x22a7
 	{ MANUAL_ENTITY_DOUBLERIGHTTEE,		8872,	"DoubleRightTee",		(char*[]) { "vDash", NULL } },	// 0x22a8
-//	{ MANUAL_ENTITY_VDASH,			8873,	"Vdash",			NULL },	// 0x22a9
+	{ MANUAL_ENTITY_VDASH,			8873,	"Vdash",			NULL },	// 0x22a9
 	{ MANUAL_ENTITY_VVDASH,			8874,	"Vvdash",			NULL },	// 0x22aa
-//	{ MANUAL_ENTITY_VDASH,			8875,	"VDash",			NULL },	// 0x22ab
-//	{ MANUAL_ENTITY_NVDASH,			8876,	"nvdash",			NULL },	// 0x22ac
-//	{ MANUAL_ENTITY_NVDASH,			8877,	"nvDash",			NULL },	// 0x22ad
-//	{ MANUAL_ENTITY_NVDASH,			8878,	"nVdash",			NULL },	// 0x22ae
-//	{ MANUAL_ENTITY_NVDASH,			8879,	"nVDash",			NULL },	// 0x22af
+	{ MANUAL_ENTITY_DVB_DRT,		8875,	"VDash",			NULL },	// 0x22ab
+	{ MANUAL_ENTITY_N_SVB_SRT,		8876,	"nvdash",			NULL },	// 0x22ac
+	{ MANUAL_ENTITY_N_SVB_DRT,		8877,	"nvDash",			NULL },	// 0x22ad
+	{ MANUAL_ENTITY_N_DVB_SRT,		8878,	"nVdash",			NULL },	// 0x22ae
+	{ MANUAL_ENTITY_N_DVB_DRT,		8879,	"nVDash",			NULL },	// 0x22af
 	{ MANUAL_ENTITY_PRUREL,			8880,	"prurel",			NULL },	// 0x22b0
 	{ MANUAL_ENTITY_LEFTTRIANGLE,		8882,	"LeftTriangle",			(char*[]) { "vartriangleleft", "vltri", NULL } },	// 0x22b2
 	{ MANUAL_ENTITY_RIGHTTRIANGLE,		8883,	"RightTriangle",		(char*[]) { "vartriangleright", "vrtri", NULL } },	// 0x22b3
@@ -892,11 +892,11 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_LRTRI,			8895,	"lrtri",			NULL },	// 0x22bf
 	{ MANUAL_ENTITY_WEDGE,			8896,	"Wedge",			(char*[]) { "bigwedge", "xwedge", NULL } },	// 0x22c0
 	{ MANUAL_ENTITY_VEE,			8897,	"Vee",				(char*[]) { "bigvee", "xvee", NULL } },	// 0x22c1
-	{ MANUAL_ENTITY_INTERSECTION,		8898,	"Intersection",			(char*[]) { "bigcap", "xcap", NULL } },	// 0x22c2
-	{ MANUAL_ENTITY_UNION,			8899,	"Union",			(char*[]) { "bigcup", "xcup", NULL } },	// 0x22c3
+	{ MANUAL_ENTITY_NARY_INTERSECTION,	8898,	"Intersection",			(char*[]) { "bigcap", "xcap", NULL } },	// 0x22c2
+	{ MANUAL_ENTITY_NARY_UNION,		8899,	"Union",			(char*[]) { "bigcup", "xcup", NULL } },	// 0x22c3
 	{ MANUAL_ENTITY_DIAMOND,		8900,	"Diamond",			(char*[]) { "diam", "diamond", NULL } },	// 0x22c4
 	{ MANUAL_ENTITY_SDOT,			8901,	"sdot",				NULL },	// 0x22c5
-//	{ MANUAL_ENTITY_STAR,			8902,	"Star",				(char*[]) { "sstarf", NULL } },	// 0x22c6
+	{ MANUAL_ENTITY_STAR_OPERATOR,		8902,	"Star",				(char*[]) { "sstarf", NULL } },	// 0x22c6
 	{ MANUAL_ENTITY_DIVIDEONTIMES,		8903,	"divideontimes",		(char*[]) { "divonx", NULL } },	// 0x22c7
 	{ MANUAL_ENTITY_BOWTIE,			8904,	"bowtie",			NULL },	// 0x22c8
 	{ MANUAL_ENTITY_LTIMES,			8905,	"ltimes",			NULL },	// 0x22c9
@@ -906,10 +906,10 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_BACKSIMEQ,		8909,	"backsimeq",			(char*[]) { "bsime", NULL } },	// 0x22cd
 	{ MANUAL_ENTITY_CURLYVEE,		8910,	"curlyvee",			(char*[]) { "cuvee", NULL } },	// 0x22ce
 	{ MANUAL_ENTITY_CURLYWEDGE,		8911,	"curlywedge",			(char*[]) { "cuwed", NULL } },	// 0x22cf
-//	{ MANUAL_ENTITY_SUB,			8912,	"Sub",				(char*[]) { "Subset", NULL } },	// 0x22d0
-//	{ MANUAL_ENTITY_SUP,			8913,	"Sup",				(char*[]) { "Supset", NULL } },	// 0x22d1
-//	{ MANUAL_ENTITY_CAP,			8914,	"Cap",				NULL },	// 0x22d2
-//	{ MANUAL_ENTITY_CUP,			8915,	"Cup",				NULL },	// 0x22d3
+	{ MANUAL_ENTITY_DOUBLE_SUBSET,		8912,	"Sub",				(char*[]) { "Subset", NULL } },	// 0x22d0
+	{ MANUAL_ENTITY_DOUBLE_SUPERSET,	8913,	"Sup",				(char*[]) { "Supset", NULL } },	// 0x22d1
+	{ MANUAL_ENTITY_DOUBLE_INTERSECTION,	8914,	"Cap",				NULL },	// 0x22d2
+	{ MANUAL_ENTITY_DOUBLE_UNION,		8915,	"Cup",				NULL },	// 0x22d3
 	{ MANUAL_ENTITY_FORK,			8916,	"fork",				(char*[]) { "pitchfork", NULL } },	// 0x22d4
 	{ MANUAL_ENTITY_EPAR,			8917,	"epar",				NULL },	// 0x22d5
 	{ MANUAL_ENTITY_LESSDOT,		8918,	"lessdot",			(char*[]) { "ltdot", NULL } },	// 0x22d6
@@ -951,8 +951,8 @@ static struct manual_entity_definition manual_entity_names[] = {
 
 	/* Miscellaneous Technical */
 
-//	{ MANUAL_ENTITY_BARWED,			8965,	"barwed",			(char*[]) { "barwedge", NULL } },	// 0x2305
-//	{ MANUAL_ENTITY_BARWED,			8966,	"Barwed",			(char*[]) { "doublebarwedge", NULL } },	// 0x2306
+	{ MANUAL_ENTITY_BARWEDGE,		8965,	"barwed",			(char*[]) { "barwedge", NULL } },	// 0x2305
+	{ MANUAL_ENTITY_DOUBLE_BARWEDGE,	8966,	"Barwed",			(char*[]) { "doublebarwedge", NULL } },	// 0x2306
 	{ MANUAL_ENTITY_LCEIL,			8968,	"lceil",			(char*[]) { "LeftCeiling", NULL } },	// 0x2308
 	{ MANUAL_ENTITY_RCEIL,			8969,	"rceil",			(char*[]) { "RightCeiling", NULL } },	// 0x2309
 	{ MANUAL_ENTITY_LFLOOR,			8970,	"lfloor",			(char*[]) { "LeftFloor", NULL } },	// 0x230a
@@ -961,7 +961,7 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_DLCROP,			8973,	"dlcrop",			NULL },	// 0x230d
 	{ MANUAL_ENTITY_URCROP,			8974,	"urcrop",			NULL },	// 0x230e
 	{ MANUAL_ENTITY_ULCROP,			8975,	"ulcrop",			NULL },	// 0x230f
-//	{ MANUAL_ENTITY_BNOT,			8976,	"bnot",				NULL },	// 0x2310
+	{ MANUAL_ENTITY_REVERSED_NOT,		8976,	"bnot",				NULL },	// 0x2310
 	{ MANUAL_ENTITY_PROFLINE,		8978,	"profline",			NULL },	// 0x2312
 	{ MANUAL_ENTITY_PROFSURF,		8979,	"profsurf",			NULL },	// 0x2313
 	{ MANUAL_ENTITY_TELREC,			8981,	"telrec",			NULL },	// 0x2315
@@ -972,8 +972,8 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_DRCORN,			8991,	"drcorn",			(char*[]) { "lrcorner", NULL } },	// 0x231f
 	{ MANUAL_ENTITY_FROWN,			8994,	"frown",			(char*[]) { "sfrown", NULL } },	// 0x2322
 	{ MANUAL_ENTITY_SMILE,			8995,	"smile",			(char*[]) { "ssmile", NULL } },	// 0x2323
-//	{ MANUAL_ENTITY_LANG,			9001,	"lang",				NULL },	// 0x2329
-//	{ MANUAL_ENTITY_RANG,			9002,	"rang",				NULL },	// 0x232a
+	{ MANUAL_ENTITY_LANGLE_BRACKET,		9001,	"lang",				NULL },	// 0x2329
+	{ MANUAL_ENTITY_RANGLE_BRACKET,		9002,	"rang",				NULL },	// 0x232a
 	{ MANUAL_ENTITY_CYLCTY,			9005,	"cylcty",			NULL },	// 0x232d
 	{ MANUAL_ENTITY_PROFALAR,		9006,	"profalar",			NULL },	// 0x232e
 	{ MANUAL_ENTITY_TOPBOT,			9014,	"topbot",			NULL },	// 0x2336
@@ -1003,45 +1003,45 @@ static struct manual_entity_definition manual_entity_names[] = {
 	/* Box Drawing */
 
 	{ MANUAL_ENTITY_HORIZONTALLINE,		9472,	"HorizontalLine",		(char*[]) { "boxh", NULL } },	// 0x2500
-//	{ MANUAL_ENTITY_BOXV,			9474,	"boxv",				NULL },	// 0x2502
-//	{ MANUAL_ENTITY_BOXDR,			9484,	"boxdr",			NULL },	// 0x250c
-//	{ MANUAL_ENTITY_BOXDL,			9488,	"boxdl",			NULL },	// 0x2510
-//	{ MANUAL_ENTITY_BOXUR,			9492,	"boxur",			NULL },	// 0x2514
-//	{ MANUAL_ENTITY_BOXUL,			9496,	"boxul",			NULL },	// 0x2518
-//	{ MANUAL_ENTITY_BOXVR,			9500,	"boxvr",			NULL },	// 0x251c
-//	{ MANUAL_ENTITY_BOXVL,			9508,	"boxvl",			NULL },	// 0x2524
-//	{ MANUAL_ENTITY_BOXHD,			9516,	"boxhd",			NULL },	// 0x252c
-//	{ MANUAL_ENTITY_BOXHU,			9524,	"boxhu",			NULL },	// 0x2534
-//	{ MANUAL_ENTITY_BOXVH,			9532,	"boxvh",			NULL },	// 0x253c
-	{ MANUAL_ENTITY_BOXH,			9552,	"boxH",				NULL },	// 0x2550
-//	{ MANUAL_ENTITY_BOXV,			9553,	"boxV",				NULL },	// 0x2551
-//	{ MANUAL_ENTITY_BOXDR,			9554,	"boxdR",			NULL },	// 0x2552
-//	{ MANUAL_ENTITY_BOXDR,			9555,	"boxDr",			NULL },	// 0x2553
-//	{ MANUAL_ENTITY_BOXDR,			9556,	"boxDR",			NULL },	// 0x2554
-//	{ MANUAL_ENTITY_BOXDL,			9557,	"boxdL",			NULL },	// 0x2555
-//	{ MANUAL_ENTITY_BOXDL,			9558,	"boxDl",			NULL },	// 0x2556
-//	{ MANUAL_ENTITY_BOXDL,			9559,	"boxDL",			NULL },	// 0x2557
-//	{ MANUAL_ENTITY_BOXUR,			9560,	"boxuR",			NULL },	// 0x2558
-//	{ MANUAL_ENTITY_BOXUR,			9561,	"boxUr",			NULL },	// 0x2559
-//	{ MANUAL_ENTITY_BOXUR,			9562,	"boxUR",			NULL },	// 0x255a
-//	{ MANUAL_ENTITY_BOXUL,			9563,	"boxuL",			NULL },	// 0x255b
-//	{ MANUAL_ENTITY_BOXUL,			9564,	"boxUl",			NULL },	// 0x255c
-//	{ MANUAL_ENTITY_BOXUL,			9565,	"boxUL",			NULL },	// 0x255d
-//	{ MANUAL_ENTITY_BOXVR,			9566,	"boxvR",			NULL },	// 0x255e
-//	{ MANUAL_ENTITY_BOXVR,			9567,	"boxVr",			NULL },	// 0x255f
-//	{ MANUAL_ENTITY_BOXVR,			9568,	"boxVR",			NULL },	// 0x2560
-//	{ MANUAL_ENTITY_BOXVL,			9569,	"boxvL",			NULL },	// 0x2561
-//	{ MANUAL_ENTITY_BOXVL,			9570,	"boxVl",			NULL },	// 0x2562
-//	{ MANUAL_ENTITY_BOXVL,			9571,	"boxVL",			NULL },	// 0x2563
-//	{ MANUAL_ENTITY_BOXHD,			9572,	"boxHd",			NULL },	// 0x2564
-//	{ MANUAL_ENTITY_BOXHD,			9573,	"boxhD",			NULL },	// 0x2565
-//	{ MANUAL_ENTITY_BOXHD,			9574,	"boxHD",			NULL },	// 0x2566
-//	{ MANUAL_ENTITY_BOXHU,			9575,	"boxHu",			NULL },	// 0x2567
-//	{ MANUAL_ENTITY_BOXHU,			9576,	"boxhU",			NULL },	// 0x2568
-//	{ MANUAL_ENTITY_BOXHU,			9577,	"boxHU",			NULL },	// 0x2569
-//	{ MANUAL_ENTITY_BOXVH,			9578,	"boxvH",			NULL },	// 0x256a
-//	{ MANUAL_ENTITY_BOXVH,			9579,	"boxVh",			NULL },	// 0x256b
-//	{ MANUAL_ENTITY_BOXVH,			9580,	"boxVH",			NULL },	// 0x256c
+	{ MANUAL_ENTITY_BOX_V,			9474,	"boxv",				NULL },	// 0x2502
+	{ MANUAL_ENTITY_BOX_D_R,		9484,	"boxdr",			NULL },	// 0x250c
+	{ MANUAL_ENTITY_BOX_D_L,		9488,	"boxdl",			NULL },	// 0x2510
+	{ MANUAL_ENTITY_BOX_U_R,		9492,	"boxur",			NULL },	// 0x2514
+	{ MANUAL_ENTITY_BOX_U_L,		9496,	"boxul",			NULL },	// 0x2518
+	{ MANUAL_ENTITY_BOX_V_R,		9500,	"boxvr",			NULL },	// 0x251c
+	{ MANUAL_ENTITY_BOX_V_L,		9508,	"boxvl",			NULL },	// 0x2524
+	{ MANUAL_ENTITY_BOX_H_D,		9516,	"boxhd",			NULL },	// 0x252c
+	{ MANUAL_ENTITY_BOX_H_U,		9524,	"boxhu",			NULL },	// 0x2534
+	{ MANUAL_ENTITY_BOX_V_H,		9532,	"boxvh",			NULL },	// 0x253c
+	{ MANUAL_ENTITY_BOX_H,			9552,	"boxH",				NULL },	// 0x2550
+	{ MANUAL_ENTITY_BOX_VV,			9553,	"boxV",				NULL },	// 0x2551
+	{ MANUAL_ENTITY_BOX_D_RR,		9554,	"boxdR",			NULL },	// 0x2552
+	{ MANUAL_ENTITY_BOX_DD_R,		9555,	"boxDr",			NULL },	// 0x2553
+	{ MANUAL_ENTITY_BOX_DD_RR,		9556,	"boxDR",			NULL },	// 0x2554
+	{ MANUAL_ENTITY_BOX_D_LL,		9557,	"boxdL",			NULL },	// 0x2555
+	{ MANUAL_ENTITY_BOX_DD_L,		9558,	"boxDl",			NULL },	// 0x2556
+	{ MANUAL_ENTITY_BOX_DD_LL,		9559,	"boxDL",			NULL },	// 0x2557
+	{ MANUAL_ENTITY_BOX_U_RR,		9560,	"boxuR",			NULL },	// 0x2558
+	{ MANUAL_ENTITY_BOX_UU_R,		9561,	"boxUr",			NULL },	// 0x2559
+	{ MANUAL_ENTITY_BOX_UU_RR,		9562,	"boxUR",			NULL },	// 0x255a
+	{ MANUAL_ENTITY_BOX_U_LL,		9563,	"boxuL",			NULL },	// 0x255b
+	{ MANUAL_ENTITY_BOX_UU_L,		9564,	"boxUl",			NULL },	// 0x255c
+	{ MANUAL_ENTITY_BOX_UU_LL,		9565,	"boxUL",			NULL },	// 0x255d
+	{ MANUAL_ENTITY_BOX_V_RR,		9566,	"boxvR",			NULL },	// 0x255e
+	{ MANUAL_ENTITY_BOX_VV_R,		9567,	"boxVr",			NULL },	// 0x255f
+	{ MANUAL_ENTITY_BOX_VV_RR,		9568,	"boxVR",			NULL },	// 0x2560
+	{ MANUAL_ENTITY_BOX_V_LL,		9569,	"boxvL",			NULL },	// 0x2561
+	{ MANUAL_ENTITY_BOX_VV_L,		9570,	"boxVl",			NULL },	// 0x2562
+	{ MANUAL_ENTITY_BOX_VV_LL,		9571,	"boxVL",			NULL },	// 0x2563
+	{ MANUAL_ENTITY_BOX_HH_D,		9572,	"boxHd",			NULL },	// 0x2564
+	{ MANUAL_ENTITY_BOX_H_DD,		9573,	"boxhD",			NULL },	// 0x2565
+	{ MANUAL_ENTITY_BOX_HH_DD,		9574,	"boxHD",			NULL },	// 0x2566
+	{ MANUAL_ENTITY_BOX_HH_U,		9575,	"boxHu",			NULL },	// 0x2567
+	{ MANUAL_ENTITY_BOX_H_UU,		9576,	"boxhU",			NULL },	// 0x2568
+	{ MANUAL_ENTITY_BOX_HH_UU,		9577,	"boxHU",			NULL },	// 0x2569
+	{ MANUAL_ENTITY_BOX_V_HH,		9578,	"boxvH",			NULL },	// 0x256a
+	{ MANUAL_ENTITY_BOX_VV_H,		9579,	"boxVh",			NULL },	// 0x256b
+	{ MANUAL_ENTITY_BOX_VV_HH,		9580,	"boxVH",			NULL },	// 0x256c
 
 	/* Block Elements */
 
@@ -1083,7 +1083,7 @@ static struct manual_entity_definition manual_entity_names[] = {
 	/* Miscellaneous Symbols */
 
 	{ MANUAL_ENTITY_BIGSTAR,		9733,	"bigstar",			(char*[]) { "starf", NULL } },	// 0x2605
-//	{ MANUAL_ENTITY_STAR,			9734,	"star",				NULL },	// 0x2606
+	{ MANUAL_ENTITY_STAR,			9734,	"star",				NULL },	// 0x2606
 	{ MANUAL_ENTITY_PHONE,			9742,	"phone",			NULL },	// 0x260e
 	{ MANUAL_ENTITY_FEMALE,			9792,	"female",			NULL },	// 0x2640
 	{ MANUAL_ENTITY_MALE,			9794,	"male",				NULL },	// 0x2642
@@ -1099,7 +1099,7 @@ static struct manual_entity_definition manual_entity_names[] = {
 	/* Dingbats */
 
 	{ MANUAL_ENTITY_CHECK,			10003,	"check",			(char*[]) { "checkmark", NULL } },	// 0x2713
-//	{ MANUAL_ENTITY_CROSS,			10007,	"cross",			NULL },	// 0x2717
+	{ MANUAL_ENTITY_CROSS,			10007,	"cross",			NULL },	// 0x2717
 	{ MANUAL_ENTITY_MALT,			10016,	"malt",				(char*[]) { "maltese", NULL } },	// 0x2720
 	{ MANUAL_ENTITY_SEXT,			10038,	"sext",				NULL },	// 0x2736
 	{ MANUAL_ENTITY_VERTICALSEPARATOR,	10072,	"VerticalSeparator",		NULL },	// 0x2758
@@ -1114,8 +1114,8 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_RIGHTDOUBLEBRACKET,	10215,	"RightDoubleBracket",		(char*[]) { "robrk", NULL } },	// 0x27e7
 	{ MANUAL_ENTITY_LEFTANGLEBRACKET,	10216,	"LeftAngleBracket",		(char*[]) { "lang", "langle", NULL } },	// 0x27e8
 	{ MANUAL_ENTITY_RIGHTANGLEBRACKET,	10217,	"RightAngleBracket",		(char*[]) { "rang", "rangle", NULL } },	// 0x27e9
-//	{ MANUAL_ENTITY_LANG,			10218,	"Lang",				NULL },	// 0x27ea
-//	{ MANUAL_ENTITY_RANG,			10219,	"Rang",				NULL },	// 0x27eb
+	{ MANUAL_ENTITY_LDOUBLE_ANGLE_BRACKET,	10218,	"Lang",				NULL },	// 0x27ea
+	{ MANUAL_ENTITY_RDOUBLE_ANGLE_BRACKET,	10219,	"Rang",				NULL },	// 0x27eb
 	{ MANUAL_ENTITY_LOANG,			10220,	"loang",			NULL },	// 0x27ec
 	{ MANUAL_ENTITY_ROANG,			10221,	"roang",			NULL },	// 0x27ed
 
@@ -1315,14 +1315,14 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_MINUSDU,		10794,	"minusdu",			NULL },	// 0x2a2a
 	{ MANUAL_ENTITY_LOPLUS,			10797,	"loplus",			NULL },	// 0x2a2d
 	{ MANUAL_ENTITY_ROPLUS,			10798,	"roplus",			NULL },	// 0x2a2e
-//	{ MANUAL_ENTITY_CROSS,			10799,	"Cross",			NULL },	// 0x2a2f
+	{ MANUAL_ENTITY_VECTOR_PRODUCT,		10799,	"Cross",			NULL },	// 0x2a2f
 	{ MANUAL_ENTITY_TIMESD,			10800,	"timesd",			NULL },	// 0x2a30
 	{ MANUAL_ENTITY_TIMESBAR,		10801,	"timesbar",			NULL },	// 0x2a31
 	{ MANUAL_ENTITY_SMASHP,			10803,	"smashp",			NULL },	// 0x2a33
 	{ MANUAL_ENTITY_LOTIMES,		10804,	"lotimes",			NULL },	// 0x2a34
 	{ MANUAL_ENTITY_ROTIMES,		10805,	"rotimes",			NULL },	// 0x2a35
 	{ MANUAL_ENTITY_OTIMESAS,		10806,	"otimesas",			NULL },	// 0x2a36
-//	{ MANUAL_ENTITY_OTIMES,			10807,	"Otimes",			NULL },	// 0x2a37
+	{ MANUAL_ENTITY_CIRCLED_TIMES,		10807,	"Otimes",			NULL },	// 0x2a37
 	{ MANUAL_ENTITY_ODIV,			10808,	"odiv",				NULL },	// 0x2a38
 	{ MANUAL_ENTITY_TRIPLUS,		10809,	"triplus",			NULL },	// 0x2a39
 	{ MANUAL_ENTITY_TRIMINUS,		10810,	"triminus",			NULL },	// 0x2a3a
@@ -1334,7 +1334,7 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_NCAP,			10819,	"ncap",				NULL },	// 0x2a43
 	{ MANUAL_ENTITY_CAPAND,			10820,	"capand",			NULL },	// 0x2a44
 	{ MANUAL_ENTITY_CUPOR,			10821,	"cupor",			NULL },	// 0x2a45
-//	{ MANUAL_ENTITY_CUPCAP,			10822,	"cupcap",			NULL },	// 0x2a46
+	{ MANUAL_ENTITY_UNION_ABOVE_INTERSECT,	10822,	"cupcap",			NULL },	// 0x2a46
 	{ MANUAL_ENTITY_CAPCUP,			10823,	"capcup",			NULL },	// 0x2a47
 	{ MANUAL_ENTITY_CUPBRCAP,		10824,	"cupbrcap",			NULL },	// 0x2a48
 	{ MANUAL_ENTITY_CAPBRCUP,		10825,	"capbrcup",			NULL },	// 0x2a49
@@ -1343,8 +1343,8 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_CCUPS,			10828,	"ccups",			NULL },	// 0x2a4c
 	{ MANUAL_ENTITY_CCAPS,			10829,	"ccaps",			NULL },	// 0x2a4d
 	{ MANUAL_ENTITY_CCUPSSM,		10832,	"ccupssm",			NULL },	// 0x2a50
-//	{ MANUAL_ENTITY_AND,			10835,	"And",				NULL },	// 0x2a53
-//	{ MANUAL_ENTITY_OR,			10836,	"Or",				NULL },	// 0x2a54
+	{ MANUAL_ENTITY_DOUBLE_LOGIC_AND,	10835,	"And",				NULL },	// 0x2a53
+	{ MANUAL_ENTITY_DOUBLE_LOGIC_OR,	10836,	"Or",				NULL },	// 0x2a54
 	{ MANUAL_ENTITY_ANDAND,			10837,	"andand",			NULL },	// 0x2a55
 	{ MANUAL_ENTITY_OROR,			10838,	"oror",				NULL },	// 0x2a56
 	{ MANUAL_ENTITY_ORSLOPE,		10839,	"orslope",			NULL },	// 0x2a57
@@ -1359,7 +1359,7 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_CONGDOT,		10861,	"congdot",			NULL },	// 0x2a6d
 	{ MANUAL_ENTITY_EASTER,			10862,	"easter",			NULL },	// 0x2a6e
 	{ MANUAL_ENTITY_APACIR,			10863,	"apacir",			NULL },	// 0x2a6f
-//	{ MANUAL_ENTITY_APE,			10864,	"apE",				NULL },	// 0x2a70
+	{ MANUAL_ENTITY_APPROX_OR_EQUAL,	10864,	"apE",				NULL },	// 0x2a70
 	{ MANUAL_ENTITY_EPLUS,			10865,	"eplus",			NULL },	// 0x2a71
 	{ MANUAL_ENTITY_PLUSE,			10866,	"pluse",			NULL },	// 0x2a72
 	{ MANUAL_ENTITY_ESIM,			10867,	"Esim",				NULL },	// 0x2a73
@@ -1381,8 +1381,8 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_GESDOTOL,		10884,	"gesdotol",			NULL },	// 0x2a84
 	{ MANUAL_ENTITY_LAP,			10885,	"lap",				(char*[]) { "lessapprox", NULL } },	// 0x2a85
 	{ MANUAL_ENTITY_GAP,			10886,	"gap",				(char*[]) { "gtrapprox", NULL } },	// 0x2a86
-//	{ MANUAL_ENTITY_LNE,			10887,	"lne",				(char*[]) { "lneq", NULL } },	// 0x2a87
-//	{ MANUAL_ENTITY_GNE,			10888,	"gne",				(char*[]) { "gneq", NULL } },	// 0x2a88
+	{ MANUAL_ENTITY_L_SINGLE_LINE_NE,	10887,	"lne",				(char*[]) { "lneq", NULL } },	// 0x2a87
+	{ MANUAL_ENTITY_G_SINGLE_LINE_NE,	10888,	"gne",				(char*[]) { "gneq", NULL } },	// 0x2a88
 	{ MANUAL_ENTITY_LNAP,			10889,	"lnap",				(char*[]) { "lnapprox", NULL } },	// 0x2a89
 	{ MANUAL_ENTITY_GNAP,			10890,	"gnap",				(char*[]) { "gnapprox", NULL } },	// 0x2a8a
 	{ MANUAL_ENTITY_LEG,			10891,	"lEg",				(char*[]) { "lesseqqgtr", NULL } },	// 0x2a8b
@@ -1438,12 +1438,12 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_SUPMULT,		10946,	"supmult",			NULL },	// 0x2ac2
 	{ MANUAL_ENTITY_SUBEDOT,		10947,	"subedot",			NULL },	// 0x2ac3
 	{ MANUAL_ENTITY_SUPEDOT,		10948,	"supedot",			NULL },	// 0x2ac4
-//	{ MANUAL_ENTITY_SUBE,			10949,	"subE",				(char*[]) { "subseteqq", NULL } },	// 0x2ac5
-//	{ MANUAL_ENTITY_SUPE,			10950,	"supE",				(char*[]) { "supseteqq", NULL } },	// 0x2ac6
+	{ MANUAL_ENTITY_SUBSET_ABOVE_EQ,	10949,	"subE",				(char*[]) { "subseteqq", NULL } },	// 0x2ac5
+	{ MANUAL_ENTITY_SUPERSET_ABOVE_EQ,	10950,	"supE",				(char*[]) { "supseteqq", NULL } },	// 0x2ac6
 	{ MANUAL_ENTITY_SUBSIM,			10951,	"subsim",			NULL },	// 0x2ac7
 	{ MANUAL_ENTITY_SUPSIM,			10952,	"supsim",			NULL },	// 0x2ac8
-//	{ MANUAL_ENTITY_SUBNE,			10955,	"subnE",			(char*[]) { "subsetneqq", NULL } },	// 0x2acb
-//	{ MANUAL_ENTITY_SUPNE,			10956,	"supnE",			(char*[]) { "supsetneqq", NULL } },	// 0x2acc
+	{ MANUAL_ENTITY_SUBSET_ABOVE_NE,	10955,	"subnE",			(char*[]) { "subsetneqq", NULL } },	// 0x2acb
+	{ MANUAL_ENTITY_SUPERSET_ABOVE_NE,	10956,	"supnE",			(char*[]) { "supsetneqq", NULL } },	// 0x2acc
 	{ MANUAL_ENTITY_CSUB,			10959,	"csub",				NULL },	// 0x2acf
 	{ MANUAL_ENTITY_CSUP,			10960,	"csup",				NULL },	// 0x2ad0
 	{ MANUAL_ENTITY_CSUBE,			10961,	"csube",			NULL },	// 0x2ad1
@@ -1460,11 +1460,11 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_DASHV,			10980,	"Dashv",			(char*[]) { "DoubleLeftTee", NULL } },	// 0x2ae4
 	{ MANUAL_ENTITY_VDASHL,			10982,	"Vdashl",			NULL },	// 0x2ae6
 	{ MANUAL_ENTITY_BARV,			10983,	"Barv",				NULL },	// 0x2ae7
-//	{ MANUAL_ENTITY_VBAR,			10984,	"vBar",				NULL },	// 0x2ae8
+	{ MANUAL_ENTITY_SHORT_UPTACK_UBAR,	10984,	"vBar",				NULL },	// 0x2ae8
 	{ MANUAL_ENTITY_VBARV,			10985,	"vBarv",			NULL },	// 0x2ae9
-//	{ MANUAL_ENTITY_VBAR,			10987,	"Vbar",				NULL },	// 0x2aeb
-//	{ MANUAL_ENTITY_NOT,			10988,	"Not",				NULL },	// 0x2aec
-//	{ MANUAL_ENTITY_BNOT,			10989,	"bNot",				NULL },	// 0x2aed
+	{ MANUAL_ENTITY_DOUBLE_UPTACK,		10987,	"Vbar",				NULL },	// 0x2aeb
+	{ MANUAL_ENTITY_DOUBLE_NOT,		10988,	"Not",				NULL },	// 0x2aec
+	{ MANUAL_ENTITY_DOUBLE_REVERSED_NOT,	10989,	"bNot",				NULL },	// 0x2aed
 	{ MANUAL_ENTITY_RNMID,			10990,	"rnmid",			NULL },	// 0x2aee
 	{ MANUAL_ENTITY_CIRMID,			10991,	"cirmid",			NULL },	// 0x2aef
 	{ MANUAL_ENTITY_MIDCIR,			10992,	"midcir",			NULL },	// 0x2af0
