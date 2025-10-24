@@ -1112,8 +1112,8 @@ static struct manual_entity_definition manual_entity_names[] = {
 	{ MANUAL_ENTITY_SUPHSOL,		10185,	"suphsol",			NULL },	// 0x27c9
 	{ MANUAL_ENTITY_LEFTDOUBLEBRACKET,	10214,	"LeftDoubleBracket",		(char*[]) { "lobrk", NULL } },	// 0x27e6
 	{ MANUAL_ENTITY_RIGHTDOUBLEBRACKET,	10215,	"RightDoubleBracket",		(char*[]) { "robrk", NULL } },	// 0x27e7
-	{ MANUAL_ENTITY_LEFTANGLEBRACKET,	10216,	"LeftAngleBracket",		(char*[]) { "lang", "langle", NULL } },	// 0x27e8
-	{ MANUAL_ENTITY_RIGHTANGLEBRACKET,	10217,	"RightAngleBracket",		(char*[]) { "rang", "rangle", NULL } },	// 0x27e9
+	{ MANUAL_ENTITY_LEFTANGLEBRACKET,	10216,	"LeftAngleBracket",		(char*[]) { "langle", NULL } },	// 0x27e8
+	{ MANUAL_ENTITY_RIGHTANGLEBRACKET,	10217,	"RightAngleBracket",		(char*[]) { "rangle", NULL } },	// 0x27e9
 	{ MANUAL_ENTITY_LDOUBLE_ANGLE_BRACKET,	10218,	"Lang",				NULL },	// 0x27ea
 	{ MANUAL_ENTITY_RDOUBLE_ANGLE_BRACKET,	10219,	"Rang",				NULL },	// 0x27eb
 	{ MANUAL_ENTITY_LOANG,			10220,	"loang",			NULL },	// 0x27ec
