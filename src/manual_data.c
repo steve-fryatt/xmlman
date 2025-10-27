@@ -115,12 +115,10 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_FUNCTION,			"Function"},
 	{MANUAL_DATA_OBJECT_TYPE_ICON,				"Icon"},
 	{MANUAL_DATA_OBJECT_TYPE_INTRO,				"Intro"},
-	{MANUAL_DATA_OBJECT_TYPE_KEY,				"Key"},
 	{MANUAL_DATA_OBJECT_TYPE_KEYWORD,			"Keyword"},
 	{MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS,		"Light Emphasis"},
 	{MANUAL_DATA_OBJECT_TYPE_LINK,				"Link"},
 	{MANUAL_DATA_OBJECT_TYPE_MATHS,				"Maths"},
-	{MANUAL_DATA_OBJECT_TYPE_MENU,				"Menu"},
 	{MANUAL_DATA_OBJECT_TYPE_MESSAGE,			"Message"},
 	{MANUAL_DATA_OBJECT_TYPE_MOUSE,				"Mouse"},
 	{MANUAL_DATA_OBJECT_TYPE_NAME,				"Name"},
@@ -131,6 +129,11 @@ static struct manual_data_object_type_definition manual_data_object_type_names[]
 	{MANUAL_DATA_OBJECT_TYPE_USER_ENTRY,			"User Entry"},
 	{MANUAL_DATA_OBJECT_TYPE_VARIABLE,			"Variable"},
 	{MANUAL_DATA_OBJECT_TYPE_WINDOW,			"Window"},
+
+	{MANUAL_DATA_OBJECT_TYPE_KEYPRESS,			"Keypress"},
+	{MANUAL_DATA_OBJECT_TYPE_KEY,				"Key"},
+	{MANUAL_DATA_OBJECT_TYPE_MENU,				"Menu"},
+	{MANUAL_DATA_OBJECT_TYPE_MENU_ITEM,			"Menu Item"},
 
 	{MANUAL_DATA_OBJECT_TYPE_LINE_BREAK,			"Line Break"},
 	{MANUAL_DATA_OBJECT_TYPE_TEXT,				"Text"},
@@ -417,7 +420,7 @@ char *manual_data_get_node_number(struct manual_data *node, bool include_name)
 		name = "Note";
 		break;
 	default:
-		break;	
+		break;
 	}
 
 	/* Identify the nodes which will make up the number. */
@@ -727,7 +730,7 @@ bool manual_data_nodes_share_file(struct manual_data *node1, struct manual_data 
 /**
  * Given a callout node, return an appropriate callout name in
  * the form of a set of node chunks.
- * 
+ *
  * \param *callout	Pointer to the callout node.
  * \return		Pointer to the callout name.
  */

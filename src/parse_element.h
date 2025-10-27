@@ -68,7 +68,9 @@ enum parse_element_type {
 	PARSE_ELEMENT_IMAGES,
 	PARSE_ELEMENT_INTRO,
 	PARSE_ELEMENT_INDEX,
+	PARSE_ELEMENT_ITEM,
 	PARSE_ELEMENT_KEY,
+	PARSE_ELEMENT_KEYPRESS,
 	PARSE_ELEMENT_KEYWORD,
 	PARSE_ELEMENT_LI,
 	PARSE_ELEMENT_LINK,
@@ -120,4 +122,3 @@ enum parse_element_type parse_element_find_type(char *name);
 const char *parse_element_find_tag(enum parse_element_type type);
 
 #endif
-

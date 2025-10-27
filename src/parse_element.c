@@ -60,7 +60,7 @@ static int parse_element_max_entries = -1;
 
 /**
  * The list of known element definitions.
- * 
+ *
  * The order of the tags is alphabetical, with NONE at the end as an
  * end stop. It *must* correspond to the order that the enum values are
  * defined in parse_element.h, so that the array indices match the
@@ -97,7 +97,9 @@ static struct parse_element_definition parse_element_tags[] = {
 	{PARSE_ELEMENT_IMAGES,		"images"},
 	{PARSE_ELEMENT_INTRO,		"intro"},
 	{PARSE_ELEMENT_INDEX,		"index"},
+	{PARSE_ELEMENT_ITEM,		"item"},
 	{PARSE_ELEMENT_KEY,		"key"},
+	{PARSE_ELEMENT_KEYPRESS,	"keypress"},
 	{PARSE_ELEMENT_KEYWORD,		"keyword"},
 	{PARSE_ELEMENT_LI,		"li"},
 	{PARSE_ELEMENT_LINK,		"link"},
@@ -190,7 +192,7 @@ const char *parse_element_find_tag(enum parse_element_type type)
 
 /**
  * Initialise the parse tree and element list.
- * 
+ *
  * \return		True if successful; False on failure.
  */
 

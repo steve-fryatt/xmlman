@@ -69,6 +69,8 @@ static struct manual_data *parse_table_row(struct parse_xml_block *parser);
 static struct manual_data *parse_code_block(struct parse_xml_block *parser);
 static struct manual_data *parse_block_object(struct parse_xml_block *parser);
 static struct manual_data *parse_empty_block_object(struct parse_xml_block *parser);
+static struct manual_data *parse_sequence_object(struct parse_xml_block *parser);
+static struct manual_data *parse_single_level_block_object(struct parse_xml_block *parser);
 
 static void parse_unknown(struct parse_xml_block *parser);
 static void parse_resources(struct parse_xml_block *parser, struct manual_data_resources *resources);
@@ -153,7 +155,7 @@ struct manual *parse_document(char *filename)
 	manual_defines_dump();
 
 	return document;
-} 
+}
 
 /**
  * Parse an XML file.
@@ -262,7 +264,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 
 	if (*manual == NULL)
 		*manual = manual_data_create(MANUAL_DATA_OBJECT_TYPE_MANUAL);
-	
+
 	if (*manual == NULL) {
 		parse_xml_set_error(parser);
 		return;
@@ -422,7 +424,7 @@ static void parse_manual(struct parse_xml_block *parser, struct manual_data **ma
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
-	
+
 	msg_report(MSG_PARSE_POP, "Manual", parse_element_find_tag(type));
 }
 
@@ -812,7 +814,7 @@ static struct manual_data *parse_section(struct parse_xml_block *parser)
 /**
  * Process a block collection object (LI), returning a pointer to the root
  * of the new data structure.
- * 
+ *
  * Items allowed in a block collection are the same as those allowed in a
  * section, aside from the section admin ones.
  *
@@ -945,7 +947,7 @@ static struct manual_data *parse_block_collection_object(struct parse_xml_block 
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
-	
+
 	msg_report(MSG_PARSE_POP, "Block Collection", parse_element_find_tag(type));
 
 	return new_block;
@@ -1029,7 +1031,7 @@ static struct manual_data *parse_callout(struct parse_xml_block *parser)
 		parse_xml_set_error(parser);
 		break;
 	}
-	
+
 	/* Parse the box contents. */
 
 	do {
@@ -1718,9 +1720,6 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 	case PARSE_ELEMENT_INTRO:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_INTRO);
 		break;
-	case PARSE_ELEMENT_KEY:
-		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_KEY);
-		break;
 	case PARSE_ELEMENT_KEYWORD:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_KEYWORD);
 		break;
@@ -1729,9 +1728,6 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 		break;
 	case PARSE_ELEMENT_MATHS:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_MATHS);
-		break;
-	case PARSE_ELEMENT_MENU:
-		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_MENU);
 		break;
 	case PARSE_ELEMENT_MESSAGE:
 		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_MESSAGE);
@@ -1839,11 +1835,9 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 			case PARSE_ELEMENT_FUNCTION:
 			case PARSE_ELEMENT_ICON:
 			case PARSE_ELEMENT_INTRO:
-			case PARSE_ELEMENT_KEY:
 			case PARSE_ELEMENT_KEYWORD:
 			case PARSE_ELEMENT_LINK:
 			case PARSE_ELEMENT_MATHS:
-			case PARSE_ELEMENT_MENU:
 			case PARSE_ELEMENT_MESSAGE:
 			case PARSE_ELEMENT_MOUSE:
 			case PARSE_ELEMENT_NAME:
@@ -1854,6 +1848,11 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 			case PARSE_ELEMENT_VARIABLE:
 			case PARSE_ELEMENT_WINDOW:
 				item = parse_block_object(parser);
+				parse_link_item(&tail, new_block, item);
+				break;
+			case PARSE_ELEMENT_KEYPRESS:
+			case PARSE_ELEMENT_MENU:
+				item = parse_sequence_object(parser);
 				parse_link_item(&tail, new_block, item);
 				break;
 			case PARSE_ELEMENT_NONE:
@@ -1912,7 +1911,7 @@ static struct manual_data *parse_block_object(struct parse_xml_block *parser)
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
-	
+
 	msg_report(MSG_PARSE_POP, "Block", parse_element_find_tag(type));
 
 	return new_block;
@@ -1987,6 +1986,265 @@ static struct manual_data *parse_empty_block_object(struct parse_xml_block *pars
 	return new_block;
 }
 
+/**
+ * Process a sequence object (MENU, KEYPRESS), returning a pointer to the root
+ * of the new data structure.
+ *
+ * \param *parser	Pointer to the parser to use.
+ * \return		Pointer to the new data structure.
+ */
+
+static struct manual_data *parse_sequence_object(struct parse_xml_block *parser)
+{
+	bool done = false, bad_block = false;
+	enum parse_xml_result result;
+	enum parse_element_type type, element;
+	struct manual_data *new_block = NULL, *tail = NULL, *item = NULL;
+
+	/* Identify the tag which got us here. */
+
+	type = parse_xml_get_element(parser);
+
+	msg_report(MSG_PARSE_PUSH, "Sequence", parse_element_find_tag(type));
+
+	/* Create the block object. */
+
+	switch (type) {
+	case PARSE_ELEMENT_KEYPRESS:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_KEYPRESS);
+		break;
+	case PARSE_ELEMENT_MENU:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_MENU);
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type), "Block");
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	if (new_block == NULL) {
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	/* Process the content within the new object. */
+
+	do {
+		result = parse_xml_read_next_chunk(parser);
+
+		switch (result) {
+		case PARSE_XML_RESULT_WHITESPACE:
+			item = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TEXT);
+			if (item == NULL) {
+				result = parse_xml_set_error(parser);
+				msg_report(MSG_DATA_MALLOC_FAIL);
+				continue;
+			}
+			item->chunk.text = parse_xml_get_text(parser);
+			encoding_flatten_whitespace(item->chunk.text);
+			parse_link_item(&tail, new_block, item);
+			break;
+
+		case PARSE_XML_RESULT_TAG_ENTITY:
+			item = manual_data_create(MANUAL_DATA_OBJECT_TYPE_ENTITY);
+			if (item == NULL) {
+				result = parse_xml_set_error(parser);
+				msg_report(MSG_DATA_MALLOC_FAIL);
+				continue;
+			}
+			item->chunk.entity = parse_xml_get_entity(parser);
+			parse_link_item(&tail, new_block, item);
+			break;
+
+		case PARSE_XML_RESULT_TAG_START:
+			element = parse_xml_get_element(parser);
+
+			switch (element) {
+			case PARSE_ELEMENT_ITEM:
+			case PARSE_ELEMENT_KEY:
+				bad_block = false;
+
+				/* Sequences can only contain a single type of tag, enforced here. */
+
+				switch(type) {
+				case PARSE_ELEMENT_KEYPRESS:
+					bad_block = (element == PARSE_ELEMENT_KEY) ? false : true;
+					break;
+				case PARSE_ELEMENT_MENU:
+					bad_block = (element == PARSE_ELEMENT_ITEM) ? false : true;
+					break;
+				default:
+					bad_block = false;
+					break;
+				}
+
+				if (bad_block == true) {
+					msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
+					parse_unknown(parser);
+				}
+
+				item = parse_single_level_block_object(parser);
+				parse_link_item(&tail, new_block, item);
+				break;
+			case PARSE_ELEMENT_NONE:
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
+				parse_unknown(parser);
+				break;
+			}
+			break;
+
+		case PARSE_XML_RESULT_TAG_EMPTY:
+			element = parse_xml_get_element(parser);
+
+			switch (element) {
+			case PARSE_ELEMENT_BR:
+				item = manual_data_create(MANUAL_DATA_OBJECT_TYPE_LINE_BREAK);
+				if (item == NULL) {
+					result = parse_xml_set_error(parser);
+					msg_report(MSG_DATA_MALLOC_FAIL);
+					continue;
+				}
+				parse_link_item(&tail, new_block, item);
+				break;
+			case PARSE_ELEMENT_DEFINE:
+			case PARSE_ELEMENT_LINK:
+			case PARSE_ELEMENT_REF:
+				item = parse_empty_block_object(parser);
+				parse_link_item(&tail, new_block, item);
+				break;
+			case PARSE_ELEMENT_NONE:
+				break;
+			default:
+				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
+				parse_unknown(parser);
+				break;
+			}
+			break;
+
+		case PARSE_XML_RESULT_TAG_END:
+			element = parse_xml_get_element(parser);
+
+			if (element == type)
+				done = true;
+			else if (element != PARSE_ELEMENT_NONE)
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
+			break;
+
+		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
+		case PARSE_XML_RESULT_EOF:
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
+			break;
+		}
+	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
+
+	msg_report(MSG_PARSE_POP, "Sequence", parse_element_find_tag(type));
+
+	return new_block;
+}
+
+/**
+ * Parse a single level block (ie. one which can contain only entities, and no
+ * nested tags) from the current element, returning a linked list of chunks.
+ *
+ * \param *parser	Pointer to the parser to use.
+ * \return		Pointer to the top-level Single Level Attribute chunk.
+ */
+
+
+static struct manual_data *parse_single_level_block_object(struct parse_xml_block *parser)
+{
+	bool done = false;
+	enum parse_xml_result result;
+	enum parse_element_type type, element;
+	struct manual_data *new_block = NULL, *tail = NULL, *item = NULL;
+
+	/* Identify the tag which got us here. */
+
+	type = parse_xml_get_element(parser);
+
+	msg_report(MSG_PARSE_PUSH, "Single Level Block", parse_element_find_tag(type));
+
+	/* Create the block object. */
+
+	switch (type) {
+	case PARSE_ELEMENT_ITEM:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_MENU_ITEM);
+		break;
+	case PARSE_ELEMENT_KEY:
+		new_block = manual_data_create(MANUAL_DATA_OBJECT_TYPE_KEY);
+		break;
+	default:
+		msg_report(MSG_UNEXPECTED_BLOCK_ADD, parse_element_find_tag(type), "Single Level Block");
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	if (new_block == NULL) {
+		parse_xml_set_error(parser);
+		return NULL;
+	}
+
+	/* Process the content within the new object. */
+
+	do {
+		result = parse_xml_read_next_chunk(parser);
+
+		switch (result) {
+		case PARSE_XML_RESULT_TEXT:
+		case PARSE_XML_RESULT_WHITESPACE:
+			item = manual_data_create(MANUAL_DATA_OBJECT_TYPE_TEXT);
+			if (item == NULL) {
+				result = parse_xml_set_error(parser);
+				msg_report(MSG_DATA_MALLOC_FAIL);
+				continue;
+			}
+			item->chunk.text = parse_xml_get_text(parser);
+			encoding_flatten_whitespace(item->chunk.text);
+			parse_link_item(&tail, new_block, item);
+			break;
+
+		case PARSE_XML_RESULT_TAG_ENTITY:
+			item = manual_data_create(MANUAL_DATA_OBJECT_TYPE_ENTITY);
+			if (item == NULL) {
+				result = parse_xml_set_error(parser);
+				msg_report(MSG_DATA_MALLOC_FAIL);
+				continue;
+			}
+			item->chunk.entity = parse_xml_get_entity(parser);
+			parse_link_item(&tail, new_block, item);
+			break;
+
+		case PARSE_XML_RESULT_TAG_END:
+			element = parse_xml_get_element(parser);
+
+			if (element == type)
+				done = true;
+			else if (element != PARSE_ELEMENT_NONE)
+				msg_report(MSG_UNEXPECTED_CLOSE, parse_element_find_tag(element), parse_element_find_tag(type));
+			break;
+
+		case PARSE_XML_RESULT_COMMENT:
+		case PARSE_XML_RESULT_ERROR:
+		case PARSE_XML_RESULT_EOF:
+			break;
+
+		default:
+			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
+			break;
+		}
+	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
+
+	msg_report(MSG_PARSE_POP, "Single Level Object", parse_element_find_tag(type));
+
+	return new_block;
+}
+
 
 /**
  * Process an unknown object, simply disposing of it and all of its descendents.
@@ -2033,7 +2291,7 @@ static void parse_unknown(struct parse_xml_block *parser)
 			break;
 		}
 	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
-	
+
 	msg_report(MSG_PARSE_POP, "Unknown", parse_element_find_tag(type));
 }
 
@@ -2253,7 +2511,7 @@ static struct manual_data *parse_multi_level_attribute(struct parse_xml_block *p
 
 /**
  * Parse a single level attribute (ie. one which can contain only entities) from
- * the current element, returning  a linked list of chunks.
+ * the current element, returning a linked list of chunks.
  *
  * \param *parser	Pointer to the parser to use.
  * \param *attribute	The name of the attribute to parse.
@@ -2263,7 +2521,6 @@ static struct manual_data *parse_multi_level_attribute(struct parse_xml_block *p
 
 static struct manual_data *parse_single_level_attribute(struct parse_xml_block *parser, char *attribute)
 {
-	bool done = false;
 	struct parse_xml_block *attribute_parser;
 	enum parse_xml_result result;
 	enum parse_element_type type;
@@ -2335,8 +2592,8 @@ static struct manual_data *parse_single_level_attribute(struct parse_xml_block *
 			msg_report(MSG_UNEXPECTED_XML, parse_xml_get_result_name(result), parse_element_find_tag(type));
 			break;
 		}
-	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF && !done);
-	
+	} while (result != PARSE_XML_RESULT_ERROR && result != PARSE_XML_RESULT_EOF);
+
 	msg_report(MSG_PARSE_POP, "Single Level Attribute", parse_element_find_tag(type));
 
 	return new_block;
