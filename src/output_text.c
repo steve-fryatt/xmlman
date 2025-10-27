@@ -123,6 +123,7 @@ static bool output_text_write_reference(struct manual_data *target);
 static bool output_text_write_text(int column, enum manual_data_object_type type, struct manual_data *text);
 static bool output_text_write_span_enclosed(int column, enum manual_data_object_type type, char *string, struct manual_data *text);
 static bool output_text_write_inline_defined_text(int column, struct manual_data *defined_text);
+static bool output_text_write_inline_sequence(int column, enum manual_data_object_type type, struct manual_data *sequence, char *enclosure, char *separator);
 static bool output_text_write_inline_link(int column, struct manual_data *link);
 static bool output_text_write_inline_reference(int column, struct manual_data *reference);
 static bool output_text_write_title(int column, struct manual_data *node, bool include_name, bool include_title);
@@ -492,7 +493,7 @@ static bool output_text_write_object(struct manual_data *object, bool root, int 
 				if (!output_text_write_definition_list(block, 0, 0))
 					return false;
 				break;
-	
+
 			case MANUAL_DATA_OBJECT_TYPE_TABLE:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
 					msg_report(MSG_UNEXPECTED_CHUNK,
@@ -941,7 +942,7 @@ static bool output_text_write_block_collection_object(struct manual_data *object
 			if (!output_text_write_definition_list(block, column, level + 1))
 				return false;
 			break;
-	
+
 		case MANUAL_DATA_OBJECT_TYPE_TABLE:
 			if (!output_text_write_table(block, column))
 				return false;
@@ -1146,7 +1147,7 @@ static bool output_text_write_callout(struct manual_data *object, int column)
 			if (!output_text_write_definition_list(block, 0, 0))
 				return false;
 			break;
-	
+
 		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
 			if (!output_text_write_code_block(block, 0))
 				return false;
@@ -1322,7 +1323,7 @@ static bool output_text_write_standard_list(struct manual_data *object, int colu
 			/* If this isn't the first item in the list, write a blank line to space it
 			 * unless the list is flagged as compact.
 			 */
-	
+
 			if (item->previous != NULL && !(object->chunk.flags && MANUAL_DATA_OBJECT_FLAGS_LIST_COMPACT) &&
 					!output_text_line_write_newline()) {
 				list_numbers_destroy(numbers);
@@ -1333,7 +1334,7 @@ static bool output_text_write_standard_list(struct manual_data *object, int colu
 				list_numbers_destroy(numbers);
 				return false;
 			}
-			
+
 			if (!output_text_line_add_text(0, list_numbers_get_next_entry(numbers))) {
 				list_numbers_destroy(numbers);
 				return false;
@@ -1419,7 +1420,7 @@ static bool output_text_write_definition_list(struct manual_data *object, int co
 
 				if (!output_text_line_reset())
 					return false;
-	
+
 				if (!output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_TITLE, item->title))
 					return false;
 
@@ -1434,10 +1435,10 @@ static bool output_text_write_definition_list(struct manual_data *object, int co
 
 			if (!output_text_line_push_to_column(column, OUTPUT_TEXT_BLOCK_INDENT, OUTPUT_TEXT_NO_INDENT))
 				return false;
-	
+
 			if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
 				return false;
-	
+
 			if (!output_text_line_reset())
 				return false;
 
@@ -1448,7 +1449,7 @@ static bool output_text_write_definition_list(struct manual_data *object, int co
 
 			if (!output_text_line_pop())
 				return false;
-	
+
 			break;
 
 		default:
@@ -1463,7 +1464,7 @@ static bool output_text_write_definition_list(struct manual_data *object, int co
 
 	return true;
 }
- 
+
 /**
  * Write the contents of a table to the output.
  *
@@ -1893,8 +1894,8 @@ static bool output_text_write_text(int column, enum manual_data_object_type type
 		case MANUAL_DATA_OBJECT_TYPE_INTRO:
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_INTRO, chunk);
 			break;
-		case MANUAL_DATA_OBJECT_TYPE_KEY:
-			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_KEY, chunk);
+		case MANUAL_DATA_OBJECT_TYPE_KEYPRESS:
+			success = output_text_write_inline_sequence(column, MANUAL_DATA_OBJECT_TYPE_KEYPRESS, chunk, NULL, "-");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_KEYWORD:
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_KEYWORD, chunk);
@@ -1909,7 +1910,8 @@ static bool output_text_write_text(int column, enum manual_data_object_type type
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_MATHS, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MENU:
-			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_MENU, chunk);
+			success = output_text_write_inline_sequence(column, MANUAL_DATA_OBJECT_TYPE_MENU, chunk, "'",
+					" " ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY " ");
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MESSAGE:
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_MESSAGE, chunk);
@@ -1965,7 +1967,7 @@ static bool output_text_write_text(int column, enum manual_data_object_type type
 
 /**
  * Write out a section of text wrapped in {f} tags.
- * 
+ *
  * \param column		The column in the line to write to.
  * \param type			The type of block which is expected.
  * \param *string		The text to enclose the span in.
@@ -2026,6 +2028,72 @@ static bool output_text_write_inline_defined_text(int column, struct manual_data
 	}
 
 	return true;
+}
+
+/**
+ * Write an inline sequence object to a column in the current output line.
+ *
+ * A sequence object is an object containing a flat list of child objects of
+ * the same type, such as a keypress or menu entry.
+ *
+ * \param column		The column in the line to write to.
+ * \param type			The type of block which is expected.
+ * \param *sequence		The sequence to be written.
+ * \param *enclosure		The enclosure to use before and after the
+ *				sequence, or NULL.
+ * \param *separator		The separator to use between items, or NULL.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_text_write_inline_sequence(int column, enum manual_data_object_type type, struct manual_data *sequence, char *enclosure, char *separator)
+{
+	struct manual_data *chunk;
+	bool success = true;
+
+	if (sequence == NULL)
+		return false;
+
+	/* Confirm that this is a sequence. */
+
+	if (sequence->type != type) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(type), manual_data_find_object_name(sequence->type));
+		return false;
+	}
+
+	/* Write the sequence text. */
+
+	chunk = sequence->first_child;
+
+	/* Add the prefixing enclosure, if provided. */
+
+	if (success == true && sequence->first_child != NULL && enclosure != NULL)
+		success = output_text_line_add_text(column, enclosure);
+
+
+	while (success == true && chunk != NULL) {
+		if (sequence->type == MANUAL_DATA_OBJECT_TYPE_MENU && chunk->type == MANUAL_DATA_OBJECT_TYPE_MENU_ITEM)
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_MENU_ITEM, chunk);
+		else if (sequence->type == MANUAL_DATA_OBJECT_TYPE_KEYPRESS && chunk->type == MANUAL_DATA_OBJECT_TYPE_KEY)
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_KEY, chunk);
+		else
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(chunk->type),
+					manual_data_find_object_name(sequence->type));
+
+		/* Separate the items if this isn't the last one in the list. */
+
+		if (success == true && chunk->next != NULL && separator != NULL)
+			success = output_text_line_add_text(column, separator);
+
+		chunk = chunk->next;
+	}
+
+	/* Add the suffixing enclosure, if provided. */
+
+	if (success == true && sequence->first_child != NULL && enclosure != NULL)
+		success = output_text_line_add_text(column, enclosure);
+
+	return success;
 }
 
 /**
@@ -2220,7 +2288,7 @@ static bool output_text_write_title(int column, struct manual_data *node, bool i
 /**
  * Convert an entity into a textual representation and write
  * it to the current file.
- * 
+ *
  * Unless we have a special case, we just pass it to the manual_entity
  * module to turn the entity into unicode for us. This will then get
  * encoded when writen out to the file.
