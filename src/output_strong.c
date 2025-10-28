@@ -1,4 +1,4 @@
-/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2025, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -110,6 +110,7 @@ static bool output_strong_write_reference(struct manual_data *target, char *text
 static bool output_strong_write_text(enum manual_data_object_type type, struct manual_data *text);
 static bool output_strong_write_span_font(enum manual_data_object_type type, char *font, struct manual_data *text);
 static bool output_strong_write_inline_defined_text(struct manual_data *defined_text);
+static bool output_strong_write_inline_sequence(enum manual_data_object_type type, char *enclosure, char *separator, struct manual_data *sequence);
 static bool output_strong_write_inline_link(struct manual_data *link);
 static bool output_strong_write_inline_reference(struct manual_data *reference);
 static bool output_strong_write_local_anchor(struct manual_data *source, struct manual_data *target);
@@ -429,7 +430,7 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 				if (!output_strong_write_definition_list(block, 0))
 					return false;
 				break;
-	
+
 			case MANUAL_DATA_OBJECT_TYPE_CALLOUT:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
 					msg_report(MSG_UNEXPECTED_CHUNK,
@@ -441,7 +442,7 @@ static bool output_strong_write_object(struct manual_data *object, int level, bo
 				if (!output_strong_write_callout(block))
 					return false;
 				break;
-	
+
 			case MANUAL_DATA_OBJECT_TYPE_BLOCKQUOTE:
 				if (object->type != MANUAL_DATA_OBJECT_TYPE_SECTION) {
 					msg_report(MSG_UNEXPECTED_CHUNK,
@@ -830,7 +831,7 @@ static bool output_strong_write_block_collection_object(struct manual_data *obje
 			if (!output_strong_write_definition_list(block, level + 1))
 				return false;
 			break;
-	
+
 		case MANUAL_DATA_OBJECT_TYPE_TABLE:
 	//		if (!output_html_write_table(block))
 	//			return false;
@@ -998,7 +999,7 @@ static bool output_strong_write_callout(struct manual_data *object)
 			if (!output_strong_write_definition_list(block, 0))
 				return false;
 			break;
-	
+
 		case MANUAL_DATA_OBJECT_TYPE_CODE_BLOCK:
 			if (!output_strong_write_code_block(block))
 				return false;
@@ -1114,7 +1115,7 @@ static bool output_strong_write_standard_list(struct manual_data *object, int le
 	case MANUAL_DATA_OBJECT_TYPE_UNORDERED_LIST:
 		numbers = list_numbers_create_unordered(output_strong_unordered_list_bullets, level);
 		break;
-	
+
 	default:
 		break;
 	}
@@ -1139,7 +1140,7 @@ static bool output_strong_write_standard_list(struct manual_data *object, int le
 			/* If this isn't the first item in the list, write a blank line to space it
 			 * unless the list is flagged as compact.
 			 */
-	
+
 			if (item->previous != NULL && !(object->chunk.flags && MANUAL_DATA_OBJECT_FLAGS_LIST_COMPACT) &&
 					!output_strong_file_write_newline()) {
 				list_numbers_destroy(numbers);
@@ -1230,7 +1231,7 @@ static bool output_strong_write_definition_list(struct manual_data *object, int 
 
 			if (!output_strong_file_write_plain("#Indent +2"))
 				return false;
-	
+
 
 			if (!output_strong_write_block_collection_object(item, level))
 				return false;
@@ -1362,7 +1363,7 @@ static bool output_strong_write_paragraph(struct manual_data *object)
 
 /**
  * Write an internal reference (a link to another page) to the output.
- * 
+ *
  * \param *target		The node to be the target of the link.
  * \param *text			Text to use for the link, or NULL for none.
  * \return			True if successful; False on failure.
@@ -1472,8 +1473,8 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 		case MANUAL_DATA_OBJECT_TYPE_INTRO:
 			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_INTRO, chunk);
 			break;
-		case MANUAL_DATA_OBJECT_TYPE_KEY:
-			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_KEY, chunk);
+		case MANUAL_DATA_OBJECT_TYPE_KEYPRESS:
+			success = output_strong_write_inline_sequence(MANUAL_DATA_OBJECT_TYPE_KEYPRESS, NULL, "-", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_KEYWORD:
 			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_KEYWORD, chunk);
@@ -1488,7 +1489,7 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_MATHS, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MENU:
-			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_MENU, chunk);
+			success = output_strong_write_inline_sequence(MANUAL_DATA_OBJECT_TYPE_MENU, NULL, ENCODING_UTF8_MDASH, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MESSAGE:
 			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_MESSAGE, chunk);
@@ -1544,7 +1545,7 @@ static bool output_strong_write_text(enum manual_data_object_type type, struct m
 
 /**
  * Write out a section of text wrapped in {f} tags.
- * 
+ *
  * \param type			The type of block which is expected.
  * \param *font			The font tag to use.
  * \param *text			The block of text to be written.
@@ -1556,13 +1557,13 @@ static bool output_strong_write_span_font(enum manual_data_object_type type, cha
 	if (text == NULL || font == NULL)
 		return false;
 
-	if (!output_strong_file_write_plain("{f%s}"))
+	if (font != NULL && !output_strong_file_write_plain("{f%s}", font))
 		return false;
 
 	if (!output_strong_write_text(type, text))
 		return false;
 
-	if (!output_strong_file_write_plain("{f}"))
+	if (font != NULL && !output_strong_file_write_plain("{f}"))
 		return false;
 
 	return true;
@@ -1607,6 +1608,74 @@ static bool output_strong_write_inline_defined_text(struct manual_data *defined_
 
 
 /**
+ * Write out a an inline sequence object wrapped in <span> tags.
+ *
+ * A sequence object is an object containing a flat list of child objects of
+ * the same type, such as a keypress or menu entry.
+ *
+ * \param type			The type of block which is expected.
+ * \param *enclosure		The font tag to use to enclose the sequence.
+ * \param *item			The font tag to use to enclose each of the items
+ *				in the sequence.
+ * \param *separator		The text to use to separate items in the sequence.
+ * \param *sequence		The sequence to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_strong_write_inline_sequence(enum manual_data_object_type type, char *enclosure, char *separator, struct manual_data *sequence)
+{
+	struct manual_data *chunk;
+	bool success = true;
+
+	if (sequence == NULL)
+		return false;
+
+	/* Confirm that this is a sequence. */
+
+	if (sequence->type != type) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(type), manual_data_find_object_name(sequence->type));
+		return false;
+	}
+
+	/* Write the sequence text. */
+
+	chunk = sequence->first_child;
+
+	/* Add the prefixing enclosure, if provided. */
+
+	if (success == true && sequence->first_child != NULL && enclosure != NULL)
+		success = output_strong_file_write_plain("{f%s}", enclosure);
+
+	/* Write the items in the sequence. */
+
+	while (success == true && chunk != NULL) {
+		if (sequence->type == MANUAL_DATA_OBJECT_TYPE_MENU && chunk->type == MANUAL_DATA_OBJECT_TYPE_MENU_ITEM)
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_MENU_ITEM, chunk);
+		else if (sequence->type == MANUAL_DATA_OBJECT_TYPE_KEYPRESS && chunk->type == MANUAL_DATA_OBJECT_TYPE_KEY)
+			success = output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_KEY, chunk);
+		else
+			msg_report(MSG_UNEXPECTED_CHUNK,
+					manual_data_find_object_name(chunk->type),
+					manual_data_find_object_name(sequence->type));
+
+		/* Separate the items if this isn't the last one in the list. */
+
+		if (success == true && chunk->next != NULL && separator != NULL)
+			success = output_strong_file_write_plain(separator);
+
+		chunk = chunk->next;
+	}
+
+	/* Add the suffixing enclosure, if provided. */
+
+	if (success == true && sequence->first_child != NULL && enclosure != NULL)
+		success = output_strong_file_write_plain("{f}");
+
+	return success;
+}
+
+
+/**
  * Write an inline link out to the file.
  *
  * \param *link			The link to be written.
@@ -1640,7 +1709,7 @@ static bool output_strong_write_inline_link(struct manual_data *link)
 		if (!output_strong_write_text(MANUAL_DATA_OBJECT_TYPE_SINGLE_LEVEL_ATTRIBUTE, link->chunk.link))
 			return false;
 	}
-	
+
 	/* Output the closing link tag. */
 
 	if (link->chunk.link != NULL && !output_strong_file_write_plain("=>#URL %s>", link->chunk.link))
@@ -1871,7 +1940,7 @@ static bool output_strong_write_id(struct manual_data *node)
 /**
  * Convert an entity into a StrongHelp representation and write
  * it to the current file.
- * 
+ *
  * Unless we have a special case, we just pass it to the manual_entity
  * module to turn the entity into unicode for us. This will then get
  * encoded when writen out to the file.

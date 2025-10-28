@@ -1,4 +1,4 @@
-/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2025, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -138,8 +138,9 @@ static char *output_html_default_stylesheet[] = {
 	"SPAN.command { font-weight: bold; }",
 	"SPAN.entry { font-family: monospace; }",
 	"SPAN.filename { font-weight: bold; font-style: italic; }",
-	"SPAN.icon, SPAN.introduction, SPAN.maths, SPAN.menu { font-style: italic; }",
-	"SPAN.key, SPAN.mouse { font-style: unset; }",
+	"SPAN.icon, SPAN.introduction, SPAN.maths, SPAN.menu SPAN.item { font-style: italic; }",
+	"SPAN.keypress, SPAN.mouse { font-style: unset; }",
+	"SPAN.key { background: lightgrey; border: 1px solid darkgrey; border-radius: 3px; padding: 0 0.3em; }",
 	"SPAN.keyword, SPAN.name, SPAN.window, SPAN.variable { font-weight: bold; }",
 	NULL
 };
@@ -169,6 +170,7 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 static bool output_html_write_span_tag(enum manual_data_object_type type, char *tag, struct manual_data *text);
 static bool output_html_write_span_style(enum manual_data_object_type type, char *style, struct manual_data *text);
 static bool output_html_write_inline_defined_text(struct manual_data *defined_text);
+static bool output_html_write_inline_sequence(enum manual_data_object_type type, char *enclosure, char *item, char *separator, struct manual_data *sequence);
 static bool output_html_write_inline_link(struct manual_data *link);
 static bool output_html_write_inline_reference(struct manual_data *reference);
 static bool output_html_write_local_anchor(struct manual_data *source, struct manual_data *target);
@@ -728,7 +730,7 @@ static bool output_html_write_page_head(struct manual_data *manual, int level)
  *
  * \param *manual	The node at the root of the file.
  * \return		TRUE if successful, otherwise FALSE.
- * 
+ *
  */
 
 static bool output_html_write_stylesheet_link(struct manual_data *manual)
@@ -742,7 +744,7 @@ static bool output_html_write_stylesheet_link(struct manual_data *manual)
 		return false;
 
 	/* Find the nearest stylesheet details. If there isn't one, write the default
-	 * sheet and exit. 
+	 * sheet and exit.
 	 */
 
 	sheet_node = manual_data_get_node_stylesheet(manual, MODES_TYPE_HTML);
@@ -964,7 +966,7 @@ static bool output_html_write_chapter_list(struct manual_data *object, int level
 				if (first == true) {
 					if (!output_html_file_write_newline())
 						return false;
-					
+
 					if (!output_html_file_write_plain("<ul class=\"contents-list\">") || !output_html_file_write_newline())
 						return false;
 
@@ -1368,7 +1370,7 @@ static bool output_html_write_blockquote(struct manual_data *object)
 
 	return true;
 }
- 
+
 /**
  * Process the contents of a list and write it out.
  *
@@ -1486,7 +1488,7 @@ static bool output_html_write_list(struct manual_data *object)
 	default:
 		break;
 	}
-	
+
 	if (!output_html_file_write_newline())
 		return false;
 
@@ -1522,10 +1524,10 @@ static bool output_html_write_table(struct manual_data *object)
 
 	if (!output_html_file_write_newline())
 		return false;
-	
+
 	if (!output_html_file_write_plain("<div class=\"table\""))
 		return false;
-	
+
 	if (!output_html_write_id(object))
 		return false;
 
@@ -1682,7 +1684,7 @@ static bool output_html_write_code_block(struct manual_data *object)
 
 	if (!output_html_file_write_plain("<div class=\"codeblock\""))
 		return false;
-	
+
 	if (!output_html_write_id(object))
 		return false;
 
@@ -1758,7 +1760,7 @@ static bool output_html_write_paragraph(struct manual_data *object)
 
 /**
  * Write an internal reference (a link to another page) to the output.
- * 
+ *
  * \param *source		The node to be the source of the link.
  * \param *target		The node to be the target of the link.
  * \param *text			Text to use for the link, or NULL for none.
@@ -1876,8 +1878,8 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 		case MANUAL_DATA_OBJECT_TYPE_INTRO:
 			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_INTRO, "introduction", chunk);
 			break;
-		case MANUAL_DATA_OBJECT_TYPE_KEY:
-			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_KEY, "key", chunk);
+		case MANUAL_DATA_OBJECT_TYPE_KEYPRESS:
+			success = output_html_write_inline_sequence(MANUAL_DATA_OBJECT_TYPE_KEYPRESS, "keypress", "key", " + ", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_KEYWORD:
 			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_KEYWORD, "keyword", chunk);
@@ -1892,7 +1894,7 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_MATHS, "maths", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MENU:
-			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_MENU, "menu", chunk);
+			success = output_html_write_inline_sequence(MANUAL_DATA_OBJECT_TYPE_MENU, "menu", "item", " " ENCODING_UTF8_NDASH " ", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MESSAGE:
 			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_MESSAGE, "name", chunk);
@@ -1948,7 +1950,7 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 
 /**
  * Write out a section of text wrapped in HTML tags.
- * 
+ *
  * \param type			The type of block which is expected.
  * \param *tag			The HTML tag to use.
  * \param *text			The block of text to be written.
@@ -1974,7 +1976,7 @@ static bool output_html_write_span_tag(enum manual_data_object_type type, char *
 
 /**
  * Write out a section of text wrapped in HTML <span> tags.
- * 
+ *
  * \param type			The type of block which is expected.
  * \param *style		The CSS class to use in the span.
  * \param *text			The block of text to be written.
@@ -2037,6 +2039,83 @@ static bool output_html_write_inline_defined_text(struct manual_data *defined_te
 
 
 /**
+ * Write out a an inline sequence object wrapped in <span> tags.
+ *
+ * A sequence object is an object containing a flat list of child objects of
+ * the same type, such as a keypress or menu entry.
+ *
+ * \param type			The type of block which is expected.
+ * \param *enclosure		The CSS class to use in the span enclosing the
+ *				sequence.
+ * \param *item			The CSS class to use in the span enclosing each
+ *				of the items in the sequence.
+ * \param *separator		The text to use to separate items in the sequence.
+ * \param *sequence		The sequence to be written.
+ * \return			True if successful; False on error.
+ */
+
+static bool output_html_write_inline_sequence(enum manual_data_object_type type, char *enclosure, char *item, char *separator, struct manual_data *sequence)
+{
+	struct manual_data *chunk;
+	bool success = true;
+
+	if (sequence == NULL)
+		return false;
+
+	/* Confirm that this is a sequence. */
+
+	if (sequence->type != type) {
+		msg_report(MSG_UNEXPECTED_BLOCK, manual_data_find_object_name(type), manual_data_find_object_name(sequence->type));
+		return false;
+	}
+
+	/* Write the sequence text. */
+
+	chunk = sequence->first_child;
+
+	/* Add the prefixing enclosure, if provided. */
+
+	if (success == true && sequence->first_child != NULL && enclosure != NULL)
+		success = output_html_file_write_plain("<span class=\"%s\">", enclosure);
+
+	/* Write the items in the sequence. */
+
+	while (success == true && chunk != NULL) {
+		if (success == true && item != NULL)
+			success = output_html_file_write_plain("<span class=\"%s\">", item);
+
+		if (success == true) {
+			if (sequence->type == MANUAL_DATA_OBJECT_TYPE_MENU && chunk->type == MANUAL_DATA_OBJECT_TYPE_MENU_ITEM)
+				success = output_html_write_text(MANUAL_DATA_OBJECT_TYPE_MENU_ITEM, chunk);
+			else if (sequence->type == MANUAL_DATA_OBJECT_TYPE_KEYPRESS && chunk->type == MANUAL_DATA_OBJECT_TYPE_KEY)
+				success = output_html_write_text(MANUAL_DATA_OBJECT_TYPE_KEY, chunk);
+			else
+				msg_report(MSG_UNEXPECTED_CHUNK,
+						manual_data_find_object_name(chunk->type),
+						manual_data_find_object_name(sequence->type));
+		}
+
+		if (success == true && item != NULL)
+			success = output_html_file_write_plain("</span>");
+
+		/* Separate the items if this isn't the last one in the list. */
+
+		if (success == true && chunk->next != NULL && separator != NULL)
+			success = output_html_file_write_text(separator);
+
+		chunk = chunk->next;
+	}
+
+	/* Add the suffixing enclosure, if provided. */
+
+	if (success == true && sequence->first_child != NULL && enclosure != NULL)
+		success = output_html_file_write_plain("</span>");
+
+	return success;
+}
+
+
+/**
  * Write out an inline link.
  *
  * \param *link			The link to be written.
@@ -2082,7 +2161,7 @@ static bool output_html_write_inline_link(struct manual_data *link)
 		if (!output_html_write_text(MANUAL_DATA_OBJECT_TYPE_SINGLE_LEVEL_ATTRIBUTE, link->chunk.link))
 			return false;
 	}
-	
+
 	/* Output the closing link tag. */
 
 	if (link->chunk.link != NULL && !output_html_file_write_plain("</a>"))
@@ -2315,7 +2394,7 @@ static bool output_html_write_id(struct manual_data *node)
 /**
  * Convert an entity into an HTML representation and write
  * it to the current file.
- * 
+ *
  * Unless we have a special case, we just pass it to the manual_entity
  * module to turn the entity into unicode for us. This will then get
  * encoded when writen out to the file.

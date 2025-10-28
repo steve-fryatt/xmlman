@@ -1,4 +1,4 @@
-/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2025, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -123,7 +123,7 @@ static bool output_text_write_reference(struct manual_data *target);
 static bool output_text_write_text(int column, enum manual_data_object_type type, struct manual_data *text);
 static bool output_text_write_span_enclosed(int column, enum manual_data_object_type type, char *string, struct manual_data *text);
 static bool output_text_write_inline_defined_text(int column, struct manual_data *defined_text);
-static bool output_text_write_inline_sequence(int column, enum manual_data_object_type type, struct manual_data *sequence, char *enclosure, char *separator);
+static bool output_text_write_inline_sequence(int column, enum manual_data_object_type type, char *enclosure, char *separator, struct manual_data *sequence);
 static bool output_text_write_inline_link(int column, struct manual_data *link);
 static bool output_text_write_inline_reference(int column, struct manual_data *reference);
 static bool output_text_write_title(int column, struct manual_data *node, bool include_name, bool include_title);
@@ -1895,7 +1895,7 @@ static bool output_text_write_text(int column, enum manual_data_object_type type
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_INTRO, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_KEYPRESS:
-			success = output_text_write_inline_sequence(column, MANUAL_DATA_OBJECT_TYPE_KEYPRESS, chunk, NULL, "-");
+			success = output_text_write_inline_sequence(column, MANUAL_DATA_OBJECT_TYPE_KEYPRESS, NULL, "-", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_KEYWORD:
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_KEYWORD, chunk);
@@ -1910,8 +1910,8 @@ static bool output_text_write_text(int column, enum manual_data_object_type type
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_MATHS, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MENU:
-			success = output_text_write_inline_sequence(column, MANUAL_DATA_OBJECT_TYPE_MENU, chunk, "'",
-					" " ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY " ");
+			success = output_text_write_inline_sequence(column, MANUAL_DATA_OBJECT_TYPE_MENU,
+					"'", " " ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY " ", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MESSAGE:
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_MESSAGE, chunk);
@@ -2038,14 +2038,15 @@ static bool output_text_write_inline_defined_text(int column, struct manual_data
  *
  * \param column		The column in the line to write to.
  * \param type			The type of block which is expected.
- * \param *sequence		The sequence to be written.
  * \param *enclosure		The enclosure to use before and after the
  *				sequence, or NULL.
  * \param *separator		The separator to use between items, or NULL.
+ * \param *sequence		The sequence to be written.
  * \return			True if successful; False on error.
  */
 
-static bool output_text_write_inline_sequence(int column, enum manual_data_object_type type, struct manual_data *sequence, char *enclosure, char *separator)
+static bool output_text_write_inline_sequence(int column, enum manual_data_object_type type,
+		char *enclosure, char *separator, struct manual_data *sequence)
 {
 	struct manual_data *chunk;
 	bool success = true;
@@ -2069,6 +2070,7 @@ static bool output_text_write_inline_sequence(int column, enum manual_data_objec
 	if (success == true && sequence->first_child != NULL && enclosure != NULL)
 		success = output_text_line_add_text(column, enclosure);
 
+	/* Write the items in the sequence. */
 
 	while (success == true && chunk != NULL) {
 		if (sequence->type == MANUAL_DATA_OBJECT_TYPE_MENU && chunk->type == MANUAL_DATA_OBJECT_TYPE_MENU_ITEM)
