@@ -122,6 +122,11 @@
 #define ENCODING_UTF8_BULLET "\xe2\x80\xa2"
 
 /**
+ * UTF8 Right Arrow Sequence
+ */
+#define ENCODING_UTF8_RARR "\xe2\x86\x92"
+
+/**
  * UTF8 Middot Sequence
  */
 #define ENCODING_UTF8_MIDDOT "\xc2\xb7"
@@ -181,7 +186,7 @@ bool encoding_select_table(enum encoding_target target);
 /**
  * Return the name of the current encding, in the standard
  * form recognised in HTML documents.
- * 
+ *
  * \return			Pointer to the name.
  */
 
@@ -208,7 +213,7 @@ bool encoding_select_line_end(enum encoding_line_end type);
 /**
  * Parse a UTF-8 string and return its visible length, in characters.
  * This should be a constant in all encodings.
- * 
+ *
  * \param *text			Pointer to the the UTF8 string to parse.
  * \return			The number of characters in the string.
  */
@@ -269,4 +274,3 @@ const char *encoding_get_newline(void);
 void encoding_flatten_whitespace(char *text);
 
 #endif
-

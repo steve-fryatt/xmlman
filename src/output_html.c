@@ -1894,7 +1894,8 @@ static bool output_html_write_text(enum manual_data_object_type type, struct man
 			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_MATHS, "maths", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MENU:
-			success = output_html_write_inline_sequence(MANUAL_DATA_OBJECT_TYPE_MENU, "menu", "item", " " ENCODING_UTF8_NDASH " ", chunk);
+			success = output_html_write_inline_sequence(MANUAL_DATA_OBJECT_TYPE_MENU, "menu",
+					"item", " " ENCODING_UTF8_RARR " ", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_MESSAGE:
 			success = output_html_write_span_style(MANUAL_DATA_OBJECT_TYPE_MESSAGE, "name", chunk);
