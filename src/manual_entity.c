@@ -77,7 +77,6 @@ static struct manual_entity_definition manual_entity_names[] = {
 
 	{ MANUAL_ENTITY_SMILEYFACE,	MANUAL_ENTITY_NO_CODEPOINT,	"smileyface",	NULL },
 	{ MANUAL_ENTITY_SADFACE,	MANUAL_ENTITY_NO_CODEPOINT,	"sadface",	NULL },
-	{ MANUAL_ENTITY_MSEP,		MANUAL_ENTITY_NO_CODEPOINT,	"msep",		NULL },
 
 	/* Basic Latin */
 

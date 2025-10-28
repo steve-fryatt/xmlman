@@ -53,7 +53,6 @@ enum manual_entity_type {
 
 	MANUAL_ENTITY_SMILEYFACE,
 	MANUAL_ENTITY_SADFACE,
-	MANUAL_ENTITY_MSEP,
 
 	/* Basic Latin */
 

@@ -2344,9 +2344,6 @@ static bool output_text_write_entity(int column, enum manual_entity_type entity)
 	case MANUAL_ENTITY_SADFACE:
 		text = ":-(";
 		break;
-	case MANUAL_ENTITY_MSEP:
-		text = ENCODING_UTF8_NBHY ENCODING_UTF8_NBHY;
-		break;
 	default:
 		codepoint = manual_entity_find_codepoint(entity);
 		if (codepoint != MANUAL_ENTITY_NO_CODEPOINT) {
