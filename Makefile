@@ -38,6 +38,7 @@ else
 endif
 
 OBJS := args.o			\
+	case.o			\
 	encoding.o		\
 	filename.o		\
 	list_numbers.o		\

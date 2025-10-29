@@ -133,6 +133,7 @@ enum msg_type {
 	MSG_TOO_DEEP,
 	MSG_BAD_LIST_NUMBERS,
 	MSG_LIST_TOO_LONG,
+	MSG_CASE_OUT_OF_SEQ,
 
 	MSG_TEXT_LINE_MEM,
 	MSG_TEXT_LINE_COL_MEM,
@@ -220,4 +221,3 @@ void msg_report(enum msg_type type, ...);
 bool msg_errors(void);
 
 #endif
-

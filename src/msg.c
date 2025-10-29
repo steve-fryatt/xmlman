@@ -46,7 +46,7 @@
 
 /**
  * The maximum length allowed for a complete message.
- */ 
+ */
 
 #define MSG_MAX_MESSAGE 256
 
@@ -189,6 +189,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Sections are nested too deep, at %d levels",			false},
 	{MSG_ERROR,	"Failed to initialise list numbers",				false},
 	{MSG_ERROR,	"Too many list items",						false},
+	{MSG_ERROR,	"Character %d is out of sequence at line %d of table",		false},
 
 	{MSG_ERROR,	"Out of memory creating text output line",			false},
 	{MSG_ERROR,	"Out of memory creating text output column",			false},
@@ -362,4 +363,3 @@ bool msg_errors(void)
 {
 	return msg_error_reported;
 }
-
