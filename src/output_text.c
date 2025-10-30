@@ -121,7 +121,7 @@ static bool output_text_write_code_block(struct manual_data *object, int column)
 static bool output_text_write_paragraph(struct manual_data *object, int column, bool last_item);
 static bool output_text_write_reference(struct manual_data *target);
 static bool output_text_write_text(int column, enum manual_data_object_type type, struct manual_data *text);
-static bool output_text_write_span_enclosed(int column, enum manual_data_object_type type, char *string, struct manual_data *text);
+static bool output_text_write_span_enclosed(int column, enum manual_data_object_type type, char *string, enum output_text_line_column_flags flags, struct manual_data *text);
 static bool output_text_write_inline_defined_text(int column, struct manual_data *defined_text);
 static bool output_text_write_inline_sequence(int column, enum manual_data_object_type type, char *enclosure, char *separator, struct manual_data *sequence);
 static bool output_text_write_inline_link(int column, struct manual_data *link);
@@ -630,7 +630,7 @@ static bool output_text_write_page_head(struct manual_data *manual, int level)
 	if (!output_text_line_add_column(1, 1)) // Nominal width; we'll resize to content later
 		return false;
 
-	if (!output_text_line_set_column_flags(1, OUTPUT_TEXT_LINE_COLUMN_FLAGS_RIGHT))
+	if (!output_text_line_set_column_flags(1, OUTPUT_TEXT_LINE_COLUMN_FLAGS_RIGHT, true))
 		return false;
 
 	if (!output_text_line_reset())
@@ -1092,7 +1092,7 @@ static bool output_text_write_callout(struct manual_data *object, int column)
 	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
 		return false;
 
-	if (!output_text_line_set_column_flags(0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE))
+	if (!output_text_line_set_column_flags(0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE, true))
 		return false;
 
 	if (!output_text_line_reset())
@@ -1118,7 +1118,7 @@ static bool output_text_write_callout(struct manual_data *object, int column)
 			return false;
 	}
 
-	if (!output_text_line_set_column_flags(0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_NONE))
+	if (!output_text_line_set_column_flags(0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE, false))
 		return false;
 
 	/* Write the contents. */
@@ -1630,7 +1630,7 @@ static bool output_text_write_table(struct manual_data *object, int target_colum
 	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
 		return false;
 
-	if (!output_text_line_set_column_flags(0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE))
+	if (!output_text_line_set_column_flags(0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE, true))
 		return false;
 
 	if (!output_text_line_reset())
@@ -1691,7 +1691,7 @@ static bool output_text_write_code_block(struct manual_data *object, int column)
 	if (!output_text_line_add_column(0, OUTPUT_TEXT_LINE_FULL_WIDTH))
 		return false;
 
-	if (!output_text_line_set_column_flags(0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_PREFORMAT))
+	if (!output_text_line_set_column_flags(0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_PREFORMAT, true))
 		return false;
 
 	if (!output_text_line_reset())
@@ -1712,6 +1712,9 @@ static bool output_text_write_code_block(struct manual_data *object, int column)
 		return true;
 	}
 
+	if (!output_text_line_set_column_flags(0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_PREFORMAT, false))
+		return false;
+
 	/* Write a newline above the title. */
 
 	if (!output_text_line_write_newline())
@@ -1719,7 +1722,7 @@ static bool output_text_write_code_block(struct manual_data *object, int column)
 
 	/* Centre the title. */
 
-	if (!output_text_line_set_column_flags(0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE))
+	if (!output_text_line_set_column_flags(0, OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE, true))
 		return false;
 
 	if (!output_text_line_reset())
@@ -1868,7 +1871,7 @@ static bool output_text_write_text(int column, enum manual_data_object_type type
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_CITATION, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_CODE:
-			success = output_text_write_span_enclosed(column, MANUAL_DATA_OBJECT_TYPE_CODE, "\"", chunk);
+			success = output_text_write_span_enclosed(column, MANUAL_DATA_OBJECT_TYPE_CODE, "\"", OUTPUT_TEXT_LINE_COLUMN_FLAGS_NONE, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_COMMAND:
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_COMMAND, chunk);
@@ -1889,19 +1892,21 @@ static bool output_text_write_text(int column, enum manual_data_object_type type
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_FUNCTION, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_ICON:
-			success = output_text_write_span_enclosed(column, MANUAL_DATA_OBJECT_TYPE_ICON, "'", chunk);
+			success = output_text_write_span_enclosed(column, MANUAL_DATA_OBJECT_TYPE_ICON,
+					"'", OUTPUT_TEXT_LINE_COLUMN_FLAGS_NONE, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_INTRO:
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_INTRO, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_KEYPRESS:
-			success = output_text_write_inline_sequence(column, MANUAL_DATA_OBJECT_TYPE_KEYPRESS, NULL, "-", chunk);
+			success = output_text_write_inline_sequence(column, MANUAL_DATA_OBJECT_TYPE_KEYPRESS,
+					NULL, "-", chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_KEYWORD:
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_KEYWORD, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS:
-			success = output_text_write_span_enclosed(column, MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, "/", chunk);
+			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_LIGHT_EMPHASIS, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_LINK:
 			success = output_text_write_inline_link(column, chunk);
@@ -1926,7 +1931,8 @@ static bool output_text_write_text(int column, enum manual_data_object_type type
 			success = output_text_write_inline_reference(column, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS:
-			success = output_text_write_span_enclosed(column, MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS, "*", chunk);
+			success = output_text_write_span_enclosed(column, MANUAL_DATA_OBJECT_TYPE_STRONG_EMPHASIS,
+					NULL, OUTPUT_TEXT_LINE_COLUMN_FLAGS_UPPER_CASE, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_SWI:
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_SWI, chunk);
@@ -1935,7 +1941,8 @@ static bool output_text_write_text(int column, enum manual_data_object_type type
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_TYPE, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_USER_ENTRY:
-			success = output_text_write_span_enclosed(column, MANUAL_DATA_OBJECT_TYPE_USER_ENTRY, "\"", chunk);
+			success = output_text_write_span_enclosed(column, MANUAL_DATA_OBJECT_TYPE_USER_ENTRY,
+					"\"", OUTPUT_TEXT_LINE_COLUMN_FLAGS_NONE, chunk);
 			break;
 		case MANUAL_DATA_OBJECT_TYPE_VARIABLE:
 			success = output_text_write_text(column, MANUAL_DATA_OBJECT_TYPE_VARIABLE, chunk);
@@ -1966,27 +1973,35 @@ static bool output_text_write_text(int column, enum manual_data_object_type type
 }
 
 /**
- * Write out a section of text wrapped in {f} tags.
+ * Write out a section of text wrapped in characters and column flags.
  *
  * \param column		The column in the line to write to.
  * \param type			The type of block which is expected.
  * \param *string		The text to enclose the span in.
+ * \param *flags		The column flags to enclose the span in.
  * \param *text			The block of text to be written.
  * \return			True if successful; False on error.
  */
 
-static bool output_text_write_span_enclosed(int column, enum manual_data_object_type type, char *string, struct manual_data *text)
+static bool output_text_write_span_enclosed(int column, enum manual_data_object_type type,
+		char *string, enum output_text_line_column_flags flags, struct manual_data *text)
 {
-	if (text == NULL || string == NULL)
+	if (text == NULL)
 		return false;
 
-	if (!output_text_line_add_text(column, string))
+	if (string != NULL && !output_text_line_add_text(column, string))
+		return false;
+
+	if (flags != OUTPUT_TEXT_LINE_COLUMN_FLAGS_NONE && !output_text_line_set_column_flags(column, flags, true))
 		return false;
 
 	if (!output_text_write_text(column, type, text))
 		return false;
 
-	if (!output_text_line_add_text(column, string))
+	if (flags != OUTPUT_TEXT_LINE_COLUMN_FLAGS_NONE && !output_text_line_set_column_flags(column, flags, false))
+		return false;
+
+	if (string != NULL && !output_text_line_add_text(column, string))
 		return false;
 
 	return true;

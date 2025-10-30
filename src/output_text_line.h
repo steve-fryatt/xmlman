@@ -1,4 +1,4 @@
-/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2025, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -47,7 +47,10 @@ enum output_text_line_column_flags {
 	OUTPUT_TEXT_LINE_COLUMN_FLAGS_NONE = 0,
 	OUTPUT_TEXT_LINE_COLUMN_FLAGS_CENTRE = 1,
 	OUTPUT_TEXT_LINE_COLUMN_FLAGS_RIGHT = 2,
-	OUTPUT_TEXT_LINE_COLUMN_FLAGS_PREFORMAT = 4
+	OUTPUT_TEXT_LINE_COLUMN_FLAGS_PREFORMAT = 4,
+	OUTPUT_TEXT_LINE_COLUMN_FLAGS_UPPER_CASE = 8,
+	OUTPUT_TEXT_LINE_COLUMN_FLAGS_LOWER_CASE = 16,
+	OUTPUT_TEXT_LINE_COLUMN_FLAGS_TITLE_CASE = 32,
 };
 
 /**
@@ -69,7 +72,7 @@ void output_text_line_close(void);
 /**
  * Push a new output line on to the stack, insetting it the given number
  * of character positions relative to the start of the file line.
- * 
+ *
  * \param inset		The number of character positions to inset the line.
  * \return		TRUE if successful; else FALSE.
  */
@@ -80,7 +83,7 @@ bool output_text_line_push_absolute(int inset);
  * Push a new output line on to the stack, insetting it the given number
  * of character positions from the left margin of the line below it on
  * the stack.
- * 
+ *
  * \param left		The number of character positions to inset the line
  *			from the parent on the left.
  * \param right		The number of character positions to inset the line
@@ -140,14 +143,15 @@ bool output_text_line_has_content(void);
 bool output_text_line_add_column(int margin, int width);
 
 /**
- * Set the flags for a column in the line at the top of the stack.
+ * Set or clear flags for a column in the line at the top of the stack.
  *
  * \param column	The index of the column to update.
- * \param flags		The new column flags.
+ * \param flags		The column flags to be changed.
+ * \param state		True to set the flags, or false to clear them.
  * \return		True on success; False on error.
  */
 
-bool output_text_line_set_column_flags(int column, enum output_text_line_column_flags flags);
+bool output_text_line_set_column_flags(int column, enum output_text_line_column_flags flags, bool state);
 
 /**
  * Reset the line at the top of the stack, ready for a new block to be built.
@@ -224,4 +228,3 @@ bool output_text_line_write_ruleoff(int unicode);
 bool output_text_line_write_newline(void);
 
 #endif
-

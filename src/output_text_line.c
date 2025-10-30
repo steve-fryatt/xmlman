@@ -35,6 +35,7 @@
 
 #include "output_text_line.h"
 
+#include "case.h"
 #include "encoding.h"
 #include "filename.h"
 #include "msg.h"
@@ -254,7 +255,7 @@ void output_text_line_close(void)
 /**
  * Push a new output line on to the stack, insetting it the given number
  * of character positions relative to the start of the file line.
- * 
+ *
  * \param inset		The number of character positions to inset the line.
  * \return		TRUE if successful; else FALSE.
  */
@@ -284,7 +285,7 @@ bool output_text_line_push_absolute(int inset)
  * Push a new output line on to the stack, insetting it the given number
  * of character positions from the left margin of the line below it on
  * the stack.
- * 
+ *
  * \param left		The number of character positions to inset the line
  *			from the parent on the left.
  * \param right		The number of character positions to inset the line
@@ -526,14 +527,15 @@ bool output_text_line_add_column(int margin, int width)
 }
 
 /**
- * Set the flags for a column in the line at the top of the stack.
+ * Set or clear flags for a column in the line at the top of the stack.
  *
  * \param column	The index of the column to update.
- * \param flags		The new column flags.
+ * \param flags		The column flags to be changed.
+ * \param state		True to set the flags, or false to clear them.
  * \return		True on success; False on error.
  */
 
-bool output_text_line_set_column_flags(int column, enum output_text_line_column_flags flags)
+bool output_text_line_set_column_flags(int column, enum output_text_line_column_flags flags, bool state)
 {
 	struct output_text_line_column	*col = NULL;
 	struct output_text_line *line = output_text_line_stack;
@@ -547,7 +549,10 @@ bool output_text_line_set_column_flags(int column, enum output_text_line_column_
 	if (col == NULL)
 		return false;
 
-	col->flags = flags;
+	if (state == true)
+		col->flags |= flags;
+	else
+		col->flags &= (~flags);
 
 	return true;
 }
@@ -620,7 +625,7 @@ bool output_text_line_set_column_width(int column)
 	col = output_text_line_find_column(line, column);
 	if (col == NULL)
 		return false;
-		
+
 	col->requested_width = encoding_get_utf8_string_length(col->text);
 
 	/* Recalculate the column widths. */
@@ -749,7 +754,7 @@ bool output_text_line_add_text(int column, char *text)
 
 static bool output_text_line_add_column_text(struct output_text_line_column *column, char *text)
 {
-	int	write_ptr;
+	int write_ptr, c;
 
 	if (column == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_COL_REF);
@@ -786,15 +791,28 @@ static bool output_text_line_add_column_text(struct output_text_line_column *col
 	 */
 
 	while (*text != '\0') {
-		column->text[write_ptr++] = *text++;
+		c = encoding_parse_utf8_string(&text);
+
+		/* Apply formatting to the character. */
+
+		if (column->flags & OUTPUT_TEXT_LINE_COLUMN_FLAGS_UPPER_CASE)
+			c = case_convert_to_upper_case(c);
+		else if (column->flags & OUTPUT_TEXT_LINE_COLUMN_FLAGS_LOWER_CASE)
+			c = case_convert_to_lower_case(c);
+		else if (column->flags & OUTPUT_TEXT_LINE_COLUMN_FLAGS_TITLE_CASE)
+			c = case_convert_to_title_case(c);
 
 		/* If we're now out of memory, try to claim some more. */
 
-		if ((write_ptr >= column->size) && !output_text_line_update_column_memory(column)) {
+		if (((column->size - write_ptr) < ENCODING_CHAR_BUF_LEN) && !output_text_line_update_column_memory(column)) {
 			column->text[write_ptr - 1] = '\0';
 			msg_report(MSG_TEXT_LINE_NO_MEM);
 			return false;
 		}
+
+		/* Write the character to the buffer and advance the pointer. */
+
+		write_ptr += encoding_write_utf8_character(column->text + write_ptr, column->size - write_ptr, c);
 	}
 
 	column->text[write_ptr] = '\0';
@@ -1031,7 +1049,7 @@ static bool output_text_line_size_columns(struct output_text_line *line)
 
 	column = line->columns;
 
-	while (column != NULL) 
+	while (column != NULL)
 	{
 		column->blank_rows = 0;
 
@@ -1054,7 +1072,7 @@ static bool output_text_line_size_columns(struct output_text_line *line)
 
 	column = line->columns;
 
-	while (column != NULL) 
+	while (column != NULL)
 	{
 		column->blank_rows = max_count - column->blank_rows;
 
@@ -1158,7 +1176,7 @@ static bool output_text_line_write_column(struct output_text_line_column *column
 		/* If this is a possible breakpoint... */
 
 		if (c == ' ' || c == '-') {
-			
+
 
 			if (preformat == false && c == ' ' && written_width == 1) {
 				/* If the first character of the column is a space, we skip it. */
@@ -1458,4 +1476,3 @@ static bool output_text_line_write_char(struct output_text_line *line, int unico
 
 	return true;
 }
-
