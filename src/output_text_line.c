@@ -110,6 +110,21 @@ struct output_text_line_column {
 	 * Pointer to the next column structure, or NULL.
 	 */
 	struct output_text_line_column		*next;
+
+	/**
+	 * Nesting count for the Upper Case flag.
+	 */
+	int					upper_case_count;
+
+	/**
+	 * Nesting count for the Lower Case flag.
+	 */
+	int					lower_case_count;
+
+	/**
+	 * Nesting count for the Title Case flag.
+	 */
+	int					title_case_count;
 };
 
 /**
@@ -514,6 +529,9 @@ bool output_text_line_add_column(int margin, int width)
 	column->requested_width = width;
 	column->parent = line;
 	column->flags = OUTPUT_TEXT_LINE_COLUMN_FLAGS_NONE;
+	column->lower_case_count = 0;
+	column->upper_case_count = 0;
+	column->title_case_count = 0;
 	column->width = 0;
 	column->text = NULL;
 	column->size = 0;
@@ -548,6 +566,33 @@ bool output_text_line_set_column_flags(int column, enum output_text_line_column_
 	col = output_text_line_find_column(line, column);
 	if (col == NULL)
 		return false;
+
+	/* The case flags are cumulative, so we count sets and unsets to ensure that
+	 * they don't get cleared too soon for nested applications.
+	 */
+
+	if (flags & OUTPUT_TEXT_LINE_COLUMN_FLAGS_UPPER_CASE) {
+		if (state == true)
+			col->upper_case_count++;
+		else if ((col->upper_case_count > 0) && (--(col->upper_case_count) > 0))
+			flags &= (~OUTPUT_TEXT_LINE_COLUMN_FLAGS_UPPER_CASE);
+	}
+
+	if (flags & OUTPUT_TEXT_LINE_COLUMN_FLAGS_LOWER_CASE) {
+		if (state == true)
+			col->lower_case_count++;
+		else if ((col->lower_case_count > 0) && (--(col->lower_case_count) > 0))
+			flags &= (~OUTPUT_TEXT_LINE_COLUMN_FLAGS_LOWER_CASE);
+	}
+
+	if (flags & OUTPUT_TEXT_LINE_COLUMN_FLAGS_TITLE_CASE) {
+		if (state == true)
+			col->title_case_count++;
+		else if ((col->title_case_count > 0) && (--(col->title_case_count) > 0))
+			flags &= (~OUTPUT_TEXT_LINE_COLUMN_FLAGS_TITLE_CASE);
+	}
+
+	/* Now apply what flags remain. */
 
 	if (state == true)
 		col->flags |= flags;
