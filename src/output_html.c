@@ -602,6 +602,8 @@ static bool output_html_write_section_object(struct manual_data *object, int lev
 
 static bool output_html_write_file_head(struct manual_data *manual)
 {
+	const char *encoding = NULL;
+
 	if (manual == NULL)
 		return false;
 
@@ -614,7 +616,9 @@ static bool output_html_write_file_head(struct manual_data *manual)
 	if (!output_html_file_write_plain("<head>") || !output_html_file_write_newline())
 		return false;
 
-	if (!output_html_file_write_plain("<meta charset=\"%s\">", encoding_get_current_label()) || !output_html_file_write_newline())
+	encoding = encoding_get_current_label();
+
+	if (encoding != NULL && (!output_html_file_write_plain("<meta charset=\"%s\">", encoding) || !output_html_file_write_newline()))
 		return false;
 
 	if (manual->title != NULL && !output_html_write_heading(manual, 0))

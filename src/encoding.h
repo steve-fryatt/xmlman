@@ -1,4 +1,4 @@
-/* Copyright 2018-2024, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2018-2025, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of XmlMan:
  *
@@ -143,12 +143,26 @@
  */
 
 enum encoding_target {
-	ENCODING_TARGET_UTF8,		/**< UTF8 encoding.				*/
-	ENCODING_TARGET_7BIT,		/**< 7-Bit encoding.				*/
-	ENCODING_TARGET_ACORN_LATIN1,	/**< RISC OS Latin 1 encoding.			*/
-	ENCODING_TARGET_ACORN_LATIN2,	/**< RISC OS Latin 2 encoding.			*/
-	ENCODING_TARGET_MAX,		/**< The maximum nubmber of encodings.		*/
-	ENCODING_TARGET_NONE		/**< No encoding.				*/
+	ENCODING_TARGET_UTF8,			/**< UTF8 encoding.			*/
+	ENCODING_TARGET_7BIT,			/**< 7-Bit encoding.			*/
+	ENCODING_TARGET_ACORN_LATIN1,		/**< RISC OS Latin 1 encoding.		*/
+	ENCODING_TARGET_ACORN_LATIN2,		/**< RISC OS Latin 2 encoding.		*/
+	ENCODING_TARGET_ACORN_LATIN3,		/**< RISC OS Latin 3 encoding.		*/
+	ENCODING_TARGET_ACORN_LATIN4,		/**< RISC OS Latin 4 encoding.		*/
+	ENCODING_TARGET_ACORN_LATIN5,		/**< RISC OS Latin 5 encoding.		*/
+	ENCODING_TARGET_ACORN_LATIN6,		/**< RISC OS Latin 6 encoding.		*/
+	ENCODING_TARGET_ACORN_LATIN7,		/**< RISC OS Latin 7 encoding.		*/
+	ENCODING_TARGET_ACORN_LATIN8,		/**< RISC OS Latin 8 encoding.		*/
+	ENCODING_TARGET_ACORN_LATIN9,		/**< RISC OS Latin 9 encoding.		*/
+	ENCODING_TARGET_ACORN_LATIN10,		/**< RISC OS Latin 10 encoding.		*/
+	ENCODING_TARGET_ACORN_CYRILLIC,		/**< RISC OS Cyrillic encoding.		*/
+	ENCODING_TARGET_ACORN_CYRILLIC2,	/**< RISC OS Cyrillic 2 encoding.	*/
+	ENCODING_TARGET_ACORN_GREEK,		/**< RISC OS Greek encoding.		*/
+	ENCODING_TARGET_ACORN_HEBREW,		/**< RISC OS Hebrew encoding.		*/
+	ENCODING_TARGET_ACORN_WELSH,		/**< RISC OS Welsh encoding.		*/
+	ENCODING_TARGET_ACORN_BFONT,		/**< RISC OS BFont encoding.		*/
+	ENCODING_TARGET_MAX,			/**< The maximum nubmber of encodings.	*/
+	ENCODING_TARGET_NONE			/**< No encoding.			*/
 };
 
 /**
