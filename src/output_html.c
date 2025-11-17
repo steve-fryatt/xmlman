@@ -100,7 +100,7 @@ static char *output_html_default_stylesheet[] = {
 	"DIV#body { margin: 0; padding: 0 1em; }",
 	"DIV#body-liner { max-width: 1000px; margin: 1em auto; }",
 	"H1 { text-align: left; font-size: 2em; font-weight: bold; margin-top: 1em; margin-bottom: 1em; }",
-	"H2 { text-align: left; font-size: 1.5em; font-weight: bold; margin-top: 1.5em; margin-bottom: 1em; }",
+	"H2 { text-align: left; font-size: 1.5em; font-weight: bold; margin-top: 1.5em; margin-bottom: 1em; border-bottom: 2px solid #777777; }",
 	"H3 { text-align: left; font-size: 1em; font-weight: bold; font-style: italic; margin-top: 0.5em; margin-bottom:0; }",
 	"H4 { text-align: left; font-size: 1em; font-style: italic; margin-top: 0.5em; margin-bottom: 0; }",
 	"H5 { text-align: left; font-size: 1em; font-style: italic; margin-top: 0.5em; margin-bottom: 0; }",
@@ -130,7 +130,7 @@ static char *output_html_default_stylesheet[] = {
 	"TABLE { width: 100%; border-collapse: collapse; border-spacing: 2px; }",
 	"TH { font-weight: bold; text-align: left; }",
 	"TD { text-align: left; }",
-	"TR { vertical-align: middle; border-bottom: 1px solid #DFDFFF; }",
+	"TR { vertical-align: middle; border-bottom: 1px solid #DFDFDF; }",
 	"CODE, SPAN.code { font-family: monospace; font-weight: bold; }",
 	"DIV.caption { width: 100%; margin: 0.5em 0 0; padding: 0 2em; font-style: italic; text-align: center; }"
 	"STRONG { font-weight: bold; }",
