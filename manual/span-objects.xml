@@ -1,0 +1,9 @@
+<manual>
+<chapter id="chapter-span-objects">
+<title>Span Objects</title>
+
+<section>
+<p>A span object is an object which is contained within a &lsquo;paragraph level&rsquo; (or <ref id="chapter-block-objects">block</ref>) object.</p>
+</section>
+</chapter>
+</manual>

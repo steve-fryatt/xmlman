@@ -2,7 +2,7 @@
 <title>XMLMan</title>
 
 <strapline>Generate RISC&nbsp;OS documentation from XML</strapline>
-<credit>&copy; Stephen Fryatt, 2018-2024</credit>
+<credit>&copy; Stephen Fryatt, 2018-2025</credit>
 <version>Version <define name="version" /></version>
 <date><define name="date" /></date>
 
@@ -39,96 +39,15 @@
 </chapter>
 
 
+<chapter file="documents.xml" />
 
-<chapter>
-<title>Documents</title>
+<chapter file="manual-structure.xml" />
 
-<section>
-<p>An <cite>XMLMan</cite> document consists of one or more XML files. They are notionally in UTF-8 encoding, although users creating files on RISC&nbsp;OS can avoid this by sticking to ASCII and using entities for the &ldquo;top-bit&rdquo; characters. This approach also makes it easier to store the files in source code management systems on other platforms.</p>
+<chapter file="block-objects.xml" />
 
-<p>The files mostly follow the standard XML syntax rules, which are as follows.</p>
+<chapter file="span-objects.xml" />
 
-<ul>
-<li><p>Tags are enclosed in &lt; and &gt; angle brackets, and use lower case.</p></li>
-<li><p>Attribute names are in lower case, and their values are strings enclosed in double-quotes.</p></li>
-<li><p>Entities are lower case text enclosed by &amp; and a semicolon. A subset of the HTML&nbsp;5 entities are supported.</p></li>
-<li><p>The &lt;, &gt;, &quot; and &amp; characters are reserved, and must <em>always</em> be represented by the <code>&amp;lt;</code>, <code>&amp;gt;</code>, <code>&amp;quot;</code> and <code>&amp;amp;</code> entities when they appear in the manual text.</p></li>
-</ul>
-
-<p>Comments are enclosed in <code>&lt;!--</code> and <code>--&gt;</code>, and can span multiple lines.</p>
-
-<p>There is one small extension to the XML syntax, which is that some attributes can contain their own entities <em>and</em> tags. These are used sparingly, and will be clearly documented when they arise.</p>
-</section>
-
-<section>
-<title>Character sets and encodings</title>
-
-<p><cite>XMLMan</cite> source files are always treated as being in UTF-8. To make it easier to work on different platforms, many standard HTML&nbsp;5 entities are supported &ndash; for example <code>&amp;ndash;</code> for the en-dash in this sentence, or <code>&amp;Aacute;</code> for a capital A with an acute accent (&Aacute;). By sticking to standard &ldquo;ASCII-range&rdquo; characters and using entities, it is possible to create files which can be safely edited on both RISC&nbsp;OS and other platforms.</p>
-
-<p>The encoding used for output files is specified when calling <cite>XMLMan</cite> from the command line. Characters which can be represented in the target encoding will be converted and written to the output, while those which can&rsquo;t will be replaced by a question mark &ndash; a warning will be issued for each one. Some output modes handle the conversion differently, and this is documented in their specific sections of this manual.</p>
-
-<p>The encodings listed in <ref id="table-encodings" /> are supported.</p>
-
-<table id="table-encodings" title="Supported output encoding types">
-<columns>
-<coldef>Encoding</coldef>
-<coldef>Parameter</coldef>
-</columns>
-<row><col>Acorn Latin 1</col><col>AcornL1</col></row>
-<row><col>Acorn Latin 2</col><col>AcornL2</col></row>
-<row><col>Unicode UTF-8</col><col>UTF8</col></row>
-<row><col>7 Bit</col><col>7Bit</col></row>
-</table>
-</section>
-
-<section>
-<title>Internal references</title>
-
-<p>Internal references link from areas of the text to objects such as chapters, sections, tables and code blocks (&ldquo;listings&rdquo;). These enable items such as &ldquo;see Chapter 2&rdquo; or &ldquo;as shown in Table 4&rdquo; to be entered easily, along with hyperlinks where the output format allows for these.</p>
-
-<p>Reference IDs are specified using the <name>id</name> attribute within appropriate target tags, and can be any alphanumeric text. However, references map to object IDs in HTML output and since the IDs <name>head</name>, <name>head-liner</name>, <name>body</name>, <name>body-liner</name>, <name>foot</name> and <name>foot-liner</name> are used within the page structure, these are not available within a manual.</p>
-</section>
-
-<section>
-<title>External definitions</title>
-
-<p>It is possible to supply externally-sourced content for a manual, in the form of short text definitions supplied with the <param>-define</param> parameter on the command line. The primary use case for this functionality is to support the embedding of build dates and version numbers into software manuals.</p>
-
-<p>In the manual document, these defines can be accessed using <code>&lt;define&gt;</code> tags.</p>
-
-<code>&lt;p&gt;The software was built on &lt;define name=&quot;builddate&quot; /&gt;.&lt;/p&gt;</code>
-
-</section>
-
-<section>
-<title>The Manual</title>
-
-<p>The top level of an <cite>XMLMan</cite> document are the <code>&lt;manual&gt;</code> tags, which enclose the complete manual.</p>
-
-<code>&lt;manual&gt;
-
-  &lt;!-- The manual contents --&gt;
-
-&lt;/manual&gt;</code>
-
-<p>A manual can contain a number of tags, as follows.</p>
-
-<section>
-<title>Title</title>
-
-<p>The manual title is contained in <code>&lt;title&gt;</code> tags. This is the title used for the whole manual.</p>
-
-<code>&lt;manual&gt;
-  &lt;title&gt;The XMLMan Manual&lt;/title&gt;
-
-  &lt;!-- The manual contents --&gt;
-
-&lt;/manual&gt;</code>
-
-<p>A title is a single paragraph-like object containing text and markup.</p>
-</section>
-</section>
-</chapter>
+<chapter file="resources.xml" />
 
 <chapter file="html-output.xml" />
 

@@ -35,7 +35,24 @@
 <p>The way that software interacts with the Wimp hasn&rsquo;t really changed since the days of Arthur &ndash; although there have been some small changes to accommodate the system of cooperative multitasking, they don&rsquo;t alter anything in a fundamental way. All access to the Wimp is via SWI calls: using the <code>SYS</code> command in BASIC or &ndash; in the case of this tutorial &ndash; OSLib when working in C.</p>
 </section>
 
+<section>
+<resources>
+ <mode type="text">
+  <filename>FileStrucure2.txt</filename>
+ </mode>
+</resources>
 
+<title>Another section</title>
+
+<p>Here's some text.</p>
+
+<section>
+<title>And down a level</title>
+
+<p>Lower still.</p>
+
+</section>
+</section>
 </chapter>
 </manual>
 

@@ -27,11 +27,16 @@
 ARCHIVE := xmlman
 
 MANSRC := Source.xml		\
-	html-output.xml
+	block-objects.xml	\
+	documents.xml		\
+	html-output.xml		\
+	manual-structure.xml	\
+	resources.xml		\
+	span-objects.xml
 
 ifeq ($(TARGET),riscos)
   RUNIMAGE := xmlman,ff8
-  HTMLHELP := Manual,ff8
+  HTMLHELP := Manual,faf
 else
   RUNIMAGE := xmlman
   HTMLHELP := Manual.html

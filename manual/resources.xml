@@ -1,0 +1,71 @@
+<manual>
+<chapter id="chapter-resources">
+<title>Resources</title>
+
+<section>
+<p>Resources objects hold settings and meta-information about the document, which can be used by the parser and the output modes. They exist within <ref id="section-manual-structure-sections">sections</ref>, <ref id="section-manual-structure-chapters">chapters, indexes</ref> and at the <ref id="section-manual-structure-manual">top level of the manual</ref>, and operate in a hierarchy.</p>
+
+<code>&lt;resources&gt;
+  &lt;mode type=&quot;text&quot;&gt;
+    &lt;filename&gt;chapter-1.txt&lt;/filename&gt;
+  &lt;/mode&lt;
+
+  &lt;mode type=&quot;html&quot;&gt;
+    &lt;filename&gt;chapter-1.html&lt;/filename&gt;
+  &lt;/mode&lt;
+
+  &lt;images&gt;images/chapter2&lt;/images&gt;
+&lt;/resources&gt;</code>
+
+<p>Some of the resources apply to specific output modes, whilst others apply to them all (or at least, those which are able to use them).</p>
+</section>
+
+<section>
+<title>Resource hierarchy</title>
+
+<p>The resources within a document operate in a hierarchical way, with the most recently-seen values taking precedence over those before them.</p>
+
+<p>Initial default values will be assigned to each setting when the parser starts, which can be overwritten by including the setting in the <ref id="section-manual-structure-manual">top-level manual structure</ref>. These settings can then be overwritten again if they are included in the resources of a <ref id="section-manual-structure-chapters">chapter or indexe</ref>. Finally, they can be overwritten again using the resources in any level of nested <ref id="section-manual-structure-sections">sections</ref>.</p>
+</section>
+
+<section>
+<title>Mode resources</title>
+
+<p>Resources which apply to specific modes are contained within a mode object, which takes a <name>type</name> attribute that is assigned the name of the mode as listed in <ref id="table-documents-output-modes" />.</p>
+
+<p>Multiple mode objects can be inlcuded in each resource object, so long as they are targetted at different output modes.</p>
+
+<p>Each mode object can contain any of the following objects; exactly how they are used will depend on the specific output modes.</p>
+
+<section>
+<title>Filename</title>
+
+<p>The filename object contains the name of an output file which will be used to write the output document from the object in which it is held downwards, until another filename is found to replace it.</p>
+</section>
+
+<section>
+<title>Folder</title>
+
+<p>The folder object contains the name of an output folder into which output documents will be saved from the object in which it is held downwards, until another folder is found to replace it. Depending on the output mode, the folders may be nested to create a hierarchical output structure which mirrors the document.</p>
+</section>
+
+<section>
+<title>Stylesheet</title>
+
+<p>The stylesheet object contains the name of a stylesheet file relative to the root source document for the manual, which will be used for all documents created from the object in which it is held downwards, until another stylesheet is found to replace it. Exactly how this is used will depend on the output mode.</p>
+</section>
+</section>
+
+<section>
+<title>Downloads</title>
+
+<p>The downloads object holds a folder name relative to the root source document for the manual. It is not currently used.</p>
+</section>
+
+<section>
+<title>Images</title>
+
+<p>The images object holds a folder name relative to the root source document for the manual. It is not currently used.</p>
+</section>
+</chapter>
+</manual>
