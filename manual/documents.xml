@@ -86,7 +86,7 @@
 
 <p>It is possible to supply externally-sourced content for a manual, in the form of short text definitions supplied with the <param>-define</param> parameter on the command line. The primary use case for this functionality is to support the embedding of build dates and version numbers into software manuals.</p>
 
-<p>In the manual document, these defines can be accessed using <code>&lt;define&gt;</code> tags.</p>
+<p>In the manual document, these defines can be accessed using <code>&lt;define&gt;</code> tags, which can be used anywhere that a <ref id="chapter-span-objects">span object</ref> is valid.</p>
 
 <code>&lt;p&gt;The software was built on &lt;define name=&quot;builddate&quot; /&gt;.&lt;/p&gt;</code>
 </section>

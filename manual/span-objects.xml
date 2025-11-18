@@ -3,7 +3,103 @@
 <title>Span Objects</title>
 
 <section>
-<p>A span object is an object which is contained within a &lsquo;paragraph level&rsquo; (or <ref id="chapter-block-objects">block</ref>) object.</p>
+<p>A span object is an object which is contained within a &lsquo;paragraph level&rsquo; (or <ref id="chapter-block-objects">block</ref>) object. It forms the markup of much of the text within the document.</p>
+
+<p>In general, span objects can be nested within each other as required to create the reqired semantic meaning. Where this isn&rsquo;t possible, it is stated in the descriptions below.</p>
+</section>
+
+<section>
+<title>Simple semantic objects</title>
+
+<p>The simple semantic objects apply a meaning to the text within them, which will usually be mapped to a display format by the individual output modes. A full list is given in <ref id="table-span-objects-simple"/>.</p>
+
+<table title="Simple semantic objects" id="table-span-objects-simple">
+<columns>
+<coldef width="26">Object</coldef>
+<coldef>Purpose</coldef>
+</columns>
+<row><col><code>&lt;cite&gt;...&lt;/cite&gt;</code></col><col>Citations</col></row>
+<row><col><code>&lt;code&gt;...&lt;/code&gt;</code></col><col>In-line chinks of code</col></row>
+<row><col><code>&lt;command&gt;...&lt;/command&gt;</code></col><col>Commands, such as *Commands</col></row>
+<row><col><code>&lt;const&gt;...&lt;/const&gt;</code></col><col>Constant values </col></row>
+<row><col><code>&lt;em&gt;...&lt;/em&gt;</code></col><col>Lightly emphasised text</col></row>
+<row><col><code>&lt;entry&gt;...&lt;/entry&gt;</code></col><col>Text to be entered by the user</col></row>
+<row><col><code>&lt;event&gt;...&lt;/event&gt;</code></col><col>The name of a Wimp or Toolbox event</col></row>
+<row><col><code>&lt;file&gt;...&lt;/file&gt;</code></col><col>The name of a file</col></row>
+<row><col><code>&lt;function&gt;...&lt;/function&gt;</code></col><col>The name of a function or procedure</col></row>
+<row><col><code>&lt;icon&gt;...&lt;/icon&gt;</code></col><col>The name of a button or icon in a window</col></row>
+<row><col><code>&lt;intro&gt;...&lt;/intro&gt;</code></col><col>The introductorary reference to a word or concept</col></row>
+<row><col><code>&lt;keyword&gt;...&lt;/keyword&gt;</code></col><col>A programming keyword</col></row>
+<row><col><code>&lt;maths&gt;...&lt;/maths&gt;</code></col><col>A mathematical formula</col></row>
+<row><col><code>&lt;message&gt;...&lt;/message&gt;</code></col><col>The name of a Wimp message</col></row>
+<row><col><code>&lt;mouse&gt;...&lt;/mouse&gt;</code></col><col>The name of a mouse key</col></row>
+<row><col><code>&lt;name&gt;...&lt;/name&gt;</code></col><col>A general name which isn&rsquo;t covered by another object</col></row>
+<row><col><code>&lt;strong&gt;...&lt;/strong&gt;</code></col><col>Strongly emphasised text</col></row>
+<row><col><code>&lt;swi&gt;...&lt;/swi&gt;</code></col><col>The name of a SWI call</col></row>
+<row><col><code>&lt;type&gt;...&lt;/type&gt;</code></col><col>The name of a variable type</col></row>
+<row><col><code>&lt;variable&gt;...&lt;/variable&gt;</code></col><col>The name of a variable</col></row>
+<row><col><code>&lt;window&gt;...&lt;/window&gt;</code></col><col>The name of a window</col></row>
+</table>
+
+<p>Semantic objects can be nested, and can contain any of the other span objects documented in this section within their span.</p>
+
+</section>
+
+<section>
+<title>Keypresses</title>
+
+<p>Keypresses allow key combinations to be documented, and consist of a list of key objects contained within an outer keypress object.</p>
+
+<code>&lt;p&gt;Press &lt;keypress&gt;&lt;key&gt;Return&lt;/key&gt;&lt;/keypress&gt;
+or use &lt;keypress&gt;&lt;key&gt;Ctrl&lt;/key&gt;&lt;key&gt;M&lt;/key&gt;&lt;/keypress&gt;.&lt;/p&gt;</code>
+
+<p>This structure allows output modes to join the key combinations as they see fit, and also format the keys as they see fit (for example rendering each key as its own key-cap, if that is appropriate). For example, the line above might appear in some modes as &ldquo;Press Return or use Ctrl-M&rdquo;; in this output mode, it appears as &ldquo;Press <keypress><key>Return</key></keypress> or use <keypress><key>Ctrl</key><key>M</key></keypress>&rdquo;.</p>
+
+<p>The key objects can only contain plain text and entities: no other objects may be nested within them.</p>
+</section>
+
+<section>
+<title>Menu entries</title>
+
+<p>Menu entries allow selections from Wimp menus (or, indeed, any other sort of hierarchical menu structure) to be documented, and consist of a list of menu item objects contained within an outer menu object.</p>
+
+<code>&lt;p&gt;Select &lt;menu&gt;&lt;item&gt;File&lt;/item&gt;&lt;item&gt;Close&lt;/item&gt;&lt;/menu&gt; from the
+main menu, then choose &lt;menu&gt;&lt;item&gt;Quit&lt;/item&gt;&lt;/menu&gt; from the iconbar
+menu.&lt;/p&gt;</code>
+
+<p>This structure allows output modes to link the individual items in any way that they see fit. For example, the line above might be output as &ldquo;Select 'File &gt; Close' from the main menu, then choose 'Quit' from the iconbar menu&rdquo;; in this output mode, it appears as &ldquo;Select <menu><item>File</item><item>Close</item></menu> from the
+main menu, then choose <menu><item>Quit</item></menu> from the iconbar menu.&rdquo;.</p>
+
+<p>The item objects can only contain plain text and entities: no other objects may be nested within them.</p>
+</section>
+
+
+<section>
+<title>Internal references</title>
+
+<!-- To Do -->
+
+</section>
+
+<section>
+<title>External links</title>
+
+<!-- To Do -->
+
+</section>
+
+<section>
+<title>External definitions</title>
+
+<!-- To Do -->
+
+</section>
+
+<section>
+<title>Line breaks</title>
+
+<!-- To Do -->
+
 </section>
 </chapter>
 </manual>
