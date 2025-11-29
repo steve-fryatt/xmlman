@@ -45,6 +45,12 @@ and the resulting files (executable and ReadMe) will be generated in the buildro
 and a Zip file will appear in the parent folder to the location of the project itself.
 
 
+Updating the Unicode tables
+---------------------------
+
+The Case and Encoding tables can be updated from their source data using the Python utility in `tables/`.
+
+
 Licence
 -------
 

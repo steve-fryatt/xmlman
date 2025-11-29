@@ -6,3 +6,7 @@ buildro/ReadMe,fff
 buildro/xmlman,ff8
 obj
 test-out
+tables/UnicodeData.txt
+tables/UCSTables
+tables/case_table.txt
+tables/encoding_tables.txt

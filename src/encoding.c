@@ -172,7 +172,7 @@ static struct encoding_map encoding_acorn_latin1[] = {
 	{8722,	'\x99'},	// Minus Sign
 	{64257,	'\x9e'},	// Latin Small Ligature Fi
 	{64258,	'\x9f'},	// Latin Small Ligature Fl
-	{0,	'\0'},		// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
@@ -297,7 +297,7 @@ static struct encoding_map encoding_acorn_latin2[] = {
 	{8722,	'\x99'},	// Minus Sign
 	{64257,	'\x9e'},	// Latin Small Ligature Fi
 	{64258,	'\x9f'},	// Latin Small Ligature Fl
-	{0,	'\0'},		// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
@@ -415,7 +415,7 @@ static struct encoding_map encoding_acorn_latin3[] = {
 	{8722,	'\x99'},	// Minus Sign
 	{64257,	'\x9e'},	// Latin Small Ligature Fi
 	{64258,	'\x9f'},	// Latin Small Ligature Fl
-	{0,	'\0'},		// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
@@ -540,7 +540,7 @@ static struct encoding_map encoding_acorn_latin4[] = {
 	{8722,	'\x99'},	// Minus Sign
 	{64257,	'\x9e'},	// Latin Small Ligature Fi
 	{64258,	'\x9f'},	// Latin Small Ligature Fl
-	{0,	'\0'},		// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
@@ -665,7 +665,7 @@ static struct encoding_map encoding_acorn_latin5[] = {
 	{8722,	'\x99'},	// Minus Sign
 	{64257,	'\x9e'},	// Latin Small Ligature Fi
 	{64258,	'\x9f'},	// Latin Small Ligature Fl
-	{0,	'\0'},		// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
@@ -790,7 +790,7 @@ static struct encoding_map encoding_acorn_latin6[] = {
 	{8722,	'\x99'},	// Minus Sign
 	{64257,	'\x9e'},	// Latin Small Ligature Fi
 	{64258,	'\x9f'},	// Latin Small Ligature Fl
-	{0,	'\0'},		// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
@@ -911,7 +911,7 @@ static struct encoding_map encoding_acorn_latin7[] = {
 	{8722,	'\x99'},	// Minus Sign
 	{64257,	'\x9e'},	// Latin Small Ligature Fi
 	{64258,	'\x9f'},	// Latin Small Ligature Fl
-	{0,	'\0'},	// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
@@ -1036,7 +1036,7 @@ static struct encoding_map encoding_acorn_latin8[] = {
 	{8722,	'\x99'},	// Minus Sign
 	{64257,	'\x9e'},	// Latin Small Ligature Fi
 	{64258,	'\x9f'},	// Latin Small Ligature Fl
-	{0,	'\0'},		// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
@@ -1162,7 +1162,7 @@ static struct encoding_map encoding_acorn_latin9[] = {
 	{8722,	'\x99'},	// Minus Sign
 	{64257,	'\x9e'},	// Latin Small Ligature Fi
 	{64258,	'\x9f'},	// Latin Small Ligature Fl
-	{0,	'\0'},		// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
@@ -1282,7 +1282,7 @@ static struct encoding_map encoding_acorn_latin10[] = {
 	{8722,	'\x99'},	// Minus Sign
 	{64257,	'\x9e'},	// Latin Small Ligature Fi
 	{64258,	'\x9f'},	// Latin Small Ligature Fl
-	{0,	'\0'},	// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
@@ -1386,7 +1386,7 @@ static struct encoding_map encoding_acorn_cyrillic[] = {
 	{1118,	'\xfe'},	// Cyrillic Small Letter Short U
 	{1119,	'\xff'},	// Cyrillic Small Letter Dzhe
 	{8470,	'\xf0'},	// Numero Sign
-	{0,	'\0'},		// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
@@ -1511,7 +1511,7 @@ static struct encoding_map encoding_acorn_welsh[] = {
 	{8722,	'\x99'},	// Minus Sign
 	{64257,	'\x9e'},	// Latin Small Ligature Fi
 	{64258,	'\x9f'},	// Latin Small Ligature Fl
-	{0,	'\0'},		// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
@@ -1613,7 +1613,7 @@ static struct encoding_map encoding_acorn_greek[] = {
 	{8217,	'\xa2'},	// Right Single Quotation Mark
 	{8364,	'\xa4'},	// Euro Sign
 	{8367,	'\xa5'},	// Drachma Sign
-	{0,	'\0'},		// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
@@ -1677,9 +1677,11 @@ static struct encoding_map encoding_acorn_hebrew[] = {
 	{1512,	'\xf8'},	// Hebrew Letter Resh
 	{1513,	'\xf9'},	// Hebrew Letter Shin
 	{1514,	'\xfa'},	// Hebrew Letter Tav
+	{8206,	'\xfd'},	// Left-To-Right Mark
+	{8207,	'\xfe'},	// Right-To-Left Mark
 	{8215,	'\xdf'},	// Double Low Line
 	{8254,	'\xaf'},	// Overline
-	{0,	'\0'},		// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
@@ -1751,7 +1753,7 @@ static struct encoding_map encoding_acorn_cyrillic2[] = {
 	{1101,	'\xed'},	// Cyrillic Small Letter E
 	{1102,	'\xee'},	// Cyrillic Small Letter Yu
 	{1103,	'\xef'},	// Cyrillic Small Letter Ya
-	{0,	'\0'},		// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
@@ -1859,7 +1861,7 @@ static struct encoding_map encoding_acorn_bfont[] = {
 	{8801,	'\xfb'},	// Identical To
 	{8804,	'\xfc'},	// Less-Than Or Equal To
 	{8805,	'\xfe'},	// Greater-Than Or Equal To
-	{0,	'\0'},		// End of Table
+	{0,	'\0'}		// End of Table
 };
 
 /**
