@@ -2095,34 +2095,6 @@ static struct manual_data *parse_sequence_object(struct parse_xml_block *parser)
 			}
 			break;
 
-		case PARSE_XML_RESULT_TAG_EMPTY:
-			element = parse_xml_get_element(parser);
-
-			switch (element) {
-			case PARSE_ELEMENT_BR:
-				item = manual_data_create(MANUAL_DATA_OBJECT_TYPE_LINE_BREAK);
-				if (item == NULL) {
-					result = parse_xml_set_error(parser);
-					msg_report(MSG_DATA_MALLOC_FAIL);
-					continue;
-				}
-				parse_link_item(&tail, new_block, item);
-				break;
-			case PARSE_ELEMENT_DEFINE:
-			case PARSE_ELEMENT_LINK:
-			case PARSE_ELEMENT_REF:
-				item = parse_empty_block_object(parser);
-				parse_link_item(&tail, new_block, item);
-				break;
-			case PARSE_ELEMENT_NONE:
-				break;
-			default:
-				msg_report(MSG_UNEXPECTED_NODE, parse_element_find_tag(element), parse_element_find_tag(type));
-				parse_unknown(parser);
-				break;
-			}
-			break;
-
 		case PARSE_XML_RESULT_TAG_END:
 			element = parse_xml_get_element(parser);
 
