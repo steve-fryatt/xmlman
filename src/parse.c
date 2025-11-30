@@ -1965,10 +1965,15 @@ static struct manual_data *parse_empty_block_object(struct parse_xml_block *pars
 	switch (type) {
 	case PARSE_ELEMENT_DEFINE:
 		new_block->chunk.name = parse_xml_get_attribute_text(parser, "name");
+		if (new_block->chunk.name == NULL)
+			msg_report(MSG_MISSING_ATTRIBUTE, "name");
 		break;
 	case PARSE_ELEMENT_LINK:
 		new_block->chunk.link = parse_single_level_attribute(parser, "href");
 		parse_link_item(NULL, new_block, new_block->chunk.link);
+
+		if (new_block->chunk.link == NULL)
+			msg_report(MSG_MISSING_ATTRIBUTE, "href");
 
 		if (parse_xml_test_boolean_attribute(parser, "external", "true", "false"))
 			new_block->chunk.flags |= MANUAL_DATA_OBJECT_FLAGS_LINK_EXTERNAL;
@@ -1978,6 +1983,8 @@ static struct manual_data *parse_empty_block_object(struct parse_xml_block *pars
 		break;
 	case PARSE_ELEMENT_REF:
 		new_block->chunk.id = parse_xml_get_attribute_text(parser, "id");
+		if (new_block->chunk.id == NULL)
+			msg_report(MSG_MISSING_ATTRIBUTE, "id");
 		break;
 	default:
 		break;
