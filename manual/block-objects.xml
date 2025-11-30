@@ -6,14 +6,14 @@
 <p>A block object is a &lsquo;paragraph level&rsquo; object.</p>
 </section>
 
-<section>
+<section id="section-block-objects-paragraphs">
 <title>Paragraphs</title>
 
 <!-- To Do -->
 
 </section>
 
-<section>
+<section id="section-block-objects-lists">
 <title>Lists</title>
 
 <!-- To Do -->
@@ -40,35 +40,35 @@
 </section>
 </section>
 
-<section>
+<section id="section-block-objects-tables">
 <title>Tables</title>
 
 <!-- To Do -->
 
 </section>
 
-<section>
+<section id="section-block-objects-codeblocks">
 <title>Code blocks</title>
 
 <!-- To Do -->
 
 </section>
 
-<section>
+<section id="section-block-objects-blockquotes">
 <title>Block quotes</title>
 
 <!-- To Do -->
 
 </section>
 
-<section>
+<section id="section-block-objects-callouts">
 <title>Callouts</title>
 
 <!-- To Do -->
 
 </section>
 
-<section>
+<section id="section-block-objects-footnotes">
 <title>Footnotes</title>
 
 <!-- To Do -->

@@ -25,7 +25,7 @@
 
 <p>The resources within a document operate in a hierarchical way, with the most recently-seen values taking precedence over those before them.</p>
 
-<p>Initial default values will be assigned to each setting when the parser starts, which can be overwritten by including the setting in the <ref id="section-manual-structure-manual">top-level manual structure</ref>. These settings can then be overwritten again if they are included in the resources of a <ref id="section-manual-structure-chapters">chapter or indexe</ref>. Finally, they can be overwritten again using the resources in any level of nested <ref id="section-manual-structure-sections">sections</ref>.</p>
+<p>Initial default values will be assigned to each setting when the parser starts, which can be overwritten by including the setting in the <ref id="section-manual-structure-manual">top-level manual structure</ref>. These settings can then be overwritten again if they are included in the resources of a <ref id="section-manual-structure-chapters">chapter or index</ref>. Finally, they can be overwritten again using the resources in any level of nested <ref id="section-manual-structure-sections">sections</ref>.</p>
 </section>
 
 <section>

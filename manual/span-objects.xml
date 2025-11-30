@@ -6,6 +6,8 @@
 <p>A span object is an object which is contained within a &lsquo;paragraph level&rsquo; (or <ref id="chapter-block-objects">block</ref>) object. It forms the markup of much of the text within the document.</p>
 
 <p>In general, span objects can be nested within each other as required to create the reqired semantic meaning. Where this isn&rsquo;t possible, it is stated in the descriptions below.</p>
+
+<p>It is not possible to nest other types of object within span objects.</p>
 </section>
 
 <section>
@@ -41,7 +43,7 @@
 <row><col><code>&lt;window&gt;...&lt;/window&gt;</code></col><col>The name of a window</col></row>
 </table>
 
-<p>Semantic objects can be nested, and can contain any of the other span objects documented in this section within their span.</p>
+<p>Semantic objects can be nested, and may contain any of the other span objects documented in this section within their span.</p>
 
 </section>
 
@@ -77,29 +79,87 @@ main menu, then choose <menu><item>Quit</item></menu> from the iconbar menu.&rdq
 <section>
 <title>Internal references</title>
 
-<!-- To Do -->
+<p>Internal references allow links to be created within a document to any other object which has an <name>id</name> attribute. The ID is given using an <name>id</name> attribute within the reference tag.</p>
 
+<code>&lt;p&gt;For more details on &lt;ref id=&quot;paragraphs&quot;&gt;paragraphs of text&lt;/ref&gt;,
+see &lt;ref id=&quot;paragraphs&quot;/&gt;.&lt;/p&gt;</code>
+
+<p>Two forms of reference exist: <intro>span</intro> and <intro>empty</intro> references. Exactly how the two forms are used will depend on the requirements of the individual output mode, but in general:</p>
+
+<ul>
+<li><p>If text is available from a span reference, this will be used as the clickable-hyperlink or at least displayed in place in the document, whereas</p></li>
+
+<li><p>If the reference is empty, the number and title of the target object will be used instead.</p></li>
+</ul>
+
+<p>The above example might therefore be presented along the following lines.</p>
+
+<code>For more details on paragraphs of text, see Section 3.4. Paragraphs.</code>
+
+<p>In the case of references to <ref id="section-block-objects-footnotes">footnotes</ref>, the reference will be inserted in what is considered to be the standard footnote style for the target output format.</p>
 </section>
 
 <section>
 <title>External links</title>
 
-<!-- To Do -->
+<p>External links allow references to resources outside the document, to anything with a valid URI. The required URI is supplied using the <name>href</name> attribute within the link tag.</p>
 
+<code>&lt;p&gt;The &lt;link href=&quot;https://www.example.com&quot;&gt;example website&lt;/link&gt;,
+can be found at &lt;link href=&quot;https://www.example.com&quot;/&gt;.&lt;/p&gt;</code>
+
+<p>Two forms of external link exist: <intro>span</intro> and <intro>empty</intro> links. Exactly how the two forms are used will depend on the requirements of the individual output mode, but in general:</p>
+
+<ul>
+<li><p>If text is available from a span link, this will be used as the clickable-hyperlink or at least displayed in place in the document, whereas</p></li>
+
+<li><p>If the link is empty, the target URI will be used directly instead.</p></li>
+</ul>
+
+<p>The above example might therefore be presented along the following lines.</p>
+
+<code>The example website can be found at https://www.example.com.</code>
+
+<p>The optional <name>external</name> attribute can take the values <const>true</const> or <const>false</const>, with false being the default if the attribute is omitted. If true, output modes have the option to show the link as being &lsquo;external&rsquo; if they have a way of doing so.</p>
+
+<p>Some output modes, particularly those which don&rsquo;t have a way to generate hyperlinks, can use an option to &rsquo;flatten&rsquo; the link. This can be controlled using the optional <name>flatten</name> attribute, which can take the values <const>true</const> or <const>false</const> and defaults to false if omitted. If true, a mode may choose to output the link text but omit the link itself. For example,</p>
+
+<code>&lt;p&gt;Email &lt;link href=&quot;mailto:email@example.com&quot; flatten=&quot;true&quot;&gt;email@example.com&lt;/link&gt;.&lt;/p&gt;</code>
+
+<p>might generate the text</p>
+
+<code>Email info@example.com.</code>
+
+<p>with the value of the <name>href</name> attribute discarded when in a mode with no hyperlinks available.</p>
 </section>
 
 <section>
 <title>External definitions</title>
 
-<!-- To Do -->
+<p>The define object allows <ref id="documents-external-definitions">external definitions</ref> to be included within a document.</p>
 
+<code>&lt;p&gt;This manual was created on &lt;define name=&quot;date&quot;/&gt;.&lt;/p&gt;</code>
+
+<p>The <name>name</name> attribute identifies the definition to use, and the object will then be replaced by whatever value was passed to the <param>-define</param> parameter with the same name when <cite>XMLMan</cite> was called. For example, if the call was made with <entry>-define "date=2nd January 2025"</entry>, then the output would be</p>
+
+<code>This manual was created on 2nd January 2025.</code>
 </section>
 
 <section>
 <title>Line breaks</title>
 
-<!-- To Do -->
+<p>Line breaks allow a new line to be forced within a section of text.</p>
 
+<code>&lt;p&gt;This is some text.&lt;br/&gt;
+And this will always be on the next line.&lt;/p&gt;
+
+&lt;p&gt;This will be a new paragraph.&lt;/p&gt;</code>
+
+<p>This example will ensure that there is always a line break &ndash; without any paragraph spacing &ndash; after the first full stop.</p>
+
+<code>This is some text.
+And this will be on the next line.
+
+This will be a new paragraph.</code>
 </section>
 </chapter>
 </manual>

@@ -81,7 +81,7 @@
 <p>Reference IDs are specified using the <name>id</name> attribute within appropriate target tags, and can be any alphanumeric text. However, references map to object IDs in HTML output and since the IDs <name>head</name>, <name>head-liner</name>, <name>body</name>, <name>body-liner</name>, <name>foot</name> and <name>foot-liner</name> are used within the page structure, these are not available within a manual.</p>
 </section>
 
-<section id="external-definition">
+<section id="documents-external-definitions">
 <title>External definitions</title>
 
 <p>It is possible to supply externally-sourced content for a manual, in the form of short text definitions supplied with the <param>-define</param> parameter on the command line. The primary use case for this functionality is to support the embedding of build dates and version numbers into software manuals.</p>
