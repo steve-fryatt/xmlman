@@ -874,8 +874,6 @@ static bool output_text_line_add_column_text(struct output_text_line_column *col
 
 static bool output_text_line_update_column_memory(struct output_text_line_column *column)
 {
-	char *new;
-
 	if (column == NULL) {
 		msg_report(MSG_TEXT_LINE_BAD_COL_REF);
 		return false;
@@ -893,10 +891,11 @@ static bool output_text_line_update_column_memory(struct output_text_line_column
 		if (column->size > 0)
 			column->text[0] = '\0';
 	} else {
-		new = realloc(column->text, column->size + OUTPUT_TEXT_LINE_COLUMN_BLOCK_SIZE);
+		char *new = realloc(column->text, column->size + OUTPUT_TEXT_LINE_COLUMN_BLOCK_SIZE);
 		if (new == NULL)
 			return false;
 
+		column->text = new;
 		column->size += OUTPUT_TEXT_LINE_COLUMN_BLOCK_SIZE;
 	}
 
