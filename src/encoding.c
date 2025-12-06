@@ -2284,10 +2284,10 @@ static bool encoding_find_mapped_character(int unicode, char *c)
 		return true;
 	}
 
-	/* There's no encoding selected, so output straight unicode. */
+	/* There's no encoding selected, so output fallback. */
 
 	if (encoding_current_map == NULL) {
-		*c = unicode;
+		*c = '?';
 		return true;
 	}
 
